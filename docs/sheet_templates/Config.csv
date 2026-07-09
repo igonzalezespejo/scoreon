@@ -1,0 +1,5 @@
+key,value,description
+active_month_id,2026-09,Mes activo actual
+pin_enabled,true,Activa o desactiva PIN por usuario
+site_title,Porra Mensual,Nombre mostrado en la web
+show_predictions_before_lock,false,Mostrar apuestas antes del cierre

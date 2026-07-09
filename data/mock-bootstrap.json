@@ -1,0 +1,81 @@
+{
+  "ok": true,
+  "serverTime": "2026-07-09T18:00:00+02:00",
+  "config": {
+    "active_month_id": "2026-09",
+    "pin_enabled": true,
+    "site_title": "Porra Mensual",
+    "show_predictions_before_lock": false
+  },
+  "activeMonth": {
+    "month_id": "2026-09",
+    "title": "Porra Septiembre 2026",
+    "status": "open",
+    "open_at": "2026-09-01T00:00:00+02:00",
+    "lock_at": "2026-09-14T20:00:00+02:00"
+  },
+  "participants": [
+    { "user_id": "juan", "display_name": "Juan", "active": true },
+    { "user_id": "maria", "display_name": "María", "active": true },
+    { "user_id": "carlos", "display_name": "Carlos", "active": true },
+    { "user_id": "ana", "display_name": "Ana", "active": true },
+    { "user_id": "pedro", "display_name": "Pedro", "active": true }
+  ],
+  "matches": [
+    {
+      "match_id": "m001",
+      "month_id": "2026-09",
+      "competition": "Liga",
+      "home_team": "Real Madrid",
+      "away_team": "Barcelona",
+      "kickoff_at": "2026-09-15T21:00:00+02:00",
+      "status": "scheduled",
+      "display_order": 1
+    },
+    {
+      "match_id": "m002",
+      "month_id": "2026-09",
+      "competition": "Liga",
+      "home_team": "Atlético de Madrid",
+      "away_team": "Sevilla",
+      "kickoff_at": "2026-09-16T21:00:00+02:00",
+      "status": "scheduled",
+      "display_order": 2
+    },
+    {
+      "match_id": "m003",
+      "month_id": "2026-09",
+      "competition": "Champions",
+      "home_team": "Bayern",
+      "away_team": "Arsenal",
+      "kickoff_at": "2026-09-20T21:00:00+02:00",
+      "status": "scheduled",
+      "display_order": 3
+    },
+    {
+      "match_id": "m004",
+      "month_id": "2026-09",
+      "competition": "Champions",
+      "home_team": "Juventus",
+      "away_team": "PSG",
+      "kickoff_at": "2026-09-21T21:00:00+02:00",
+      "status": "scheduled",
+      "display_order": 4
+    }
+  ],
+  "predictionsSummary": {
+    "juan": { "status": "submitted", "submitted_at": "2026-09-02T10:00:00+02:00" },
+    "maria": { "status": "submitted", "submitted_at": "2026-09-03T11:00:00+02:00" }
+  },
+  "rankingMonthly": [
+    { "user_id": "juan", "display_name": "Juan", "points": 25, "exact_scores": 1, "correct_signs": 1, "failed": 2, "played_matches": 4, "position": 1 },
+    { "user_id": "maria", "display_name": "María", "points": 10, "exact_scores": 0, "correct_signs": 2, "failed": 2, "played_matches": 4, "position": 2 }
+  ],
+  "rankingGlobal": [
+    { "user_id": "juan", "display_name": "Juan", "total_points": 120, "months_played": 5, "position": 1 },
+    { "user_id": "maria", "display_name": "María", "total_points": 110, "months_played": 5, "position": 2 },
+    { "user_id": "carlos", "display_name": "Carlos", "total_points": 95, "months_played": 5, "position": 3 },
+    { "user_id": "ana", "display_name": "Ana", "total_points": 80, "months_played": 5, "position": 4 },
+    { "user_id": "pedro", "display_name": "Pedro", "total_points": 50, "months_played": 3, "position": 5 }
+  ]
+}

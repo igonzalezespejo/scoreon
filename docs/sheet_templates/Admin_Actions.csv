@@ -1,0 +1,2 @@
+timestamp,admin_action,month_id,user_id,details_json
+2026-09-01T00:00:00Z,open_month,2026-09,admin,{"status": "open"}

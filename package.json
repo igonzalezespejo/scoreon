@@ -1,0 +1,13 @@
+{
+  "name": "porra-mensual",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "serve": "serve ."
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "serve": "^14.2.4"
+  }
+}

@@ -1,0 +1,4 @@
+rule_id,description,points,active
+exact_score,Resultado exacto,20,true
+correct_sign,Signo acertado,5,true
+wrong,Fallo,0,true
