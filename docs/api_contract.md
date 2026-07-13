@@ -17,7 +17,8 @@ El parámetro `action` determina la operación. Todas las respuestas incluyen:
 **Método:** `GET` o `POST`
 
 **Descripción:** Obtiene los datos iniciales necesarios para cargar la aplicación. 
-El objeto `predictionsSummary` devuelve el estado de todos los usuarios activos (`submitted` si han apostado y `pending` si no lo han hecho), incluyendo usuarios recién registrados. Los arreglos `rankingMonthly` y `rankingGlobal` son datos derivados: aunque se lean de las hojas de Google, el backend los completa automáticamente para asegurar que todos los participantes activos están presentes, asignando 0 puntos a aquellos sin histórico.
+El objeto `predictionsSummary` devuelve el estado de todos los usuarios activos (`submitted` si han apostado y `pending` si no lo han hecho), incluyendo usuarios recién registrados. 
+Los arreglos `rankingMonthly` y `rankingGlobal` son **calculados dinámicamente por el backend** usando las reglas de puntuación (`Scoring_Rules`), las apuestas actuales (`Predictions_Current`) y los resultados reales (`Results`). El backend asegura automáticamente que todos los participantes activos están presentes, asignando 0 puntos a aquellos sin histórico. Si faltan reglas en `Scoring_Rules`, el backend utiliza un fallback seguro de 20/15/10/5/0.
 
 **Respuesta Exitosa:**
 ```json

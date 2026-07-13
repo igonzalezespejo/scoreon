@@ -14,6 +14,10 @@
 - Actualizado CSS y limpiadas las vistas HTML/JS.
 - Validado (QA en `docs/visual_qa.md`). Pendiente de hacer push/deploy para verlo en producción.
 
+## V2.3 Novedades (Cálculo Dinámico y Reglas Definitivas)
+- Reglas de puntuación definitivas implementadas: exact_draw (20), exact_non_draw (15), draw_not_exact (10), winner_not_exact (5), wrong (0).
+- El backend (`Code.gs`) ahora calcula de forma dinámica `Ranking_Monthly` y `Ranking_Global` basándose en las apuestas actuales y los resultados. Las pestañas de Google Sheets ya no necesitan cálculo manual.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

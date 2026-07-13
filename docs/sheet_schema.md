@@ -149,7 +149,7 @@ Resultados reales de los partidos para la puntuación.
 ---
 
 ## Scoring_Rules
-Reglas de puntuación (calculadas posteriormente fuera del backend web).
+Reglas de puntuación (utilizadas por el backend para calcular el ranking dinámicamente).
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|
@@ -161,12 +161,12 @@ Reglas de puntuación (calculadas posteriormente fuera del backend web).
 **Ejemplo de fila:**
 | rule_id | description | points | active |
 |---|---|---|---|
-| exact_score | Resultado exacto | 20 | true |
+| exact_draw | Resultado exacto con empate | 20 | true |
 
 ---
 
 ## Ranking_Monthly
-Clasificación de cada mes (no calculada por el backend, solo enviada al front).
+Clasificación de cada mes (ya no es calculada a mano; el backend la calcula dinámicamente ignorando el contenido de esta hoja. Se puede mantener como histórico o caché).
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|

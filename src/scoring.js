@@ -1,8 +1,10 @@
 import { validateGoals } from './utils/validation.js';
 
 const DEFAULT_RULES = {
-    exact_score: 20,
-    correct_sign: 5,
+    exact_draw: 20,
+    exact_non_draw: 15,
+    draw_not_exact: 10,
+    winner_not_exact: 5,
     wrong: 0
 };
 
@@ -23,19 +25,19 @@ function getSign(home, away) {
  * @param {object} prediction - { home_goals, away_goals }
  * @param {object} result - { home_goals, away_goals, status }
  * @param {object} rules - Scoring rules (optional)
- * @returns {number|null} Score, or null if pending/invalid
+ * @returns {object} { rule_id, points, computable }
  */
 export function scorePrediction(prediction, result, rules = DEFAULT_RULES) {
     if (!prediction || prediction.home_goals === undefined || prediction.away_goals === undefined) {
-        return null; 
+        return { rule_id: 'pending', points: 0, computable: false };
     }
 
-    if (!result || result.status !== 'finished') {
-        return null; // pending
+    if (!result || (result.status !== 'finished' && result.status !== 'final')) {
+        return { rule_id: 'pending', points: 0, computable: false };
     }
 
     if (result.home_goals === undefined || result.away_goals === undefined) {
-        return null;
+        return { rule_id: 'pending', points: 0, computable: false };
     }
 
     const pH = Number(prediction.home_goals);
@@ -43,26 +45,31 @@ export function scorePrediction(prediction, result, rules = DEFAULT_RULES) {
     const rH = Number(result.home_goals);
     const rA = Number(result.away_goals);
 
-    if (!validateGoals(pH, pA)) return null;
-    if (!validateGoals(rH, rA)) return null;
+    if (!validateGoals(pH, pA)) return { rule_id: 'pending', points: 0, computable: false };
+    if (!validateGoals(rH, rA)) return { rule_id: 'pending', points: 0, computable: false };
 
-    if (pH === rH && pA === rA) {
-        return rules.exact_score;
+    const isDraw = (rH === rA);
+    const isExact = (pH === rH && pA === rA);
+    const correctSign = getSign(pH, pA) === getSign(rH, rA);
+
+    let rule_id = 'wrong';
+
+    if (isExact) {
+        rule_id = isDraw ? 'exact_draw' : 'exact_non_draw';
+    } else if (correctSign) {
+        rule_id = isDraw ? 'draw_not_exact' : 'winner_not_exact';
     }
 
-    if (getSign(pH, pA) === getSign(rH, rA)) {
-        return rules.correct_sign;
-    }
+    const points = rules[rule_id] !== undefined ? Number(rules[rule_id]) : DEFAULT_RULES[rule_id];
 
-    return rules.wrong;
+    return { rule_id, points, computable: true };
 }
 
 /**
  * Wrapper for scoring a match prediction.
  */
 export function scoreMatchPrediction(prediction, match, rules = DEFAULT_RULES) {
-    if (!match) return null;
-    // Assume match has result embedded or is the result object itself
+    if (!match) return { rule_id: 'pending', points: 0, computable: false };
     const result = {
         home_goals: match.home_goals,
         away_goals: match.away_goals,
@@ -75,7 +82,7 @@ export function scoreMatchPrediction(prediction, match, rules = DEFAULT_RULES) {
  * Calculates the monthly ranking given all data.
  * @param {Array} participants 
  * @param {Array} matches 
- * @param {Array} predictions - Array of prediction objects { participant_id, match_id, home_goals, away_goals }
+ * @param {Array} predictions - Array of prediction objects
  * @param {Array} results - Optional array of match results. If omitted, results are extracted from matches.
  * @param {object} rules 
  */
@@ -83,14 +90,18 @@ export function calculateMonthlyRanking(participants, matches, predictions, resu
     const rankingMap = {};
 
     participants.forEach(p => {
-        rankingMap[p.user_id || p.id] = {
-            participant: p,
-            points: 0,
-            exact_scores: 0,
-            correct_signs: 0,
-            failed: 0,
-            played_matches: 0
-        };
+        if (p.active) {
+            rankingMap[p.user_id || p.id] = {
+                user_id: p.user_id || p.id,
+                display_name: p.display_name,
+                points: 0,
+                exact_scores: 0,
+                correct_signs: 0,
+                failed: 0,
+                played_matches: 0,
+                participant: p // keep for potential legacy use, though rankingView doesn't seem to use it
+            };
+        }
     });
 
     const resultMap = {};
@@ -109,25 +120,30 @@ export function calculateMonthlyRanking(participants, matches, predictions, resu
         const rankEntry = rankingMap[participantId];
         if (!rankEntry) return;
 
-        const score = scorePrediction(pred, result, rules);
-        if (score === null) return; // pending or invalid prediction
+        const { rule_id, points, computable } = scorePrediction(pred, result, rules);
+        if (!computable) return;
 
         rankEntry.played_matches += 1;
-        rankEntry.points += score;
+        rankEntry.points += points;
 
-        if (score === rules.exact_score) {
+        if (rule_id === 'exact_draw' || rule_id === 'exact_non_draw') {
             rankEntry.exact_scores += 1;
-        } else if (score === rules.correct_sign) {
+        } else if (rule_id === 'draw_not_exact' || rule_id === 'winner_not_exact') {
             rankEntry.correct_signs += 1;
-        } else if (score === rules.wrong) {
+        } else if (rule_id === 'wrong') {
             rankEntry.failed += 1;
         }
     });
 
-    return Object.values(rankingMap).sort((a, b) => {
+    const arr = Object.values(rankingMap).sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
         if (b.exact_scores !== a.exact_scores) return b.exact_scores - a.exact_scores;
         if (b.correct_signs !== a.correct_signs) return b.correct_signs - a.correct_signs;
-        return b.failed - a.failed;
+        const aName = a.display_name || '';
+        const bName = b.display_name || '';
+        return aName.localeCompare(bName);
     });
+
+    arr.forEach((r, i) => r.position = i + 1);
+    return arr;
 }

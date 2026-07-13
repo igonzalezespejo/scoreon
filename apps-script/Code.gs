@@ -46,6 +46,183 @@ function handleRequest(params) {
 // ACTIONS
 // ==========================================
 
+function getSign(home, away) {
+    if (home > away) return 1;
+    if (home < away) return -1;
+    return 0;
+}
+
+function scorePrediction(prediction, result, scoringRules) {
+    const defaultPoints = { exact_draw: 20, exact_non_draw: 15, draw_not_exact: 10, winner_not_exact: 5, wrong: 0 };
+    
+    const rules = {};
+    if (Array.isArray(scoringRules)) {
+        scoringRules.forEach(r => rules[r.rule_id] = r.points);
+    }
+
+    const getPoint = (id) => rules[id] !== undefined ? Number(rules[id]) : defaultPoints[id];
+
+    if (!prediction || prediction.home_goals === undefined || prediction.away_goals === undefined || prediction.home_goals === "" || prediction.away_goals === "") {
+        return { rule_id: 'pending', points: 0, computable: false };
+    }
+    if (!result || (result.status !== 'finished' && result.status !== 'final')) {
+        return { rule_id: 'pending', points: 0, computable: false };
+    }
+    if (result.home_goals === undefined || result.away_goals === undefined || result.home_goals === "" || result.away_goals === "") {
+        return { rule_id: 'pending', points: 0, computable: false };
+    }
+
+    const pH = Number(prediction.home_goals);
+    const pA = Number(prediction.away_goals);
+    const rH = Number(result.home_goals);
+    const rA = Number(result.away_goals);
+
+    if (isNaN(pH) || isNaN(pA) || isNaN(rH) || isNaN(rA) || pH < 0 || pA < 0 || rH < 0 || rA < 0) {
+        return { rule_id: 'pending', points: 0, computable: false };
+    }
+
+    const isDraw = (rH === rA);
+    const isExact = (pH === rH && pA === rA);
+    const correctSign = getSign(pH, pA) === getSign(rH, rA);
+
+    let rule_id = 'wrong';
+    if (isExact) {
+        rule_id = isDraw ? 'exact_draw' : 'exact_non_draw';
+    } else if (correctSign) {
+        rule_id = isDraw ? 'draw_not_exact' : 'winner_not_exact';
+    }
+
+    return { rule_id, points: getPoint(rule_id), computable: true };
+}
+
+function buildMonthlyRanking(participants, matches, predictionsCurrent, results, scoringRules, activeMonthId) {
+    const rankingMap = {};
+    
+    participants.forEach(p => {
+        if (p.active) {
+            rankingMap[p.user_id] = {
+                user_id: p.user_id,
+                display_name: p.display_name,
+                points: 0,
+                exact_scores: 0,
+                correct_signs: 0,
+                failed: 0,
+                played_matches: 0
+            };
+        }
+    });
+
+    const resultMap = {};
+    results.forEach(r => resultMap[r.match_id] = r);
+
+    const monthMatches = matches.filter(m => m.month_id === activeMonthId);
+    const monthMatchIds = monthMatches.map(m => m.match_id);
+
+    predictionsCurrent.forEach(pred => {
+        if (!monthMatchIds.includes(pred.match_id)) return;
+        
+        const participantId = pred.user_id;
+        const matchId = pred.match_id;
+        const result = resultMap[matchId];
+
+        if (!result) return;
+        const rankEntry = rankingMap[participantId];
+        if (!rankEntry) return;
+
+        const scoreObj = scorePrediction(pred, result, scoringRules);
+        if (!scoreObj.computable) return;
+
+        rankEntry.played_matches += 1;
+        rankEntry.points += scoreObj.points;
+
+        if (scoreObj.rule_id === 'exact_draw' || scoreObj.rule_id === 'exact_non_draw') {
+            rankEntry.exact_scores += 1;
+        } else if (scoreObj.rule_id === 'draw_not_exact' || scoreObj.rule_id === 'winner_not_exact') {
+            rankEntry.correct_signs += 1;
+        } else if (scoreObj.rule_id === 'wrong') {
+            rankEntry.failed += 1;
+        }
+    });
+
+    const arr = Object.values(rankingMap).sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.exact_scores !== a.exact_scores) return b.exact_scores - a.exact_scores;
+        if (b.correct_signs !== a.correct_signs) return b.correct_signs - a.correct_signs;
+        const aName = a.display_name || '';
+        const bName = b.display_name || '';
+        return aName.localeCompare(bName);
+    });
+
+    arr.forEach((r, i) => r.position = i + 1);
+    return arr;
+}
+
+function buildGlobalRanking(participants, matches, predictionsCurrent, results, scoringRules) {
+    const rankingMap = {};
+    
+    participants.forEach(p => {
+        if (p.active) {
+            rankingMap[p.user_id] = {
+                user_id: p.user_id,
+                display_name: p.display_name,
+                total_points: 0,
+                exact_scores: 0,
+                correct_signs: 0,
+                months_played: 0,
+                _played_months_set: {} 
+            };
+        }
+    });
+
+    const resultMap = {};
+    results.forEach(r => resultMap[r.match_id] = r);
+
+    const matchToMonth = {};
+    matches.forEach(m => matchToMonth[m.match_id] = m.month_id);
+
+    predictionsCurrent.forEach(pred => {
+        const participantId = pred.user_id;
+        const matchId = pred.match_id;
+        const monthId = matchToMonth[matchId];
+        const result = resultMap[matchId];
+
+        if (!result || !monthId) return;
+        
+        const rankEntry = rankingMap[participantId];
+        if (!rankEntry) return;
+
+        const scoreObj = scorePrediction(pred, result, scoringRules);
+        if (!scoreObj.computable) return;
+
+        rankEntry.total_points += scoreObj.points;
+        rankEntry._played_months_set[monthId] = true;
+
+        if (scoreObj.rule_id === 'exact_draw' || scoreObj.rule_id === 'exact_non_draw') {
+            rankEntry.exact_scores += 1;
+        } else if (scoreObj.rule_id === 'draw_not_exact' || scoreObj.rule_id === 'winner_not_exact') {
+            rankEntry.correct_signs += 1;
+        }
+    });
+
+    const arr = Object.values(rankingMap).map(r => {
+        r.months_played = Object.keys(r._played_months_set).length;
+        delete r._played_months_set;
+        return r;
+    });
+
+    arr.sort((a, b) => {
+        if (b.total_points !== a.total_points) return b.total_points - a.total_points;
+        if (b.exact_scores !== a.exact_scores) return b.exact_scores - a.exact_scores;
+        if (b.correct_signs !== a.correct_signs) return b.correct_signs - a.correct_signs;
+        const aName = a.display_name || '';
+        const bName = b.display_name || '';
+        return aName.localeCompare(bName);
+    });
+
+    arr.forEach((r, i) => r.position = i + 1);
+    return arr;
+}
+
 function actionBootstrap() {
   const configRows = getSheetData("Config");
   let config = {};
@@ -57,7 +234,6 @@ function actionBootstrap() {
   });
 
   const participants = getSheetData("Participants").map(p => {
-    // Eliminar PIN por seguridad
     delete p.pin;
     p.active = (p.active === true || p.active === "true" || p.active === "TRUE");
     return p;
@@ -67,15 +243,42 @@ function actionBootstrap() {
   const activeMonthId = config.active_month_id;
   const activeMonth = months.find(m => m.month_id === activeMonthId) || null;
 
-  const matches = getSheetData("Matches").filter(m => m.month_id === activeMonthId);
-  const rankingMonthly = getSheetData("Ranking_Monthly");
-  const rankingGlobal = getSheetData("Ranking_Global");
+  const matches = getSheetData("Matches");
+  const activeMatches = matches.filter(m => m.month_id === activeMonthId);
   const results = getSheetData("Results");
-  const scoringRules = getSheetData("Scoring_Rules");
+  let scoringRules = getSheetData("Scoring_Rules");
 
-  // Predicciones actuales (Resumen)
+  const requiredRules = {
+    exact_draw: { description: "Resultado exacto con empate", points: 20 },
+    exact_non_draw: { description: "Resultado exacto sin empate", points: 15 },
+    draw_not_exact: { description: "Empate acertado no exacto", points: 10 },
+    winner_not_exact: { description: "Ganador acertado no exacto", points: 5 },
+    wrong: { description: "Fallo", points: 0 }
+  };
+
+  const rulesMap = {};
+  scoringRules.forEach(r => rulesMap[r.rule_id] = r);
+  
+  for (let key in requiredRules) {
+    if (!rulesMap[key] || rulesMap[key].active === false || rulesMap[key].active === "false") {
+      let existingIndex = scoringRules.findIndex(r => r.rule_id === key);
+      let newRule = {
+        rule_id: key,
+        description: requiredRules[key].description,
+        points: requiredRules[key].points,
+        active: true
+      };
+      if (existingIndex >= 0) {
+        scoringRules[existingIndex] = newRule;
+      } else {
+        scoringRules.push(newRule);
+      }
+    }
+  }
+
   const currentPredictions = getSheetData("Predictions_Current");
   const predictionsSummary = {};
+  
   currentPredictions.forEach(p => {
     if (!predictionsSummary[p.user_id]) {
       predictionsSummary[p.user_id] = { status: "submitted", submitted_at: p.submitted_at };
@@ -88,53 +291,14 @@ function actionBootstrap() {
     }
   });
 
-  // Novedad: asegurar que todos los participantes activos están en predictionsSummary
   participants.forEach(p => {
     if (p.active && !predictionsSummary[p.user_id]) {
       predictionsSummary[p.user_id] = { status: "pending", submitted_at: null };
     }
   });
 
-  // Completar rankingMonthly con usuarios faltantes
-  participants.forEach(p => {
-    if (p.active && !rankingMonthly.some(r => r.user_id === p.user_id)) {
-      rankingMonthly.push({
-        user_id: p.user_id,
-        display_name: p.display_name,
-        points: 0,
-        exact_scores: 0,
-        correct_signs: 0,
-        failed: 0,
-        played_matches: 0
-      });
-    }
-  });
-  
-  rankingMonthly.sort((a, b) => {
-    const diff = Number(b.points) - Number(a.points);
-    if (diff !== 0) return diff;
-    return String(a.display_name).localeCompare(String(b.display_name));
-  });
-  rankingMonthly.forEach((r, i) => r.position = i + 1);
-
-  // Completar rankingGlobal con usuarios faltantes
-  participants.forEach(p => {
-    if (p.active && !rankingGlobal.some(r => r.user_id === p.user_id)) {
-      rankingGlobal.push({
-        user_id: p.user_id,
-        display_name: p.display_name,
-        total_points: 0,
-        months_played: 0
-      });
-    }
-  });
-  
-  rankingGlobal.sort((a, b) => {
-    const diff = Number(b.total_points) - Number(a.total_points);
-    if (diff !== 0) return diff;
-    return String(a.display_name).localeCompare(String(b.display_name));
-  });
-  rankingGlobal.forEach((r, i) => r.position = i + 1);
+  const rankingMonthly = buildMonthlyRanking(participants, matches, currentPredictions, results, scoringRules, activeMonthId);
+  const rankingGlobal = buildGlobalRanking(participants, matches, currentPredictions, results, scoringRules);
 
   return buildSuccessResponse({
     code: "SUCCESS",
@@ -142,7 +306,7 @@ function actionBootstrap() {
     config: config,
     activeMonth: activeMonth,
     participants: participants,
-    matches: matches,
+    matches: activeMatches,
     predictionsSummary: predictionsSummary,
     rankingMonthly: rankingMonthly,
     rankingGlobal: rankingGlobal,
@@ -153,7 +317,6 @@ function actionBootstrap() {
 
 function actionSavePrediction(params) {
   const lock = LockService.getScriptLock();
-  // Esperar hasta 10 segundos por el lock
   if (!lock.tryLock(10000)) {
     return buildErrorResponse("LOCK_TIMEOUT", "Sistema ocupado guardando otras predicciones, intenta en unos segundos.");
   }
@@ -162,7 +325,6 @@ function actionSavePrediction(params) {
     const { user_id, pin, month_id, predictions } = params;
     const serverTime = new Date();
 
-    // 1. Cargar contexto y validar usuario/PIN
     const configRows = getSheetData("Config");
     let config = {};
     configRows.forEach(r => {
@@ -186,7 +348,6 @@ function actionSavePrediction(params) {
       }
     }
 
-    // 2. Validar mes
     const months = getSheetData("Months");
     const month = months.find(m => m.month_id === month_id);
     if (!month) return buildErrorResponse("VALIDATION_ERROR", "Mes no encontrado");
@@ -195,7 +356,6 @@ function actionSavePrediction(params) {
     const lockAt = new Date(month.lock_at);
     if (serverTime >= lockAt) return buildErrorResponse("VALIDATION_ERROR", "El plazo del mes ha cerrado");
 
-    // 3. Validar partidos
     const matches = getSheetData("Matches").filter(m => m.month_id === month_id);
     const matchMap = {};
     matches.forEach(m => matchMap[m.match_id] = m);
@@ -232,13 +392,11 @@ function actionSavePrediction(params) {
       });
     }
 
-    // 4. Guardar predicciones
     const sheetPreds = getSpreadsheet().getSheetByName("Predictions_Current");
     if (!sheetPreds) return buildErrorResponse("SERVER_ERROR", "No existe la hoja Predictions_Current");
 
     let currentData = sheetPreds.getDataRange().getValues();
     if (currentData.length === 0) {
-      // Si la hoja está vacía por completo (ni cabeceras)
       currentData = [["user_id", "match_id", "home_goals", "away_goals", "submitted_at"]];
     }
     
@@ -256,19 +414,17 @@ function actionSavePrediction(params) {
     
     const updatingMatchIds = validPredictionsToSave.map(vp => vp.match_id);
     
-    // Mantener las predicciones que NO estamos actualizando
     for (let i = 1; i < currentData.length; i++) {
       const row = currentData[i];
       const rUser = row[userIdx];
       const rMatch = row[matchIdx];
       
       if (rUser === user_id && updatingMatchIds.includes(rMatch)) {
-        continue; // Descartamos la anterior porque la vamos a sobreescribir
+        continue; 
       }
       newData.push(row);
     }
 
-    // Agregar las nuevas predicciones
     for (let vp of validPredictionsToSave) {
       let newRow = new Array(headers.length).fill("");
       newRow[userIdx] = vp.user_id;
@@ -282,7 +438,6 @@ function actionSavePrediction(params) {
     sheetPreds.clearContents();
     sheetPreds.getRange(1, 1, newData.length, headers.length).setValues(newData);
 
-    // 5. Registrar log
     logAction(user_id, "SAVE_PREDICTION", `Guardadas ${validPredictionsToSave.length} predicciones.`, serverTime);
 
     return buildSuccessResponse({
@@ -304,7 +459,6 @@ function actionRegisterParticipant(params) {
   try {
     const { display_name, registration_code } = params;
     
-    // Config
     const configRows = getSheetData("Config");
     let config = {};
     configRows.forEach(r => {
@@ -330,7 +484,6 @@ function actionRegisterParticipant(params) {
 
     const cleanName = display_name.trim();
     
-    // Check duplicates
     const participants = getSheetData("Participants");
     const nameLower = cleanName.toLowerCase();
     
@@ -340,7 +493,6 @@ function actionRegisterParticipant(params) {
       }
     }
     
-    // Generate slug
     let baseSlug = cleanName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     if (!baseSlug) baseSlug = "user";
     
@@ -351,7 +503,6 @@ function actionRegisterParticipant(params) {
       counter++;
     }
     
-    // Generate PIN
     const pinLength = config.pin_length || 4;
     let pin = "";
     for (let i=0; i<pinLength; i++) {
@@ -402,8 +553,7 @@ function actionRegisterParticipant(params) {
 // UTILS
 // ==========================================
 
-// Si el script no está vinculado a la hoja (o da error getActiveSpreadsheet), pon aquí el ID de la URL de tu Google Sheet:
-const SPREADSHEET_ID = ""; // Ej: "1abc123..."
+const SPREADSHEET_ID = "";
 
 function getSpreadsheet() {
   if (SPREADSHEET_ID) {
@@ -439,7 +589,6 @@ function logAction(userId, action, details, serverTime) {
       sheetLog.appendRow([serverTime.toISOString(), userId, action, details]);
     }
   } catch (e) {
-    // Silencioso
   }
 }
 

@@ -67,11 +67,17 @@
   ],
   "predictionsSummary": {
     "juan": { "status": "submitted", "submitted_at": "2026-09-02T10:00:00+02:00" },
-    "maria": { "status": "submitted", "submitted_at": "2026-09-03T11:00:00+02:00" }
+    "maria": { "status": "submitted", "submitted_at": "2026-09-03T11:00:00+02:00" },
+    "carlos": { "status": "pending", "submitted_at": null },
+    "ana": { "status": "pending", "submitted_at": null },
+    "pedro": { "status": "pending", "submitted_at": null }
   },
   "rankingMonthly": [
     { "user_id": "juan", "display_name": "Juan", "points": 25, "exact_scores": 1, "correct_signs": 1, "failed": 2, "played_matches": 4, "position": 1 },
-    { "user_id": "maria", "display_name": "María", "points": 10, "exact_scores": 0, "correct_signs": 2, "failed": 2, "played_matches": 4, "position": 2 }
+    { "user_id": "maria", "display_name": "María", "points": 10, "exact_scores": 0, "correct_signs": 2, "failed": 2, "played_matches": 4, "position": 2 },
+    { "user_id": "carlos", "display_name": "Carlos", "points": 0, "exact_scores": 0, "correct_signs": 0, "failed": 0, "played_matches": 0, "position": 3 },
+    { "user_id": "ana", "display_name": "Ana", "points": 0, "exact_scores": 0, "correct_signs": 0, "failed": 0, "played_matches": 0, "position": 4 },
+    { "user_id": "pedro", "display_name": "Pedro", "points": 0, "exact_scores": 0, "correct_signs": 0, "failed": 0, "played_matches": 0, "position": 5 }
   ],
   "rankingGlobal": [
     { "user_id": "juan", "display_name": "Juan", "total_points": 120, "months_played": 5, "position": 1 },
@@ -84,8 +90,10 @@
   "message": "Data loaded",
   "results": [],
   "scoringRules": [
-    { "rule_id": "exact_score", "description": "Resultado exacto", "points": 20, "active": true },
-    { "rule_id": "correct_sign", "description": "Signo acertado", "points": 5, "active": true },
+    { "rule_id": "exact_draw", "description": "Resultado exacto con empate", "points": 20, "active": true },
+    { "rule_id": "exact_non_draw", "description": "Resultado exacto sin empate", "points": 15, "active": true },
+    { "rule_id": "draw_not_exact", "description": "Empate acertado no exacto", "points": 10, "active": true },
+    { "rule_id": "winner_not_exact", "description": "Ganador acertado no exacto", "points": 5, "active": true },
     { "rule_id": "wrong", "description": "Fallo", "points": 0, "active": true }
   ]
 }

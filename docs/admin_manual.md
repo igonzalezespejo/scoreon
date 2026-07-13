@@ -51,10 +51,11 @@ La gran mayoría de la gestión de la porra se realiza editando la Google Sheet 
   - Modificar un horario si hay cambios antes del cierre (`kickoff_at`).
 
 ### 4. Puntuaciones y Resultados
-- **Pestaña:** `Results`, `Ranking_Monthly` y `Ranking_Global`
+- **Pestaña:** `Results`, `Scoring_Rules`
 - **Acciones:**
   - Cuando terminen los partidos, el admin rellena `home_goals` y `away_goals` en `Results`.
-  - El administrador debe calcular el ranking. Esto se puede hacer mediante una macro de Apps Script personalizada, fórmulas en las hojas, o un script externo local. Apps Script (backend) **no calcula rankings completos**, pero automáticamente asegura que todos los participantes activos aparezcan en `Ranking_Monthly` y `Ranking_Global` (completando los faltantes con 0 puntos). No es necesario dar de alta manualmente a usuarios nuevos en Ranking_Monthly o Ranking_Global; basta con que existan activos en Participants.
+  - Las reglas de juego definitivas se configuran en `Scoring_Rules` (ej. exact_draw=20, exact_non_draw=15, draw_not_exact=10, winner_not_exact=5, wrong=0). Puedes cambiar los puntos asignados, pero **NUNCA debes renombrar los `rule_id`**, ya que el código del backend depende estrictamente de ellos.
+  - El backend (Apps Script) calcula de forma automática y dinámica los rankings mensual y global leyendo las apuestas y resultados. Las pestañas `Ranking_Monthly` y `Ranking_Global` ya no necesitan calcularse ni actualizarse manualmente para que la app funcione, aunque pueden usarse como histórico o caché.
 
 ### 5. Correcciones de Apuestas (Excepciones)
 - **Pestaña:** `Predictions_Current`
