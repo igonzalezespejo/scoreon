@@ -183,7 +183,7 @@ function actionSavePrediction(params) {
     }
 
     // 4. Guardar predicciones
-    const sheetPreds = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Predictions_Current");
+    const sheetPreds = getSpreadsheet().getSheetByName("Predictions_Current");
     if (!sheetPreds) return buildErrorResponse("SERVER_ERROR", "No existe la hoja Predictions_Current");
 
     let currentData = sheetPreds.getDataRange().getValues();
@@ -249,8 +249,21 @@ function actionSavePrediction(params) {
 // UTILS
 // ==========================================
 
+// Si el script no está vinculado a la hoja (o da error getActiveSpreadsheet), pon aquí el ID de la URL de tu Google Sheet:
+const SPREADSHEET_ID = ""; // Ej: "1abc123..."
+
+function getSpreadsheet() {
+  if (SPREADSHEET_ID) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
 function getSheetData(sheetName) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  const ss = getSpreadsheet();
+  if (!ss) throw new Error("No se pudo acceder a la hoja de cálculo. Por favor configura SPREADSHEET_ID en Code.gs");
+  
+  const sheet = ss.getSheetByName(sheetName);
   if (!sheet) return [];
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return [];
@@ -268,7 +281,7 @@ function getSheetData(sheetName) {
 
 function logAction(userId, action, details, serverTime) {
   try {
-    const sheetLog = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Predictions_Log");
+    const sheetLog = getSpreadsheet().getSheetByName("Predictions_Log");
     if (sheetLog) {
       sheetLog.appendRow([serverTime.toISOString(), userId, action, details]);
     }

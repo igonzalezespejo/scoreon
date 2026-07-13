@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "serve": "serve ."
+    "serve": "serve .",
+    "test:backend:bootstrap": "node scripts/test-bootstrap.js",
+    "test:backend:save": "node scripts/test-save-prediction.js",
+    "test:backend:invalid": "node scripts/test-invalid-payloads.js"
   },
   "devDependencies": {
     "jest": "^29.0.0",

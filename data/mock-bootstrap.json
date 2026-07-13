@@ -77,5 +77,13 @@
     { "user_id": "carlos", "display_name": "Carlos", "total_points": 95, "months_played": 5, "position": 3 },
     { "user_id": "ana", "display_name": "Ana", "total_points": 80, "months_played": 5, "position": 4 },
     { "user_id": "pedro", "display_name": "Pedro", "total_points": 50, "months_played": 3, "position": 5 }
+  ],
+  "code": "SUCCESS",
+  "message": "Data loaded",
+  "results": [],
+  "scoringRules": [
+    { "rule_id": "exact_score", "description": "Resultado exacto", "points": 20, "active": true },
+    { "rule_id": "correct_sign", "description": "Signo acertado", "points": 5, "active": true },
+    { "rule_id": "wrong", "description": "Fallo", "points": 0, "active": true }
   ]
 }

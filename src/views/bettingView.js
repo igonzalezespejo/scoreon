@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { savePrediction } from '../api.js';
+import { savePrediction, loadBootstrapData } from '../api.js';
 import { showToast, htmlToElements, empty } from '../utils/dom.js';
 import { formatDate } from '../utils/dates.js';
 
@@ -82,6 +82,15 @@ export const bettingView = {
             `;
         });
 
+        if (state.config && state.config.pin_enabled) {
+            formHtml += `
+                <div class="form-group" style="margin-top: 1.5rem; max-width: 200px;">
+                    <label class="form-label" for="pin-input">PIN de seguridad:</label>
+                    <input type="password" id="pin-input" class="form-input" required ${!canBet ? 'disabled' : ''}>
+                </div>
+            `;
+        }
+
         formHtml += `
             <div style="margin-top: 1.5rem; text-align: right;">
                 <button type="submit" class="btn btn-primary" id="btn-submit-bets" ${!canBet ? 'disabled' : ''}>
@@ -106,7 +115,6 @@ export const bettingView = {
         btn.textContent = 'Guardando...';
 
         try {
-            // Recopilar datos (en la v1 mock no guardamos los datos exactos, solo el status)
             const predictions = matches.map(m => {
                 const homeInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="home"]`);
                 const awayInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="away"]`);
@@ -117,15 +125,30 @@ export const bettingView = {
                 };
             });
 
-            await savePrediction(userId, predictions);
-            showToast('¡Apuesta guardada correctamente!');
+            let pin = '';
+            const pinInput = document.getElementById('pin-input');
+            if (pinInput) pin = pinInput.value;
+
+            const monthId = state.activeMonth.month_id;
+
+            const response = await savePrediction(userId, pin, monthId, predictions);
             
-            // Re-render form or status
-            const container = document.getElementById('view-betting');
-            this.handleParticipantChange(userId, container);
+            if (response.ok) {
+                showToast(response.message || '¡Apuesta guardada correctamente!');
+                await loadBootstrapData();
+                const container = document.getElementById('view-betting');
+                // Mantener al usuario seleccionado
+                const select = container.closest('.card').querySelector('#participant-select');
+                if(select) select.value = userId;
+                this.handleParticipantChange(userId, container.closest('.card'));
+            } else {
+                showToast(response.message || 'Error de validación', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Guardar Apuesta';
+            }
 
         } catch (error) {
-            showToast('Error al guardar la apuesta', 'error');
+            showToast('Error de conexión o de servidor', 'error');
             btn.disabled = false;
             btn.textContent = 'Guardar Apuesta';
         }

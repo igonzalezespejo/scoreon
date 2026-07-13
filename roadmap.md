@@ -1,6 +1,6 @@
 # ROADMAP MASTER — PORRA MENSUAL
 
-> **Estado:** Documentación base y reglas de negocio finalizadas. Implementación de Apps Script estructurada. Documentación operativa de Sheets/Despliegue/Admin completada. Plantillas CSV creadas.
+> **Estado:** Frontend conectado a backend. Bootstrap backend funcionando. SavePrediction y Logs funcionando. PIN probado. Contrato mock/backend alineado. Auditoría global completada. Documentación base y reglas de negocio finalizadas. Implementación de Apps Script estructurada. Documentación operativa de Sheets/Despliegue/Admin completada. Plantillas CSV creadas.
 
 ## Objetivo del archivo
 

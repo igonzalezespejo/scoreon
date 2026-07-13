@@ -36,7 +36,7 @@ export async function loadBootstrapData() {
     }
 }
 
-export async function savePrediction(userId, predictions) {
+export async function savePrediction(userId, pin, monthId, predictions) {
     if (USE_MOCK) {
         // Simulamos un delay de red
         return new Promise((resolve, reject) => {
@@ -59,10 +59,15 @@ export async function savePrediction(userId, predictions) {
         const payload = {
             action: 'savePrediction',
             user_id: userId,
+            pin: pin,
+            month_id: monthId,
             predictions: predictions
         };
         const response = await fetch(API_URL, {
             method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
             body: JSON.stringify(payload)
         });
         if (!response.ok) {

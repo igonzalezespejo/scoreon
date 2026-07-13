@@ -9,5 +9,5 @@
  * or just modify this file without committing it.
  */
 
-export const USE_MOCK = true;
-export const API_URL = '';
+export const USE_MOCK = false;
+export const API_URL = 'https://script.google.com/macros/s/AKfycbzZcyNFmGshh0omvAxO_GoVfX56NXYQX_nwlKLRyoN-MDfjSfpGRN-SSnfNgyzWgwn4PA/exec';
