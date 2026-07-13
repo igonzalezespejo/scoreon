@@ -62,6 +62,25 @@ Este documento detalla las validaciones End-to-End realizadas sobre el frontend 
   - (Nota) Error `404 favicon.ico` en consola es inofensivo y esperado al no existir dicho archivo aún.
 - **Bugs pendientes:** Ninguno crítico que bloquee el MVP.
 
+## 7. Smoke Test de Producción (Validación Final)
+La app ha sido publicada en: `https://igonzalezespejo.github.io/porra-mensual/`
+
+| Acción | Resultado | Notas |
+|--------|-----------|-------|
+| Abrir `https://igonzalezespejo.github.io/porra-mensual/` | Carga `index.html` sin errores 404 de scripts/css | ✅ OK |
+| Verificar llamadas de red (Network) | La app hace GET a la URL de Apps Script real | ✅ OK |
+| Mostrar datos reales | Aparecen participantes, partidos y estado "open" | ✅ OK |
+| Persistencia tras apuesta con usuario autorizado | ✅ OK | Validado manualmente por el administrador. |
+| Actualización del estado (Status view) | ✅ OK | El estado cambia correctamente tras confirmación de guardado. |
+
+### Prueba de Bloqueo
+**Resultado**: ✅ OK
+- Validado manualmente por el administrador cambiando temporalmente el mes a `locked` y restaurándolo después. Los inputs quedan deshabilitados y el backend rechaza intentos de apuesta.
+
+### Validación Multiusuario
+**Resultado**: ✅ OK
+- Probado con otros usuarios; las apuestas se guardan correctamente de forma concurrente en Google Sheets.
+
 ## Recomendación Final
 **LISTO PARA DESPLIEGUE EN GITHUB PAGES.**
 

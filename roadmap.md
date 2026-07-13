@@ -1,6 +1,6 @@
 # ROADMAP MASTER — PORRA MENSUAL
 
-> **Estado:** Frontend conectado a backend. Bootstrap backend funcionando. SavePrediction y Logs funcionando. PIN probado. Contrato mock/backend alineado. Auditoría global completada. Documentación base y reglas de negocio finalizadas. Implementación de Apps Script estructurada. Documentación operativa de Sheets/Despliegue/Admin completada. Plantillas CSV creadas.
+> **Estado:** MVP publicado y validado en producción.
 
 ## Objetivo del archivo
 
@@ -1457,9 +1457,9 @@ Actualizar manualmente esta sección conforme avance el desarrollo.
 [x] SavePrediction funcionando
 [x] Logs funcionando
 [x] Frontend conectado a backend
-[ ] Bloqueo probado
+[x] Bloqueo probado
 [x] PIN probado
 [x] Ranking probado
-[ ] GitHub Pages publicado
-[ ] MVP validado con usuarios reales
+[x] GitHub Pages publicado
+[x] MVP validado con usuarios reales
 ```

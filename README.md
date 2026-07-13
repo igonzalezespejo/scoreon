@@ -2,11 +2,23 @@
 
 Aplicación web para gestionar una porra mensual de resultados de fútbol para un grupo de 40-60 participantes.
 
+> **Estado:** MVP publicado y operativo.
+
 ## Arquitectura
 
 - **Frontend**: HTML/JS/CSS vainilla, desplegado en GitHub Pages.
-- **Backend**: Google Apps Script.
+- **Backend**: Google Apps Script + Google Sheets.
 - **Base de Datos**: Google Sheets.
+
+## Enlace Público
+🔗 **[URL de Producción](https://igonzalezespejo.github.io/porra-mensual/)**
+
+## Operación Mensual Básica
+Para lanzar una nueva porra cada mes:
+1. En Google Sheets, ve a la pestaña `Months` y añade la nueva fila del mes (ej. `2026-10`) con estado `open` y su fecha de cierre (`lock_at`).
+2. En la pestaña `Matches`, añade los partidos asignándoles el nuevo `month_id`.
+3. En la pestaña `Config`, actualiza la clave `active_month_id` al nuevo mes.
+¡Listo! La web cargará automáticamente el nuevo mes para todos los participantes.
 
 ## Roadmap
 

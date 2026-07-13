@@ -59,6 +59,18 @@ La gran mayoría de la gestión de la porra se realiza editando la Google Sheet 
   - Antes de la fecha límite, el usuario puede reenviar desde la web sin intervención del admin.
   - Después de la fecha límite, si el admin acepta una corrección excepcional por un error evidente, debe modificar `home_goals` y `away_goals` de la fila del `user_id` y `match_id` manualmente.
 
+### 6. Operación Diaria (Mantenimiento)
+- **Revisar apuestas:** Consultar `Predictions_Current` para verificar qué usuarios ya han enviado.
+- **Revisar trazabilidad:** Consultar `Predictions_Log` para ver los intentos (exitosos o fallidos) ordenados por fecha y hora.
+- **Pruebas y Estados:** Cambiar `status` a `locked` u `open` si es necesario realizar comprobaciones. **Siempre restaurar** el status correcto (`open`) tras realizar pruebas.
+
+### 7. Operación Mensual (Cambio de ciclo)
+Para lanzar una nueva porra cada mes:
+1. **Crear nuevo mes:** En la pestaña `Months`, añadir fila (ej. `2026-10`) con `status = open` y definir su fecha de cierre (`lock_at`).
+2. **Cargar partidos:** En la pestaña `Matches`, añadir los partidos asignándoles el nuevo `month_id`.
+3. **Activar mes:** En la pestaña `Config`, actualizar `active_month_id` al nuevo mes.
+4. **Cierre de ciclo (mes anterior):** Cambiar el status del mes anterior a `locked`, luego `scored` (tras calcular puntos), y finalmente `archived`.
+
 ---
 
 ## Qué edita Apps Script Automáticamente
