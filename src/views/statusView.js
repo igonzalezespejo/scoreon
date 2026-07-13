@@ -15,6 +15,8 @@ export const statusView = {
             if (hasSubmitted) submittedCount++;
             else missingCount++;
 
+            const statusBadge = hasSubmitted 
+                ? `<span class="badge badge-success">Recibida</span>` 
                 : `<span class="badge badge-warning">Pendiente</span>`;
                 
             const dateStr = hasSubmitted && statusInfo.submitted_at 
