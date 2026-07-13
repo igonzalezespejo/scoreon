@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { savePrediction, loadBootstrapData } from '../api.js';
+import { savePrediction, loadBootstrapData, registerParticipant } from '../api.js';
 import { showToast, htmlToElements, empty } from '../utils/dom.js';
 import { formatDate } from '../utils/dates.js';
 
@@ -18,10 +18,32 @@ export const bettingView = {
                 
                 <div class="form-group" style="max-width: 400px;">
                     <label class="form-label" for="participant-select">Selecciona tu nombre:</label>
-                    <select id="participant-select" class="form-select">
-                        <option value="">-- Elige un participante --</option>
-                        ${optionsHtml}
-                    </select>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="participant-select" class="form-select" style="flex: 1;">
+                            <option value="">-- Elige un participante --</option>
+                            ${optionsHtml}
+                        </select>
+                        <button id="btn-show-register" class="btn btn-secondary" style="white-space: nowrap; padding: 0.5rem 1rem;">Crear participante</button>
+                    </div>
+                </div>
+
+                <div id="registration-form-container" class="card" style="display: none; background-color: var(--bg-body); margin-top: 1rem; margin-bottom: 1.5rem;">
+                    <h3 style="margin-top: 0; color: var(--accent-primary);">Registro de Participante</h3>
+                    <form id="registration-form">
+                        <div class="form-group">
+                            <label class="form-label" for="reg-name">Nombre visible:</label>
+                            <input type="text" id="reg-name" class="form-input" required minlength="2" maxlength="60" placeholder="Ej: Juan Pérez">
+                        </div>
+                        ${state.config && state.config.registration_code ? `
+                        <div class="form-group">
+                            <label class="form-label" for="reg-code">Código de invitación:</label>
+                            <input type="text" id="reg-code" class="form-input" required>
+                        </div>` : ''}
+                        <div style="margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary" id="btn-submit-register">Registrarse</button>
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-register" style="margin-left: 10px;">Cancelar</button>
+                        </div>
+                    </form>
                 </div>
 
                 <div id="participant-status" style="margin-bottom: 1.5rem;"></div>
@@ -39,6 +61,78 @@ export const bettingView = {
         select.addEventListener('change', (e) => {
             this.handleParticipantChange(e.target.value, container);
         });
+
+        const btnShowRegister = container.querySelector('#btn-show-register');
+        const regFormContainer = container.querySelector('#registration-form-container');
+        const btnCancelRegister = container.querySelector('#btn-cancel-register');
+        const regForm = container.querySelector('#registration-form');
+
+        if (state.config && state.config.registration_enabled !== true) {
+            btnShowRegister.style.display = 'none';
+        } else {
+            btnShowRegister.addEventListener('click', () => {
+                regFormContainer.style.display = 'block';
+                btnShowRegister.style.display = 'none';
+                select.disabled = true;
+            });
+            
+            btnCancelRegister.addEventListener('click', () => {
+                regFormContainer.style.display = 'none';
+                btnShowRegister.style.display = 'inline-block';
+                select.disabled = false;
+                regForm.reset();
+            });
+
+            regForm.addEventListener('submit', (e) => this.handleRegistration(e, container));
+        }
+    },
+
+    async handleRegistration(e, container) {
+        e.preventDefault();
+        
+        const btn = container.querySelector('#btn-submit-register');
+        btn.disabled = true;
+        btn.textContent = 'Registrando...';
+
+        try {
+            const name = container.querySelector('#reg-name').value;
+            const codeInput = container.querySelector('#reg-code');
+            const code = codeInput ? codeInput.value : '';
+
+            const response = await registerParticipant(name, code);
+            
+            if (response.ok) {
+                const pin = response.participant.pin;
+                alert(`¡Participante creado!\n\nTu PIN de seguridad es: ${pin}\n\nGuarda este PIN, lo necesitarás para apostar.`);
+                
+                await loadBootstrapData();
+                
+                const select = container.querySelector('#participant-select');
+                const participants = state.participants.filter(p => p.active);
+                select.innerHTML = `<option value="">-- Elige un participante --</option>` + 
+                                   participants.map(p => `<option value="${p.user_id}">${p.display_name}</option>`).join('');
+                select.value = response.participant.user_id;
+                
+                container.querySelector('#btn-cancel-register').click();
+                
+                this.handleParticipantChange(response.participant.user_id, container);
+                
+                setTimeout(() => {
+                    const pinInput = container.querySelector('#pin-input');
+                    if (pinInput) pinInput.value = pin;
+                }, 100);
+
+            } else {
+                showToast(response.message || 'Error al registrar', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Registrarse';
+            }
+
+        } catch (error) {
+            showToast('Error de conexión o servidor', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Registrarse';
+        }
     },
 
     handleParticipantChange(userId, container) {

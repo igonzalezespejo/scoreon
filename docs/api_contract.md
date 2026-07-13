@@ -115,3 +115,40 @@ El objeto `predictionsSummary` devuelve la fecha de la última vez que un usuari
 }
 ```
 *(Otros errores comunes pueden retornar `code: "LOCK_TIMEOUT"` o `"SERVER_ERROR"`).*
+
+---
+
+### 3. Register Participant (`action=registerParticipant`)
+**Método:** `POST`
+
+**Descripción:** Permite a un usuario registrarse y obtener su PIN y `user_id` único automáticamente.
+
+**Payload:**
+```json
+{
+  "action": "registerParticipant",
+  "display_name": "Juan Pérez",
+  "registration_code": "PORRA2026"
+}
+```
+
+**Validaciones Realizadas (Backend / Code.gs):**
+1. **Configuración:** `config.registration_enabled` debe ser `true`. Si `config.registration_code` existe, debe coincidir.
+2. **Nombre:** `display_name` debe tener entre 2 y 60 caracteres y no estar duplicado.
+3. **Generación:** Genera un `user_id` limpio y único y un `pin` aleatorio.
+
+**Respuesta Exitosa:**
+```json
+{
+  "ok": true,
+  "code": "REGISTERED",
+  "message": "Participante creado correctamente",
+  "serverTime": "2026-07-13T10:00:00+02:00",
+  "participant": {
+    "user_id": "juan-perez",
+    "display_name": "Juan Pérez",
+    "pin": "4827",
+    "active": true
+  }
+}
+```

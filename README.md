@@ -2,7 +2,11 @@
 
 Aplicación web para gestionar una porra mensual de resultados de fútbol para un grupo de 40-60 participantes.
 
-> **Estado:** MVP publicado y operativo.
+> **Estado:** MVP publicado y operativo. V2.1 (Alta desde la web) completado.
+
+## Características
+- Autoregistro de participantes desde la web con código de invitación y PIN autogenerado.
+- Protección mediante PIN y cierre automático según fecha.
 
 ## Arquitectura
 

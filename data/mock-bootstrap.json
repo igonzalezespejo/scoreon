@@ -5,7 +5,9 @@
     "active_month_id": "2026-09",
     "pin_enabled": true,
     "site_title": "Porra Mensual",
-    "show_predictions_before_lock": false
+    "show_predictions_before_lock": false,
+    "registration_enabled": true,
+    "registration_code": "PORRA2026"
   },
   "activeMonth": {
     "month_id": "2026-09",

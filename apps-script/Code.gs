@@ -32,6 +32,8 @@ function handleRequest(params) {
         return actionBootstrap();
       case "savePrediction":
         return actionSavePrediction(params);
+      case "registerParticipant":
+        return actionRegisterParticipant(params);
       default:
         return buildErrorResponse("UNKNOWN_ACTION", "Action not supported: " + action);
     }
@@ -238,6 +240,109 @@ function actionSavePrediction(params) {
     return buildSuccessResponse({
       code: "SAVED",
       message: "Predicciones guardadas correctamente"
+    });
+
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function actionRegisterParticipant(params) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) {
+    return buildErrorResponse("LOCK_TIMEOUT", "Sistema ocupado, intenta en unos segundos.");
+  }
+
+  try {
+    const { display_name, registration_code } = params;
+    
+    // Config
+    const configRows = getSheetData("Config");
+    let config = {};
+    configRows.forEach(r => {
+      let val = r.value;
+      if (val === "true" || val === true) val = true;
+      else if (val === "false" || val === false) val = false;
+      config[r.key] = val;
+    });
+
+    if (config.registration_enabled !== true) {
+      return buildErrorResponse("REGISTRATION_DISABLED", "El registro no está habilitado");
+    }
+    
+    if (config.registration_code && String(config.registration_code).trim() !== "") {
+      if (String(registration_code) !== String(config.registration_code)) {
+        return buildErrorResponse("VALIDATION_ERROR", "El código de invitación no es correcto");
+      }
+    }
+
+    if (!display_name || typeof display_name !== "string" || display_name.trim().length < 2 || display_name.trim().length > 60) {
+      return buildErrorResponse("VALIDATION_ERROR", "Nombre visible inválido (debe tener entre 2 y 60 caracteres)");
+    }
+
+    const cleanName = display_name.trim();
+    
+    // Check duplicates
+    const participants = getSheetData("Participants");
+    const nameLower = cleanName.toLowerCase();
+    
+    for (let p of participants) {
+      if (p.display_name && p.display_name.trim().toLowerCase() === nameLower) {
+        return buildErrorResponse("VALIDATION_ERROR", "El nombre ya está en uso");
+      }
+    }
+    
+    // Generate slug
+    let baseSlug = cleanName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (!baseSlug) baseSlug = "user";
+    
+    let slug = baseSlug;
+    let counter = 2;
+    while (participants.find(p => p.user_id === slug)) {
+      slug = baseSlug + "-" + counter;
+      counter++;
+    }
+    
+    // Generate PIN
+    const pinLength = config.pin_length || 4;
+    let pin = "";
+    for (let i=0; i<pinLength; i++) {
+      pin += Math.floor(Math.random() * 10).toString();
+    }
+    
+    const serverTime = new Date();
+    
+    const sheetPart = getSpreadsheet().getSheetByName("Participants");
+    if (!sheetPart) return buildErrorResponse("SERVER_ERROR", "No existe la hoja Participants");
+    
+    const dataRange = sheetPart.getDataRange().getValues();
+    const headers = dataRange.length > 0 ? dataRange[0] : ["user_id", "display_name", "pin", "active", "created_at", "notes"];
+    
+    const newRow = new Array(headers.length).fill("");
+    
+    const newParticipantObj = {
+      user_id: slug,
+      display_name: cleanName,
+      pin: pin,
+      active: true,
+      created_at: serverTime.toISOString(),
+      notes: "self_registered"
+    };
+
+    headers.forEach((h, i) => {
+      if (newParticipantObj[h] !== undefined) {
+        newRow[i] = newParticipantObj[h];
+      }
+    });
+    
+    sheetPart.appendRow(newRow);
+    
+    logAction(slug, "REGISTER_PARTICIPANT", `Registrado desde web con nombre ${cleanName}`, serverTime);
+    
+    return buildSuccessResponse({
+      code: "REGISTERED",
+      message: "Participante creado correctamente",
+      participant: newParticipantObj
     });
 
   } finally {

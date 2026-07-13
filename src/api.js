@@ -80,3 +80,68 @@ export async function savePrediction(userId, pin, monthId, predictions) {
         return result;
     }
 }
+
+export async function registerParticipant(displayName, registrationCode) {
+    if (USE_MOCK) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                try {
+                    if (!displayName || displayName.trim().length < 2) {
+                        resolve({ ok: false, message: "Nombre muy corto" });
+                        return;
+                    }
+                    if (state.config.registration_enabled !== true) {
+                        resolve({ ok: false, message: "Registro no habilitado" });
+                        return;
+                    }
+                    if (state.config.registration_code && registrationCode !== state.config.registration_code) {
+                        resolve({ ok: false, message: "Código de invitación incorrecto" });
+                        return;
+                    }
+                    
+                    const cleanName = displayName.trim();
+                    const nameLower = cleanName.toLowerCase();
+                    if (state.participants.some(p => p.display_name.toLowerCase() === nameLower)) {
+                        resolve({ ok: false, message: "El nombre ya está en uso" });
+                        return;
+                    }
+
+                    const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                    const mockPin = "1234";
+
+                    // The backend won't push to local state until reload, but we return success
+                    resolve({
+                        ok: true,
+                        code: "REGISTERED",
+                        message: "Participante creado correctamente (Mock)",
+                        participant: {
+                            user_id: slug,
+                            display_name: cleanName,
+                            pin: mockPin,
+                            active: true
+                        }
+                    });
+                } catch (err) {
+                    reject(err);
+                }
+            }, 800);
+        });
+    } else {
+        const payload = {
+            action: 'registerParticipant',
+            display_name: displayName,
+            registration_code: registrationCode
+        };
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    }
+}

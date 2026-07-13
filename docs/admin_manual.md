@@ -14,7 +14,10 @@ Para iniciar un proyecto nuevo o un nuevo mes de porra, sigue estos pasos riguro
     - `pin_enabled`: `true` o `false`.
     - `site_title`: El título de la app (ej. `Porra Mensual`).
     - `show_predictions_before_lock`: `false`.
-5. [ ] **Cargar Participantes (`Participants`):** Añadir a todos los participantes con su `user_id` único, nombre para mostrar, `pin` y marcar `active` como `true`.
+    - `registration_enabled`: `true` si permites alta desde web.
+    - `registration_code`: Código de invitación opcional (ej. `PORRA2026`).
+    - `pin_length`: Longitud del PIN generado (por defecto `4`).
+5. [ ] **Cargar Participantes (`Participants`):** Añadir a todos los participantes con su `user_id` único, nombre para mostrar, `pin` y marcar `active` como `true`. Si el autoregistro web está activado, los usuarios aparecerán aquí automáticamente.
 6. [ ] **Crear Mes (`Months`):** Definir el mes inicial con estado `open` y su `lock_at` (fecha límite de apuestas en formato ISO 8601, ej. `2026-09-14T20:00:00Z`).
 7. [ ] **Cargar Partidos (`Matches`):** Añadir los partidos del mes, asegurándose de que la columna `month_id` coincida con el mes creado.
 8. [ ] **Desplegar Apps Script:** Ir a Extensiones > Apps Script, pegar `Code.gs`, realizar una "Nueva Implementación" como "Aplicación web" ejecutada como "Tú" y accesible para "Cualquiera".
@@ -30,7 +33,7 @@ La gran mayoría de la gestión de la porra se realiza editando la Google Sheet 
 ### 1. Gestión de Usuarios
 - **Pestaña:** `Participants`
 - **Acciones:**
-  - Añadir nuevos usuarios (nuevas filas).
+  - Añadir nuevos usuarios (nuevas filas). **Nota:** Si `registration_enabled` es `true`, los usuarios creados desde la web se añaden como nuevas filas automáticamente al final de la hoja.
   - Desactivar usuarios (cambiar `active` a `false`).
   - Resetear PIN (escribir un nuevo PIN en la columna `pin` e informarlo al usuario).
 
@@ -77,9 +80,11 @@ Para lanzar una nueva porra cada mes:
 
 El backend de Apps Script tiene permisos limitados. Automáticamente modifica:
 
-1. **`Predictions_Current`:**
+1. **`Participants`:**
+   - Si se habilita el autoregistro web, añade nuevas filas para usuarios nuevos.
+2. **`Predictions_Current`:**
    - Escribe o sobreescribe las apuestas activas con los campos: `user_id`, `match_id`, `home_goals`, `away_goals`, `submitted_at`.
    - Lee toda la hoja, actualiza las apuestas del usuario y reescribe las filas para mantener la estructura simple.
-2. **`Predictions_Log`:**
+3. **`Predictions_Log`:**
    - Añade filas de forma inmutable (append) con las columnas: `timestamp`, `user_id`, `action`, `details`.
-   - Deja traza de las predicciones exitosamente guardadas o errores si se configura para ello.
+   - Deja traza de las predicciones exitosamente guardadas, registros de usuario o errores si se configura para ello.

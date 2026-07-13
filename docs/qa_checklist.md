@@ -85,3 +85,17 @@ La app ha sido publicada en: `https://igonzalezespejo.github.io/porra-mensual/`
 **LISTO PARA DESPLIEGUE EN GITHUB PAGES.**
 
 La arquitectura híbrida (GitHub Pages + Apps Script + Sheets) ha demostrado ser robusta y estable para el flujo básico. La validación en servidor es hermética contra manipulación cliente, y la UI ofrece retroalimentación adecuada a los usuarios en todas las ramificaciones.
+
+## 8. QA Checklist V2.1 (Alta de Participantes)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| UI muestra botón "Crear participante" | ✅ OK | |
+| Formulario requiere nombre visible (mín. 2 chars) | ✅ OK | |
+| Formulario requiere código si está configurado | ✅ OK | |
+| Error al enviar código incorrecto | ✅ OK | Backend devuelve error VALIDATION_ERROR. |
+| Error al usar nombre duplicado (ignorando min/mayus) | ✅ OK | |
+| Generación exitosa de slug (`user_id`) y PIN | ✅ OK | Backend devuelve slug único y PIN aleatorio. |
+| Fila creada en `Participants` con status activo | ✅ OK | |
+| Toast/Alert muestra PIN autogenerado | ✅ OK | |
+| Tras el registro, el selector marca al nuevo usuario | ✅ OK | |
+| Posibilidad de apostar con el nuevo usuario y PIN | ✅ OK | |

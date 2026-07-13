@@ -1,6 +1,11 @@
 # ROADMAP MASTER — PORRA MENSUAL
 
-> **Estado:** MVP publicado y validado en producción.
+> **Estado:** MVP publicado y validado en producción. V2.1 completado (Alta desde web).
+
+## V2.1 Novedades
+- Añadido endpoint `registerParticipant`.
+- Formulario de registro en web, protegido por código de invitación opcional.
+- Generación automática de PIN y persistencia en Sheets.
 
 ## Objetivo del archivo
 
