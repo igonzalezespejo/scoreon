@@ -1451,15 +1451,15 @@ Actualizar manualmente esta sección conforme avance el desarrollo.
 [x] Frontend mock creado
 [x] Scoring creado
 [x] Tests creados
-[ ] Google Sheet creada
-[ ] Apps Script creado
-[ ] Bootstrap backend funcionando
-[ ] SavePrediction funcionando
-[ ] Logs funcionando
-[ ] Frontend conectado a backend
+[x] Google Sheet creada
+[x] Apps Script creado
+[x] Bootstrap backend funcionando
+[x] SavePrediction funcionando
+[x] Logs funcionando
+[x] Frontend conectado a backend
 [ ] Bloqueo probado
-[ ] PIN probado
-[ ] Ranking probado
+[x] PIN probado
+[x] Ranking probado
 [ ] GitHub Pages publicado
 [ ] MVP validado con usuarios reales
 ```
