@@ -17,7 +17,7 @@ El parámetro `action` determina la operación. Todas las respuestas incluyen:
 **Método:** `GET` o `POST`
 
 **Descripción:** Obtiene los datos iniciales necesarios para cargar la aplicación. 
-El objeto `predictionsSummary` devuelve la fecha de la última vez que un usuario envió su apuesta para el mes actual.
+El objeto `predictionsSummary` devuelve el estado de todos los usuarios activos (`submitted` si han apostado y `pending` si no lo han hecho), incluyendo usuarios recién registrados. Los arreglos `rankingMonthly` y `rankingGlobal` son datos derivados: aunque se lean de las hojas de Google, el backend los completa automáticamente para asegurar que todos los participantes activos están presentes, asignando 0 puntos a aquellos sin histórico.
 
 **Respuesta Exitosa:**
 ```json
@@ -57,10 +57,15 @@ El objeto `predictionsSummary` devuelve la fecha de la última vez que un usuari
     }
   ],
   "predictionsSummary": {
-    "juan": { "status": "submitted", "submitted_at": "2026-09-02T10:00:00Z" }
+    "juan": { "status": "submitted", "submitted_at": "2026-09-02T10:00:00Z" },
+    "maria": { "status": "pending", "submitted_at": null }
   },
-  "rankingMonthly": [],
-  "rankingGlobal": []
+  "rankingMonthly": [
+    // Derivado: incluye todos los usuarios activos automáticamente, incluso si no tienen apuestas (con 0 puntos).
+  ],
+  "rankingGlobal": [
+    // Derivado: incluye todos los usuarios activos automáticamente, incluso si no tienen histórico (con 0 puntos).
+  ]
 }
 ```
 

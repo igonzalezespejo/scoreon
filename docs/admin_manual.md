@@ -54,7 +54,7 @@ La gran mayoría de la gestión de la porra se realiza editando la Google Sheet 
 - **Pestaña:** `Results`, `Ranking_Monthly` y `Ranking_Global`
 - **Acciones:**
   - Cuando terminen los partidos, el admin rellena `home_goals` y `away_goals` en `Results`.
-  - El administrador debe calcular el ranking. Esto se puede hacer mediante una macro de Apps Script personalizada, fórmulas en las hojas, o un script externo local. Apps Script (backend) **no calcula rankings**, solo envía al frontend el contenido de `Ranking_Monthly` y `Ranking_Global`.
+  - El administrador debe calcular el ranking. Esto se puede hacer mediante una macro de Apps Script personalizada, fórmulas en las hojas, o un script externo local. Apps Script (backend) **no calcula rankings completos**, pero automáticamente asegura que todos los participantes activos aparezcan en `Ranking_Monthly` y `Ranking_Global` (completando los faltantes con 0 puntos). No es necesario dar de alta manualmente a usuarios nuevos en Ranking_Monthly o Ranking_Global; basta con que existan activos en Participants.
 
 ### 5. Correcciones de Apuestas (Excepciones)
 - **Pestaña:** `Predictions_Current`

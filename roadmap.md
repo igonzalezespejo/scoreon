@@ -6,6 +6,7 @@
 - Añadido endpoint `registerParticipant`.
 - Formulario de registro en web, protegido por código de invitación opcional.
 - Generación automática de PIN y persistencia en Sheets.
+- Datos derivados (predictionsSummary, rankingMonthly, rankingGlobal) actualizados automáticamente con nuevos usuarios activos.
 
 ## V2.2 Novedades (Rediseño visual)
 - Auditoría visual completada (`docs/theme_mundial_reference.md`).

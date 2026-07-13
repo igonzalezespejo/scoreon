@@ -88,6 +88,54 @@ function actionBootstrap() {
     }
   });
 
+  // Novedad: asegurar que todos los participantes activos están en predictionsSummary
+  participants.forEach(p => {
+    if (p.active && !predictionsSummary[p.user_id]) {
+      predictionsSummary[p.user_id] = { status: "pending", submitted_at: null };
+    }
+  });
+
+  // Completar rankingMonthly con usuarios faltantes
+  participants.forEach(p => {
+    if (p.active && !rankingMonthly.some(r => r.user_id === p.user_id)) {
+      rankingMonthly.push({
+        user_id: p.user_id,
+        display_name: p.display_name,
+        points: 0,
+        exact_scores: 0,
+        correct_signs: 0,
+        failed: 0,
+        played_matches: 0
+      });
+    }
+  });
+  
+  rankingMonthly.sort((a, b) => {
+    const diff = Number(b.points) - Number(a.points);
+    if (diff !== 0) return diff;
+    return String(a.display_name).localeCompare(String(b.display_name));
+  });
+  rankingMonthly.forEach((r, i) => r.position = i + 1);
+
+  // Completar rankingGlobal con usuarios faltantes
+  participants.forEach(p => {
+    if (p.active && !rankingGlobal.some(r => r.user_id === p.user_id)) {
+      rankingGlobal.push({
+        user_id: p.user_id,
+        display_name: p.display_name,
+        total_points: 0,
+        months_played: 0
+      });
+    }
+  });
+  
+  rankingGlobal.sort((a, b) => {
+    const diff = Number(b.total_points) - Number(a.total_points);
+    if (diff !== 0) return diff;
+    return String(a.display_name).localeCompare(String(b.display_name));
+  });
+  rankingGlobal.forEach((r, i) => r.position = i + 1);
+
   return buildSuccessResponse({
     code: "SUCCESS",
     message: "Data loaded",
