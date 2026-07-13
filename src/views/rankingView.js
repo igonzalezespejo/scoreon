@@ -4,16 +4,16 @@ export const rankingView = {
     render() {
         let monthlyRows = state.rankingMonthly.map((r, i) => `
             <tr>
-                <td><div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${i === 0 ? 'var(--accent-secondary)' : i===1 ? '#94a3b8' : i===2 ? '#cd7f32' : 'rgba(255,255,255,0.1)'}; color: ${i < 3 ? '#000' : 'inherit'}; font-weight: bold;">${r.position}</div></td>
+                <td><div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${i === 0 ? 'var(--accent-secondary)' : i===1 ? '#94a3b8' : i===2 ? '#cd7f32' : '#f1f5f9'}; color: ${i < 3 ? '#000' : 'inherit'}; font-weight: bold;">${r.position}</div></td>
                 <td style="font-weight: 600;">${r.display_name}</td>
                 <td style="color: var(--accent-primary); font-weight: 800; font-size: 1.1rem;">${r.points}</td>
-                <td><span style="color: #10b981; margin-right: 5px;">${r.exact_scores} exactos</span> / <span style="color: #f59e0b;">${r.correct_signs} signos</span></td>
+                <td><span style="color: var(--success-color); margin-right: 5px;">${r.exact_scores} exactos</span> / <span style="color: var(--accent-secondary);">${r.correct_signs} signos</span></td>
             </tr>
         `).join('');
 
         let globalRows = state.rankingGlobal.map((r, i) => `
             <tr>
-                <td><div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${i === 0 ? 'var(--accent-secondary)' : i===1 ? '#94a3b8' : i===2 ? '#cd7f32' : 'rgba(255,255,255,0.1)'}; color: ${i < 3 ? '#000' : 'inherit'}; font-weight: bold;">${r.position}</div></td>
+                <td><div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${i === 0 ? 'var(--accent-secondary)' : i===1 ? '#94a3b8' : i===2 ? '#cd7f32' : '#f1f5f9'}; color: ${i < 3 ? '#000' : 'inherit'}; font-weight: bold;">${r.position}</div></td>
                 <td style="font-weight: 600;">${r.display_name}</td>
                 <td style="color: var(--accent-secondary); font-weight: 800; font-size: 1.1rem;">${r.total_points}</td>
                 <td>${r.months_played}</td>

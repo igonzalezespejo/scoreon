@@ -27,7 +27,7 @@ export const bettingView = {
                     </div>
                 </div>
 
-                <div id="registration-form-container" class="card" style="display: none; background-color: var(--bg-body); margin-top: 1rem; margin-bottom: 1.5rem;">
+                <div id="registration-form-container" class="card" style="display: none; background-color: var(--bg-dark); margin-top: 1rem; margin-bottom: 1.5rem;">
                     <h3 style="margin-top: 0; color: var(--accent-primary);">Registro de Participante</h3>
                     <form id="registration-form">
                         <div class="form-group">

@@ -7,6 +7,12 @@
 - Formulario de registro en web, protegido por código de invitación opcional.
 - Generación automática de PIN y persistencia en Sheets.
 
+## V2.2 Novedades (Rediseño visual)
+- Auditoría visual completada (`docs/theme_mundial_reference.md`).
+- Aplicado tema visual claro inspirado en `mundial-2026`.
+- Actualizado CSS y limpiadas las vistas HTML/JS.
+- Validado (QA en `docs/visual_qa.md`). Pendiente de hacer push/deploy para verlo en producción.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

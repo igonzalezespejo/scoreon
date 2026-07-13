@@ -24,7 +24,7 @@ export const homeView = {
         const totalCount = state.participants.filter(p => p.active).length;
 
         return `
-            <div class="card" style="text-align: center; padding: 3rem 1.5rem; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(16, 185, 129, 0.1) 100%);">
+            <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
                 <h2 style="font-size: 2.5rem; color: var(--accent-primary); margin-bottom: 0.5rem;">${activeMonth.title}</h2>
                 <div style="margin: 1.5rem 0;">
                     ${statusHtml}

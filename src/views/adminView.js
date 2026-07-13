@@ -10,7 +10,7 @@ export const adminView = {
                     <strong style="color: var(--text-main);">Google Sheets</strong>, usando Google Apps Script.
                 </p>
                 
-                <div style="margin-top: 3rem; padding: 2rem; background: rgba(0,0,0,0.2); border-radius: var(--border-radius); border: 1px dashed var(--border-light); max-width: 500px; margin-left: auto; margin-right: auto;">
+                <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-dark); border-radius: var(--border-radius); border: 1px dashed var(--border-light); max-width: 500px; margin-left: auto; margin-right: auto;">
                     <h3 style="margin-bottom: 1rem; font-size: 1rem; color: var(--text-muted);">Acciones Futuras</h3>
                     <ul style="list-style: none; padding: 0; color: var(--text-muted); font-size: 0.9rem; text-align: left;">
                         <li style="margin-bottom: 0.5rem;">🔒 Bloqueo manual de mes</li>
