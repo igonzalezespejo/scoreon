@@ -1,2 +1,25 @@
 match_id,month_id,competition,home_team,away_team,kickoff_at,lock_at,status,display_order,notes
-m001,2026-09,LaLiga,Real Madrid,Barcelona,2026-09-15T21:00:00Z,,scheduled,1,-
+m001,2026-08,Supercopa UEFA,Paris Saint-Germain,Aston Villa,2026-08-12T21:00:00Z,,scheduled,1,-
+m002,2026-08,Community Shield,Arsenal,Manchester United,2026-08-08T16:00:00Z,,scheduled,2,-
+m003,2026-08,Supercopa Portugal,Sporting CP,FC Porto,2026-08-09T20:00:00Z,,scheduled,3,-
+m004,2026-08,Supercopa Países Bajos,PSV Eindhoven,Feyenoord,2026-08-02T18:00:00Z,,scheduled,4,-
+m005,2026-08,MLS,Los Angeles Galaxy,LAFC,2026-08-05T02:00:00Z,,scheduled,5,-
+m006,2026-08,Brasileirão,Flamengo,Palmeiras,2026-08-01T21:00:00Z,,scheduled,6,-
+m007,2026-08,LaLiga,Valencia CF,FC Barcelona,2026-08-15T21:00:00Z,,scheduled,7,-
+m008,2026-08,LaLiga,RCD Mallorca,Real Madrid,2026-08-16T21:00:00Z,,scheduled,8,-
+m009,2026-08,LaLiga,Villarreal CF,Sevilla FC,2026-08-14T21:00:00Z,,scheduled,9,-
+m010,2026-08,LaLiga,Real Betis,Athletic Club,2026-08-15T19:00:00Z,,scheduled,10,-
+m011,2026-08,Primeira Liga,SL Benfica,SC Braga,2026-08-16T20:00:00Z,,scheduled,11,-
+m012,2026-08,Eredivisie,Ajax,AZ Alkmaar,2026-08-16T14:30:00Z,,scheduled,12,-
+m013,2026-08,Premier League,Chelsea,Manchester City,2026-08-23T17:30:00Z,,scheduled,13,-
+m014,2026-08,LaLiga,Real Sociedad,Real Madrid,2026-08-22T21:00:00Z,,scheduled,14,-
+m015,2026-08,LaLiga,Athletic Club,FC Barcelona,2026-08-23T21:00:00Z,,scheduled,15,-
+m016,2026-08,LaLiga,Sevilla FC,Real Betis,2026-08-24T21:00:00Z,,scheduled,16,-
+m017,2026-08,Premier League,Arsenal,Aston Villa,2026-08-22T16:00:00Z,,scheduled,17,-
+m018,2026-08,Premier League,West Ham United,Tottenham Hotspur,2026-08-23T15:00:00Z,,scheduled,18,-
+m019,2026-08,Premier League,Manchester United,Liverpool,2026-08-30T17:30:00Z,,scheduled,19,-
+m020,2026-08,LaLiga,Atlético de Madrid,Sevilla FC,2026-08-29T21:00:00Z,,scheduled,20,-
+m021,2026-08,LaLiga,Rayo Vallecano,Real Betis,2026-08-30T19:00:00Z,,scheduled,21,-
+m022,2026-08,Premier League,Newcastle United,Tottenham Hotspur,2026-08-29T16:00:00Z,,scheduled,22,-
+m023,2026-08,Serie A,Juventus,AC Milan,2026-08-30T20:45:00Z,,scheduled,23,-
+m024,2026-08,Bundesliga,Bayer Leverkusen,Bayern Múnich,2026-08-29T18:30:00Z,,scheduled,24,-

@@ -6,20 +6,27 @@ export const statusView = {
         const activeParticipants = state.participants.filter(p => p.active);
         
         let submittedCount = 0;
+        let partialCount = 0;
         let missingCount = 0;
 
         const rows = activeParticipants.map(p => {
-            const statusInfo = state.predictionsSummary[p.user_id];
-            const hasSubmitted = statusInfo && statusInfo.status === 'submitted';
+            const statusInfo = state.predictionsSummary[p.user_id] || { status: 'pending' };
+            const status = statusInfo.status;
             
-            if (hasSubmitted) submittedCount++;
+            if (status === 'submitted') submittedCount++;
+            else if (status === 'partial') partialCount++;
             else missingCount++;
 
-            const statusBadge = hasSubmitted 
-                ? `<span class="badge badge-success">Recibida</span>` 
-                : `<span class="badge badge-warning">Pendiente</span>`;
+            let statusBadge = '';
+            if (status === 'submitted') {
+                statusBadge = `<span class="badge badge-success">Completa</span>`;
+            } else if (status === 'partial') {
+                statusBadge = `<span class="badge badge-warning">Parcial (${statusInfo.submitted_count || 0}/${statusInfo.total_matches || 0})</span>`;
+            } else {
+                statusBadge = `<span class="badge badge-secondary">Pendiente</span>`;
+            }
                 
-            const dateStr = hasSubmitted && statusInfo.submitted_at 
+            const dateStr = status !== 'pending' && statusInfo.submitted_at 
                 ? formatDate(statusInfo.submitted_at) 
                 : '-';
 
@@ -42,7 +49,11 @@ export const statusView = {
                 <div class="stat-grid" style="margin-bottom: 2rem;">
                     <div class="stat-box">
                         <div class="stat-value" style="color: var(--accent-primary);">${submittedCount}</div>
-                        <div class="stat-label">Han Apostado</div>
+                        <div class="stat-label">Completas</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" style="color: #f39c12;">${partialCount}</div>
+                        <div class="stat-label">Parciales</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-value" style="color: var(--accent-danger);">${missingCount}</div>

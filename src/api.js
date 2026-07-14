@@ -17,7 +17,7 @@ export async function loadBootstrapData() {
             }
             data = await response.json();
         } else {
-            const response = await fetch(`${API_URL}?action=bootstrap`);
+            const response = await fetch(`${API_URL}?action=bootstrap&_=${Date.now()}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -78,6 +78,66 @@ export async function savePrediction(userId, pin, monthId, predictions) {
             state.updatePredictionStatus(userId, 'submitted');
         }
         return result;
+    }
+}
+
+export async function getUserPredictions(userId, pin, monthId) {
+    if (USE_MOCK) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                try {
+                    if (!userId || !monthId) {
+                        throw new Error("Datos inválidos");
+                    }
+                    if (state.config && state.config.pin_enabled && pin !== "1234") {
+                        resolve({ ok: false, message: "PIN incorrecto" });
+                        return;
+                    }
+                    
+                    const predictions = [];
+                    if (state.predictionsSummary[userId] && state.predictionsSummary[userId].status !== 'pending') {
+                        const matches = state.getMatchesSorted();
+                        if (matches.length > 0) {
+                            predictions.push({
+                                match_id: matches[0].match_id,
+                                home_goals: 1,
+                                away_goals: 0,
+                                submitted_at: new Date().toISOString()
+                            });
+                        }
+                    }
+                    
+                    resolve({
+                        ok: true,
+                        code: "USER_PREDICTIONS",
+                        message: "Apuestas cargadas",
+                        user_id: userId,
+                        month_id: monthId,
+                        predictions: predictions
+                    });
+                } catch (err) {
+                    reject(err);
+                }
+            }, 500);
+        });
+    } else {
+        const payload = {
+            action: 'getUserPredictions',
+            user_id: userId,
+            pin: pin,
+            month_id: monthId
+        };
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
     }
 }
 

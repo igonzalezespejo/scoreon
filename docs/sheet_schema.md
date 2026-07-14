@@ -3,6 +3,12 @@
 Este documento detalla la estructura exacta de la base de datos en Google Sheets.
 Para que `Code.gs` funcione sin ambigüedad, los nombres de las pestañas y las columnas (primera fila) deben coincidir exactamente con los descritos aquí.
 
+## Reglas Generales
+1. **Formato Estricto:** La estructura de cada hoja (nombres de pestaña y encabezados en la fila 1) debe coincidir letra a letra, incluyendo mayúsculas.
+2. **Columnas de ID como Texto:** Las columnas `user_id`, `match_id`, `month_id` y `status` deben estar formateadas como "Texto Sencillo" en Google Sheets. Si Sheets convierte automáticamente valores como `2026-09` a fechas, el código fallará. Para evitarlo, usa el formato Texto o precede el ID con una comilla simple (ej. `'2026-09`).
+3. **No Mover Columnas:** El backend lee por nombre de cabecera en la fila 1, el orden de las columnas no importa siempre y cuando los nombres sean exactos.
+4. **Fechas ISO 8601:** Se recomienda escribir las fechas en formato ISO (ej. `2026-09-14T20:00:00Z`).
+
 ## Leyenda
 - **Obligatorio:** Si la columna debe tener un valor válido para que el sistema no falle.
 - **Admin Manual:** Si el administrador edita manualmente esta columna.
@@ -166,7 +172,7 @@ Reglas de puntuación (utilizadas por el backend para calcular el ranking dinám
 ---
 
 ## Ranking_Monthly
-Clasificación de cada mes (ya no es calculada a mano; el backend la calcula dinámicamente ignorando el contenido de esta hoja. Se puede mantener como histórico o caché).
+Clasificación de cada mes (calculada automáticamente por el backend de Apps Script y persistida en esta pestaña). Es la fuente de verdad visual y auditable que lee el frontend.
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|
@@ -189,7 +195,7 @@ Clasificación de cada mes (ya no es calculada a mano; el backend la calcula din
 ---
 
 ## Ranking_Global
-Clasificación acumulada de todos los meses.
+Clasificación acumulada de todos los meses (calculada automáticamente por el backend de Apps Script y persistida en esta pestaña). Es la fuente de verdad visual y auditable que lee el frontend.
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|

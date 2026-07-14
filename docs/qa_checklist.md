@@ -99,3 +99,26 @@ La arquitectura híbrida (GitHub Pages + Apps Script + Sheets) ha demostrado ser
 | Toast/Alert muestra PIN autogenerado | ✅ OK | |
 | Tras el registro, el selector marca al nuevo usuario | ✅ OK | |
 | Posibilidad de apostar con el nuevo usuario y PIN | ✅ OK | |
+
+## 9. QA Checklist V2.2 (Consulta y Edición de Apuestas)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| UI muestra botón "Cargar apuesta" con input de PIN | Pendiente | Tras seleccionar usuario. |
+| Backend valida PIN antes de devolver apuestas (getUserPredictions) | Pendiente | |
+| Inputs se rellenan con apuesta existente | Pendiente | |
+| Badges muestran estado Completa/Parcial/Pendiente por usuario | Pendiente | |
+| Badges muestran estado Guardado/Pendiente por partido | Pendiente | |
+| Guardar apuesta parcial no borra otras apuestas en backend | Pendiente | |
+| Guardar solo envía partidos con ambos goles | Pendiente | |
+| Mes cerrado impide edición pero permite consulta | Pendiente | |
+
+## 10. QA Checklist V2.3 (Recálculo Robusto de Ranking y Scoring Test Mode)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Instalar trigger de ranking (Porra Admin) | Pendiente | Requiere validación de permisos en Apps Script. |
+| Cambiar goles en `Results` lanza Toast verde | Pendiente | Debe disparar `handleRankingEdit`. |
+| Cambiar goles actualiza `Ranking_Monthly` y `Global` | Pendiente | Validable visualmente en Sheets. |
+| Ranking se actualiza en web tras F5 | Pendiente | Probar tras el paso anterior. |
+| Fallback: Poner `ranking_dirty=true` fuerza recálculo | Pendiente | Al hacer F5 en la web, se auto-limpia a `false`. |
+| Diagnóstico de scoring partido activo | Pendiente | Muestra los cálculos por consola/alert correctamente. |
+| Validar Test Mode (m001=5-0) | Pendiente | Angel: 15, Juan: 5, test: 5, Israel: 0. |

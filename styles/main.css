@@ -413,3 +413,70 @@ tr:hover td {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+
+/* Matches Preview Section */
+.matches-preview-section {
+  margin-top: 3rem;
+  padding: 0 0.5rem;
+}
+
+.preview-title {
+  text-align: center;
+  color: var(--accent-primary);
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+}
+
+.week-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius);
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid var(--accent-info);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.week-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.week-title {
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
+}
+
+.week-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+}
+
+.match-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.match-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.match-list li::before {
+  content: "⚽";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  font-size: 0.9rem;
+}
+
+.match-list li strong {
+  color: var(--accent-primary);
+}

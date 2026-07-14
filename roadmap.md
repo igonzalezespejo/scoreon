@@ -1,6 +1,8 @@
 # ROADMAP MASTER — PORRA MENSUAL
 
 > **Estado:** MVP publicado y validado en producción. V2.1 completado (Alta desde web).
+> **Nota de Auditoría:** Auditoría de arquitectura de ranking finalizada (ver `docs/ranking_architecture_audit.md`).
+> **Hito:** Opción C implementada (Rankings calculados y persistidos en Sheets).
 
 ## V2.1 Novedades
 - Añadido endpoint `registerParticipant`.
@@ -17,6 +19,16 @@
 ## V2.3 Novedades (Cálculo Dinámico y Reglas Definitivas)
 - Reglas de puntuación definitivas implementadas: exact_draw (20), exact_non_draw (15), draw_not_exact (10), winner_not_exact (5), wrong (0).
 - El backend (`Code.gs`) ahora calcula de forma dinámica `Ranking_Monthly` y `Ranking_Global` basándose en las apuestas actuales y los resultados. Las pestañas de Google Sheets ya no necesitan cálculo manual.
+- Ranking recalculado de forma fiable ante cambios de resultados: Implementado `ranking_dirty` flag, LockService y Triggers Instalables para garantizar sincronización 100% segura.
+
+## V2.3.1 Novedades (Test Mode & LockService Refactor)
+- **Modo de pruebas de puntuación:** Implementada la flag `testing_allow_result_simulation` y el diagnóstico "Porra Admin > Diagnóstico scoring partido activo".
+- **IDs Normalizados:** Todos los cruces de `user_id`, `match_id` y `month_id` se tratan estrictamente como texto, impidiendo fallos cuando Google Sheets los formatea como fecha.
+- **LockService Refactorizado:** Separación en `updateRankingsInSheets` (con Lock) y `updateRankingsInSheetsUnsafe` (sin Lock) para evitar deadlocks cuando `savePrediction` ya tiene un bloqueo activo.
+
+## V2.4 Novedades (Consulta y edición de apuestas)
+- V2: consulta y edición de apuestas existentes por usuario con PIN.
+- Los usuarios pueden cargar sus apuestas guardadas y modificarlas si el mes está abierto.
 
 ## Objetivo del archivo
 

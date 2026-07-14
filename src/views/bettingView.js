@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { savePrediction, loadBootstrapData, registerParticipant } from '../api.js';
+import { savePrediction, loadBootstrapData, registerParticipant, getUserPredictions } from '../api.js';
 import { showToast, htmlToElements, empty } from '../utils/dom.js';
 import { formatDate } from '../utils/dates.js';
 
@@ -144,54 +144,118 @@ export const bettingView = {
 
         if (!userId) return;
 
-        const hasSubmitted = state.hasParticipantSubmitted(userId);
+        const summary = state.predictionsSummary[userId] || { status: 'pending' };
+        const hasSubmitted = summary.status !== 'pending';
         const canBet = state.canBet();
-
-        if (hasSubmitted) {
-            statusContainer.innerHTML = `<span class="badge badge-success">Ya has enviado tu apuesta</span> <p class="text-muted" style="margin-top: 5px;">Podrás ver los resultados cuando comiencen los partidos.</p>`;
-            if (!canBet) return; // If closed, just show status
+        
+        let statusHtml = '';
+        if (summary.status === 'submitted') {
+            statusHtml = `<span class="badge badge-success">Apuesta completa ${summary.submitted_count || 0}/${summary.total_matches || 0}</span>`;
+        } else if (summary.status === 'partial') {
+            statusHtml = `<span class="badge badge-warning">Apuesta parcial ${summary.submitted_count || 0}/${summary.total_matches || 0}</span>`;
+        } else {
+            statusHtml = `<span class="badge badge-secondary">Sin apuesta</span>`;
         }
 
         if (!canBet) {
-            statusContainer.innerHTML += `<div style="margin-top: 10px;"><span class="badge badge-danger">La porra está cerrada</span> <p class="text-muted" style="margin-top: 5px;">Ya no se admiten apuestas.</p></div>`;
+            statusHtml += `<div style="margin-top: 10px;"><span class="badge badge-danger">La porra está cerrada</span> <p class="text-muted" style="margin-top: 5px;">Puedes consultar tu apuesta, pero no modificarla.</p></div>`;
+        } else {
+            statusHtml += `<p class="text-muted" style="margin-top: 5px;">Identifícate para ver o editar tu apuesta.</p>`;
         }
+        statusContainer.innerHTML = statusHtml;
 
-        // Render matches form
+        let authHtml = `<form id="auth-form" style="margin-top: 1rem;">`;
+        if (state.config && state.config.pin_enabled) {
+            authHtml += `
+                <div class="form-group" style="max-width: 200px;">
+                    <label class="form-label" for="auth-pin-input">PIN de seguridad:</label>
+                    <input type="password" id="auth-pin-input" class="form-input" required>
+                </div>
+            `;
+        }
+        authHtml += `
+            <button type="submit" class="btn btn-primary" id="btn-auth-load">Cargar apuesta</button>
+        </form>`;
+
+        matchesContainer.innerHTML = authHtml;
+
+        const authForm = container.querySelector('#auth-form');
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnLoad = document.getElementById('btn-auth-load');
+            btnLoad.disabled = true;
+            btnLoad.textContent = 'Cargando...';
+
+            let pin = '';
+            const pinInput = document.getElementById('auth-pin-input');
+            if (pinInput) pin = pinInput.value;
+
+            try {
+                const response = await getUserPredictions(userId, pin, state.activeMonth.month_id);
+                if (response.ok) {
+                    this.renderMatchesForm(userId, container, response.predictions, pin);
+                } else {
+                    showToast(response.message || 'Error al cargar apuestas', 'error');
+                    btnLoad.disabled = false;
+                    btnLoad.textContent = 'Cargar apuesta';
+                }
+            } catch (error) {
+                showToast('Error de conexión', 'error');
+                btnLoad.disabled = false;
+                btnLoad.textContent = 'Cargar apuesta';
+            }
+        });
+    },
+
+    renderMatchesForm(userId, container, userPredictions, pin) {
+        const matchesContainer = container.querySelector('#matches-container');
+        const canBet = state.canBet();
+        const summary = state.predictionsSummary[userId] || { status: 'pending' };
+        const hasSubmitted = summary.status !== 'pending';
+
         const matches = state.getMatchesSorted();
         let formHtml = `<form id="betting-form">`;
         
+        formHtml += `<input type="hidden" id="hidden-pin" value="${pin}">`;
+
+        const predMap = {};
+        userPredictions.forEach(p => predMap[p.match_id] = p);
+
         matches.forEach(match => {
+            const pred = predMap[match.match_id];
+            const hg = pred && pred.home_goals !== undefined && pred.home_goals !== null ? pred.home_goals : '';
+            const ag = pred && pred.away_goals !== undefined && pred.away_goals !== null ? pred.away_goals : '';
+            
+            const matchStatus = pred ? '<span class="badge badge-success" style="font-size: 0.7rem; padding: 2px 6px;">Guardado</span>' : '<span class="badge badge-secondary" style="font-size: 0.7rem; padding: 2px 6px;">Pendiente</span>';
+
             formHtml += `
                 <div class="match-bet-row">
                     <div class="match-info">
-                        <div class="match-meta">${match.competition} - ${formatDate(match.kickoff_at)}</div>
+                        <div class="match-meta" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>${match.competition} - ${formatDate(match.kickoff_at)}</span>
+                            ${matchStatus}
+                        </div>
                         <div class="match-teams">${match.home_team} vs ${match.away_team}</div>
                     </div>
                     <div class="match-inputs">
-                        <input type="number" min="0" max="20" class="form-input goal-input" data-match="${match.match_id}" data-team="home" required ${!canBet ? 'disabled' : ''}>
+                        <input type="number" min="0" max="20" class="form-input goal-input" data-match="${match.match_id}" data-team="home" value="${hg}" ${!canBet ? 'disabled' : ''}>
                         <span class="divider">-</span>
-                        <input type="number" min="0" max="20" class="form-input goal-input" data-match="${match.match_id}" data-team="away" required ${!canBet ? 'disabled' : ''}>
+                        <input type="number" min="0" max="20" class="form-input goal-input" data-match="${match.match_id}" data-team="away" value="${ag}" ${!canBet ? 'disabled' : ''}>
                     </div>
                 </div>
             `;
         });
 
-        if (state.config && state.config.pin_enabled) {
+        if (canBet) {
             formHtml += `
-                <div class="form-group" style="margin-top: 1.5rem; max-width: 200px;">
-                    <label class="form-label" for="pin-input">PIN de seguridad:</label>
-                    <input type="password" id="pin-input" class="form-input" required ${!canBet ? 'disabled' : ''}>
+                <div style="margin-top: 1.5rem; text-align: right;">
+                    <button type="submit" class="btn btn-primary" id="btn-submit-bets">
+                        ${hasSubmitted ? 'Actualizar Apuesta' : 'Guardar Apuesta'}
+                    </button>
                 </div>
             `;
         }
-
-        formHtml += `
-            <div style="margin-top: 1.5rem; text-align: right;">
-                <button type="submit" class="btn btn-primary" id="btn-submit-bets" ${!canBet ? 'disabled' : ''}>
-                    ${hasSubmitted ? 'Actualizar Apuesta' : 'Guardar Apuesta'}
-                </button>
-            </div>
-        </form>`;
+        formHtml += `</form>`;
 
         matchesContainer.innerHTML = formHtml;
 
@@ -209,19 +273,22 @@ export const bettingView = {
         btn.textContent = 'Guardando...';
 
         try {
-            const predictions = matches.map(m => {
+            const predictions = [];
+            matches.forEach(m => {
                 const homeInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="home"]`);
                 const awayInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="away"]`);
-                return {
-                    match_id: m.match_id,
-                    home_goals: parseInt(homeInput.value),
-                    away_goals: parseInt(awayInput.value)
-                };
+                if (homeInput.value !== '' && awayInput.value !== '') {
+                    predictions.push({
+                        match_id: m.match_id,
+                        home_goals: parseInt(homeInput.value),
+                        away_goals: parseInt(awayInput.value)
+                    });
+                }
             });
 
             let pin = '';
-            const pinInput = document.getElementById('pin-input');
-            if (pinInput) pin = pinInput.value;
+            const hiddenPin = document.getElementById('hidden-pin');
+            if (hiddenPin) pin = hiddenPin.value;
 
             const monthId = state.activeMonth.month_id;
 
@@ -231,10 +298,16 @@ export const bettingView = {
                 showToast(response.message || '¡Apuesta guardada correctamente!');
                 await loadBootstrapData();
                 const container = document.getElementById('view-betting');
-                // Mantener al usuario seleccionado
-                const select = container.closest('.card').querySelector('#participant-select');
-                if(select) select.value = userId;
-                this.handleParticipantChange(userId, container.closest('.card'));
+                const select = container.querySelector('#participant-select');
+                if (select) select.value = userId;
+                
+                const predsResponse = await getUserPredictions(userId, pin, monthId);
+                if (predsResponse.ok) {
+                    this.handleParticipantChange(userId, container);
+                    this.renderMatchesForm(userId, container, predsResponse.predictions, pin);
+                } else {
+                    this.handleParticipantChange(userId, container);
+                }
             } else {
                 showToast(response.message || 'Error de validación', 'error');
                 btn.disabled = false;
