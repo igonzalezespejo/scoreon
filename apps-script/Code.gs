@@ -588,6 +588,7 @@ function actionBootstrap() {
   const activeMonthId = normalizeMonthId(config.active_month_id);
   const months = getSheetData("Months").map(m => {
     m.month_id = normalizeMonthId(m.month_id);
+    m.title = sanitizeMonthTitle(m.title, m.month_id);
     return m;
   });
   
@@ -801,6 +802,7 @@ function actionBootstrapLight() {
   const activeMonthId = normalizeMonthId(config.active_month_id);
   const months = getSheetData("Months").map(m => {
     m.month_id = normalizeMonthId(m.month_id);
+    m.title = sanitizeMonthTitle(m.title, m.month_id);
     return m;
   });
   
@@ -900,6 +902,7 @@ function actionMonthData(params) {
 
   const months = getSheetData("Months").map(m => {
     m.month_id = normalizeMonthId(m.month_id);
+    m.title = sanitizeMonthTitle(m.title, m.month_id);
     return m;
   });
   
@@ -1113,7 +1116,11 @@ function actionSavePrediction(params) {
       }
     }
 
-    const months = getSheetData("Months");
+    const months = getSheetData("Months").map(m => {
+      m.month_id = normalizeMonthId(m.month_id);
+      m.title = sanitizeMonthTitle(m.title, m.month_id);
+      return m;
+    });
     const month = months.find(m => m.month_id === month_id);
     if (!month) return buildErrorResponse("VALIDATION_ERROR", "Mes no encontrado");
     if (month.status !== "open") return buildErrorResponse("VALIDATION_ERROR", "El mes no está abierto para predicciones");

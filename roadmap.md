@@ -78,6 +78,12 @@
 - match_id global único tipo 2026-08-m001.
 - month_id explícito en Predictions_Current y Results.
 
+## V2.12 — Home multi-mes con INFO/APOSTAR
+- Cards por mes.
+- Info desplegable con partidos.
+- Navegación directa a apuestas por mes.
+- Sin stats globales arriba.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

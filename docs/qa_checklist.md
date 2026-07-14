@@ -219,3 +219,16 @@ La arquitectura híbrida (GitHub Pages + Apps Script + Sheets) ha demostrado ser
 | Partidos con `week_no` usan su semana | Pendiente | El backend lee `week_no` y lo respeta. |
 | Modificar resultados recalcula S1-S4 | Pendiente | Al guardar resultados desde Admin o editar en Sheets, se actualizan las columnas `sX_points`. |
 | Alertas por falta de columnas S1-S4 | Pendiente | Backend en Code.gs lanza error claro si la pestaña Ranking_Monthly no tiene las cabeceras nuevas. |
+
+## 18. QA Checklist V2.11 & V2.12 (Multi-mes)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Home no muestra bloque de stats globales | Pendiente | Se han eliminado los stats globales del layout superior. |
+| Home muestra grid de cards de meses | Pendiente | Una card por cada mes en `state.months`. |
+| Botón APOSTAR carga datos y navega | Pendiente | El botón de la card asigna `selectedMonthId`, carga `monthData` si hace falta y navega a `bettingView`. |
+| Botón INFO despliega partidos | Pendiente | Muestra la lista de partidos agrupados; carga de caché o hace un fetch lazy load. |
+| Carga progresiva mantenida | Pendiente | Inicio carga instantáneamente sin esperar datos de meses no activos. |
+| Apuestas muestra dropdown de meses | Pendiente | Se puede cambiar de mes sin salir de la vista. |
+| Ranking muestra dropdown de meses | Pendiente | Se puede cambiar el mes evaluado en Ranking Mensual. |
+| Estado muestra dropdown de meses | Pendiente | El resumen de apuestas (Status) filtra por mes elegido. |
+| Compatibilidad legacy | Pendiente | Apuestas legacy mantienen `month_id` implícito; el sistema permite migración manual diagnosticable en Admin. |
