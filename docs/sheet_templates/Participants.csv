@@ -1,2 +1,2 @@
-user_id,display_name,pin,active,created_at,notes
-juan,Juan Pérez,1234,true,2026-07-09T10:00:00Z,-
+user_id,display_name,email,pin,active,created_at,notes
+juan,Juan Pérez,juan@email.com,0838,true,2026-07-09T10:00:00Z,-

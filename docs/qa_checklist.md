@@ -117,8 +117,105 @@ La arquitectura híbrida (GitHub Pages + Apps Script + Sheets) ha demostrado ser
 |--------|-----------|-------|
 | Instalar trigger de ranking (Porra Admin) | Pendiente | Requiere validación de permisos en Apps Script. |
 | Cambiar goles en `Results` lanza Toast verde | Pendiente | Debe disparar `handleRankingEdit`. |
-| Cambiar goles actualiza `Ranking_Monthly` y `Global` | Pendiente | Validable visualmente en Sheets. |
-| Ranking se actualiza en web tras F5 | Pendiente | Probar tras el paso anterior. |
+| Cambiar goles actualiza `Ranking_Monthly` y `Global` | Pendiente | Validar visualmente cambios | Pendiente | Tras hacer deploy. |
+| Corregir posibles desajustes en flexbox o márgenes | Pendiente | Tras testear en resolución 375px. |
+
+## 15. QA Checklist V2.9 (Email y PIN con Ceros)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Registro sin email falla | Pendiente | Debería ser rechazado en backend o frontend. |
+| Registro con email inválido falla | Pendiente | Formato erróneo rechazado. |
+| Registro con email válido crea participante | Pendiente | Se añade a Sheets correctamente. |
+| Email duplicado falla | Pendiente | No permite registrarse si ya existe en `Participants`. |
+| Nombre duplicado falla | Pendiente | Regla original sigue funcionando. |
+| PIN generado tiene longitud `pin_length` | Pendiente | Debe tener longitud exacta y rellenar con ceros si es necesario. |
+| PIN con cero inicial se conserva en Google Sheets | Pendiente | Se guarda como texto y visualmente mantiene el `0` inicial (ej. `0838`). |
+| `bootstrapLight` no devuelve email | Pendiente | Al cargar la página, el objeto `participants` no tiene propiedad `email`. |
+| `bootstrapLight` no devuelve pin | Pendiente | El pin debe estar oculto. |
+| Usuario nuevo puede apostar con su PIN | Pendiente | El flujo de apuesta para los nuevos funciona. |
+| Usuarios antiguos sin email siguen funcionando | Pendiente | Pueden cargar predicciones y apostar. |
 | Fallback: Poner `ranking_dirty=true` fuerza recálculo | Pendiente | Al hacer F5 en la web, se auto-limpia a `false`. |
 | Diagnóstico de scoring partido activo | Pendiente | Muestra los cálculos por consola/alert correctamente. |
 | Validar Test Mode (m001=5-0) | Pendiente | Angel: 15, Juan: 5, test: 5, Israel: 0. |
+
+## 11. QA Checklist V2.4 (Optimización de Tiempos de Carga)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| `testing_force_recalc_on_bootstrap=true` recalcula siempre | Pendiente | `debug.ranking_recalculated` debe ser `true`. |
+| `testing_force_recalc_on_bootstrap=false` carga rápido | Pendiente | No recalcula, devuelve cache. |
+| `ranking_dirty=true` fuerza recálculo 1 vez | Pendiente | Luego lo deja en `false`. |
+| `getUserPredictions` no lee ranking ni recalcula | Pendiente | Tiempo muy bajo en `debug.timings.total_ms`. |
+| `savePrediction` no bloquea recálculo | Pendiente | Con `recalculate_after_prediction=false`. |
+
+## 12. QA Checklist V2.5 (Carga Progresiva)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Carga inicial rápida con `bootstrapLight` | Pendiente | Inicio debe pintarse antes de que llegue el ranking. |
+| Ranking carga en segundo plano | Pendiente | Network muestra request `action=rankings` posterior a `action=bootstrapLight`. |
+| Vista Apuestas funciona antes de ranking | Pendiente | Se puede entrar y ver dropdown de usuarios de inmediato. |
+| Vista Estado funciona antes de ranking | Pendiente | Se puede entrar y ver listado de status de inmediato. |
+| Ranking muestra "Cargando ranking..." si entramos rápido | Pendiente |  |
+| Guardar apuesta usa carga ligera para refrescar | Pendiente | No debe bloquear interfaz esperando recálculo global. |
+| App no se rompe si `action=rankings` falla | Pendiente | Debería mostrar un mensaje de error suave en la pestaña Ranking. |
+
+## 13. QA Checklist V2.6 (Inicio Estático Instantáneo)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Carga inicial instantánea | Pendiente | Inicio debe renderizarse inmediatamente, con `bootstrapLight` en background. |
+| Loading en Apuestas si datos no han llegado | Pendiente | Pulsar Apuestas rápido debe mostrar "Cargando datos de la porra...". |
+| Loading en Estado si datos no han llegado | Pendiente | Pulsar Estado rápido debe mostrar "Cargando estado de apuestas...". |
+| Auto-refresco al recibir datos | Pendiente | Las vistas Apuestas y Estado deben pintarse automáticamente cuando acabe `bootstrapLight` si el usuario está en ellas. |
+| Fallo en `bootstrapLight` no rompe Inicio | Pendiente | Si falla la red, Inicio sigue visible y Apuestas/Estado muestran error suave con botón de reintento. |
+
+## 14. QA Checklist V2.7 (Títulos Dinámicos y Formateo)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Título del mes en Inicio no es ISO ni hardcodeado | Pendiente | Debe mostrar e.g. "AGOSTO 2026". |
+| Título del mes en Apuestas no es ISO | Pendiente | Debe mostrar "Participar en Agosto 2026". |
+| Título del mes en Estado no es ISO | Pendiente | Debe mostrar "Resumen de participación para Agosto 2026". |
+| Título del mes en Ranking no es ISO | Pendiente | Debe mostrar "Ranking Mensual (Agosto 2026)". |
+| Fecha límite en Inicio (lock_at) parseada | Pendiente | Ej. "31 jul 23:59". No debe mostrar ISO. |
+
+## 15. QA Checklist V2.8 (Panel Admin Funcional)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| UI bloqueada si no hay token | Pendiente | Vista muestra input de "Código admin" y bloquea funcionalidades admin. |
+| Iniciar sesión con token inválido rechaza | Pendiente | Frontend recibe error 401 y muestra alerta, no avanza. |
+| Iniciar sesión con token válido permite acceso | Pendiente | Carga y muestra meses disponibles en un selector. |
+| Selector de mes carga partidos del mes elegido | Pendiente | Muestra los partidos correctos tras llamar a `adminGetMonthMatches`. |
+| Cambiar status a "locked" funciona y persiste | Pendiente | Usar el botón de cerrar mes envía `adminSetMonthStatus`, y mes se cierra para todos los usuarios. |
+| Guardar resultado con "final" y goles | Pendiente | Hace upsert en hoja `Results`, actualiza estado del resultado en UI. |
+| Guardar resultado "final" recalcula ranking | Pendiente | Las posiciones en `Ranking_Monthly` cambian según el nuevo resultado insertado. |
+| Partidos con status "cancelled" no puntúan | Pendiente | Aunque tengan goles en backend, al guardar con status `cancelled` los puntos dados son 0. |
+| Dejar goles en blanco envía "pending" | Pendiente | Se guarda como pending, no se evalúa. |
+| Uso exclusivo de llamadas `POST` para admin | Pendiente | Comprobar en Network que el token nunca viaja en URL con `GET`. |
+
+## 16. QA Checklist V2.9 (Email y PIN con Ceros)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Registro sin email falla | Pendiente | Debería ser rechazado en backend o frontend. |
+| Registro con email inválido falla | Pendiente | Formato erróneo rechazado. |
+| Registro con email válido crea participante | Pendiente | Se añade a Sheets correctamente. |
+| Email duplicado falla | Pendiente | No permite registrarse si ya existe en `Participants`. |
+| Nombre duplicado falla | Pendiente | Regla original sigue funcionando. |
+| PIN generado tiene longitud `pin_length` | Pendiente | Debe tener longitud exacta y rellenar con ceros si es necesario. |
+| PIN con cero inicial se conserva en Google Sheets | Pendiente | Se guarda como texto y visualmente mantiene el `0` inicial (ej. `0838`). |
+| `bootstrapLight` no devuelve email | Pendiente | Al cargar la página, el objeto `participants` no tiene propiedad `email`. |
+| `bootstrapLight` no devuelve pin | Pendiente | El pin debe estar oculto. |
+| Usuario nuevo puede apostar con su PIN | Pendiente | El flujo de apuesta para los nuevos funciona. |
+| Usuarios antiguos sin email siguen funcionando | Pendiente | Pueden cargar predicciones y apostar. |
+
+## 17. QA Checklist V2.10 (Resultado Real y Ranking por Semanas)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| `bootstrapLight` devuelve array `results` | Pendiente | Solo los resultados del mes activo. |
+| Apuestas muestra "Resultado real" | Pendiente | Formato `X - Y` o `- -` si no hay. |
+| Apuestas muestra badge Final/Cancelado | Pendiente | Depende de `status` en Google Sheets. |
+| Resultado real es de solo lectura | Pendiente | El usuario no puede modificar el marcador real desde su vista de apuesta. |
+| Ranking Mensual muestra columnas S1 a S4 | Pendiente | Las cabeceras y celdas deben reflejar S1, S2, S3, S4. |
+| Ranking Mensual no muestra Exactos/Signos | Pendiente | Columna eliminada visualmente de la tabla mensual. |
+| `TOTAL` coincide con suma S1+S2+S3+S4 | Pendiente | Si todos los partidos se puntúan y caen en semanas 1-4. |
+| Partidos sin `week_no` usan `display_order` | Pendiente | Backend calcula `Math.ceil(display_order / 6)`. |
+| Partidos con `week_no` usan su semana | Pendiente | El backend lee `week_no` y lo respeta. |
+| Modificar resultados recalcula S1-S4 | Pendiente | Al guardar resultados desde Admin o editar en Sheets, se actualizan las columnas `sX_points`. |
+| Alertas por falta de columnas S1-S4 | Pendiente | Backend en Code.gs lanza error claro si la pestaña Ranking_Monthly no tiene las cabeceras nuevas. |

@@ -5,7 +5,16 @@ Para que `Code.gs` funcione sin ambigüedad, los nombres de las pestañas y las 
 
 ## Reglas Generales
 1. **Formato Estricto:** La estructura de cada hoja (nombres de pestaña y encabezados en la fila 1) debe coincidir letra a letra, incluyendo mayúsculas.
-2. **Columnas de ID como Texto:** Las columnas `user_id`, `match_id`, `month_id` y `status` deben estar formateadas como "Texto Sencillo" en Google Sheets. Si Sheets convierte automáticamente valores como `2026-09` a fechas, el código fallará. Para evitarlo, usa el formato Texto o precede el ID con una comilla simple (ej. `'2026-09`).
+2. **Importante sobre los IDs y Fechas ISO:** Estas columnas deben tener formato texto plano:
+   - `Config.value` cuando `key = active_month_id`
+   - `Months.month_id`
+   - `Matches.month_id`
+   - `Ranking_Monthly.month_id`
+   - `Results.match_id`
+   - `Predictions_Current.match_id`
+   - `Participants.user_id`
+
+   Si Google Sheets convierte `2026-08` en fecha (provocando que el sistema muestre fechas ISO como "2026-07-31T22:00:00.000Z"), debes escribirlo obligatoriamente con una comilla simple delante: `'2026-08`
 3. **No Mover Columnas:** El backend lee por nombre de cabecera en la fila 1, el orden de las columnas no importa siempre y cuando los nombres sean exactos.
 4. **Fechas ISO 8601:** Se recomienda escribir las fechas en formato ISO (ej. `2026-09-14T20:00:00Z`).
 
@@ -37,17 +46,21 @@ Lista de usuarios permitidos para apostar.
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|
-| `user_id` | Sí | Sí | No | ID único del usuario (sin espacios) |
-| `display_name` | Sí | Sí | No | Nombre a mostrar en la interfaz |
-| `pin` | No | Sí | No | PIN de acceso numérico (si `pin_enabled=true`) |
-| `active` | Sí | Sí | No | `true` o `false` para permitir acceso |
-| `created_at` | No | Sí | No | Fecha de creación del usuario |
-| `notes` | No | Sí | No | Notas internas del admin |
+| `user_id` | Sí | Sí | Sí | ID único del usuario (sin espacios). Formato texto. |
+| `display_name` | Sí | Sí | Sí | Nombre a mostrar en la interfaz |
+| `email` | Sí | Sí | Sí | Email del usuario. Formato texto. |
+| `pin` | Sí | Sí | Sí | PIN de acceso numérico (si `pin_enabled=true`). Formato texto. |
+| `active` | Sí | Sí | Sí | `true` o `false` para permitir acceso |
+| `created_at` | No | Sí | Sí | Fecha de creación del usuario |
+| `notes` | No | Sí | Sí | Notas internas del admin |
+
+> [!IMPORTANT]
+> **Formato de Texto**: Las columnas `user_id`, `email` y `pin` deben estar configuradas SIEMPRE como **Texto Plano** (`@`) en Google Sheets. Esto es crítico para preservar los ceros iniciales del PIN (ej. `0838`) y evitar que Sheets lo convierta al número `838`. Si editas manualmente un PIN con ceros iniciales, puedes escribir un apóstrofe al inicio (`'0838`) si la columna no está formateada.
 
 **Ejemplo de fila:**
-| user_id | display_name | pin | active | created_at | notes |
-|---|---|---|---|---|---|
-| juan | Juan Pérez | 1234 | true | 2026-07-09T10:00:00Z | - |
+| user_id | display_name | email | pin | active | created_at | notes |
+|---|---|---|---|---|---|---|
+| juan | Juan Pérez | juan@email.com | 0838 | true | 2026-07-09T10:00:00Z | - |
 
 ---
 
@@ -86,6 +99,7 @@ Partidos de cada mes.
 | `lock_at` | No | Sí | No | Cierre específico de este partido |
 | `status` | Sí | Sí | No | `scheduled`, `locked`, `played`, `cancelled` |
 | `display_order` | No | Sí | No | Orden numérico para la vista |
+| `week_no` | No | Sí | No | Semana del mes a la que pertenece (1, 2, 3 o 4) |
 | `notes` | No | Sí | No | Notas |
 
 **Ejemplo de fila:**
@@ -180,6 +194,10 @@ Clasificación de cada mes (calculada automáticamente por el backend de Apps Sc
 | `user_id` | Sí | Sí | No | Usuario |
 | `display_name` | Sí | Sí | No | Nombre a mostrar |
 | `points` | Sí | Sí | No | Puntos totales del mes |
+| `s1_points` | No | Sí | No | Puntos en la semana 1 |
+| `s2_points` | No | Sí | No | Puntos en la semana 2 |
+| `s3_points` | No | Sí | No | Puntos en la semana 3 |
+| `s4_points` | No | Sí | No | Puntos en la semana 4 |
 | `exact_scores` | No | Sí | No | Resultados exactos acertados |
 | `correct_signs` | No | Sí | No | Signos acertados |
 | `failed` | No | Sí | No | Fallos |
@@ -188,9 +206,9 @@ Clasificación de cada mes (calculada automáticamente por el backend de Apps Sc
 | `updated_at` | No | Sí | No | Fecha de cálculo |
 
 **Ejemplo de fila:**
-| month_id | user_id | display_name | points | exact_scores | correct_signs | failed | played_matches | position | updated_at |
-|---|---|---|---|---|---|---|---|---|---|
-| 2026-09 | juan | Juan | 25 | 1 | 1 | 0 | 2 | 1 | 2026-09-15T23:05:00Z |
+| month_id | user_id | display_name | points | s1_points | s2_points | s3_points | s4_points | exact_scores | correct_signs | failed | played_matches | position | updated_at |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-09 | juan | Juan | 25 | 10 | 15 | 0 | 0 | 1 | 1 | 0 | 2 | 1 | 2026-09-15T23:05:00Z |
 
 ---
 

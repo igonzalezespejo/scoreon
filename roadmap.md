@@ -30,6 +30,44 @@
 - V2: consulta y edición de apuestas existentes por usuario con PIN.
 - Los usuarios pueden cargar sus apuestas guardadas y modificarlas si el mes está abierto.
 
+## V2.5 Novedades (Carga progresiva / optimización UX)
+- bootstrapLight para datos mínimos.
+- rankings en segundo plano.
+- Inicio y Apuestas renderizan sin esperar ranking.
+- Ranking muestra loading propio hasta recibir datos.
+- getUserPredictions sigue siendo independiente y rápido.
+- savePrediction/registerParticipant refrescan datos ligeros, no bootstrap completo.
+- scoring/ranking intactos.
+
+## V2.6 Novedades (Inicio estático instantáneo)
+- La vista de Inicio (Home) es ahora una landing page estática que renderiza instantáneamente sin esperar datos del servidor.
+- `bootstrapLight` carga en segundo plano los datos reales (Apuestas, Estado).
+- Apuestas y Estado muestran un loading local si el usuario entra antes de que lleguen los datos.
+- Percepción de carga inicial cero.
+
+## V2.7 Novedades (Títulos Dinámicos y Formateo)
+- Los títulos visibles del mes activo ahora provienen de `Months.title` o de un fallback generado automáticamente por su `month_id` ("Agosto 2026").
+- Las fechas límite como `lock_at` y los títulos de vistas ya no muestran fechas ISO crudas al usuario.
+- Afecta a Inicio, Apuestas, Ranking y Estado.
+
+## V2.8 Novedades (Panel Admin Funcional)
+- **Documentación y Arquitectura:** Creado `docs/admin_panel_plan.md` definiendo el modelo funcional del nuevo panel web.
+- **Seguridad:** El acceso al panel requiere `admin_token` validado por backend contra la pestaña `Config`. El token nunca se expone en variables públicas.
+- **API (POST):** Cuatro nuevos endpoints implementados (`adminGetMonths`, `adminGetMonthMatches`, `adminSaveResults`, `adminSetMonthStatus`).
+- **Funciones:** Establecer estado `pending`, `final`, o `cancelled` para los resultados. Opción de abrir o cerrar porra.
+- **Auto-recálculo:** `adminSaveResults` inserta los resultados mediante `upsert` y desencadena el recálculo y actualización en Google Sheets.
+
+## V2.9 Novedades (Email y PIN robusto)
+- **Email obligatorio:** Los nuevos registros requieren un email válido (validado en frontend y backend) para evitar cuentas duplicadas.
+- **Seguridad en datos expuestos:** El endpoint `bootstrapLight` se ha limpiado para no enviar ni el `email` ni el `pin` de los usuarios al frontend.
+- **Formato Texto en PIN:** Se asegura a través de Apps Script que las columnas `user_id`, `email` y `pin` se formen como texto plano (`@`), evitando la pérdida de ceros iniciales en los PINs.
+
+## V2.10 Novedades (Resultado Real y Ranking por Semanas)
+- **Resultado en Apuestas:** La vista de apuestas ahora muestra el "Resultado real" de los partidos en el centro (solo lectura) junto con insignias de estado (Final, Cancelado).
+- **Ranking Mensual por Semanas:** El ranking mensual ha sido actualizado para mostrar el desglose de puntos por semana (S1, S2, S3, S4) además del total, ofreciendo una vista más detallada de la progresión del mes.
+- **Asignación de Semanas:** Soporte para la columna `week_no` en la hoja `Matches`. Si está ausente, el backend calcula automáticamente a qué semana pertenece el partido basado en `display_order` (1-6 a S1, 7-12 a S2, etc.).
+- **Backend Refactor:** Actualización de `Code.gs` para retornar resultados activos en `bootstrapLight` y computar `s1_points`, `s2_points`, `s3_points`, `s4_points` en el recálculo dinámico.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

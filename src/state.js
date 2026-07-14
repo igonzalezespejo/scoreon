@@ -11,7 +11,17 @@ class State {
         this.predictionsSummary = {};
         this.rankingMonthly = [];
         this.rankingGlobal = [];
+        this.results = [];
         this.serverTime = null;
+        
+        // Progressive Loading
+        this.coreLoaded = false;
+        this.coreLoading = false;
+        this.coreError = null;
+        
+        this.rankingsLoaded = false;
+        this.rankingsLoading = false;
+        this.rankingsError = null;
     }
 
     initialize(data) {
@@ -22,11 +32,55 @@ class State {
         this.predictionsSummary = data.predictionsSummary || {};
         this.rankingMonthly = data.rankingMonthly || [];
         this.rankingGlobal = data.rankingGlobal || [];
+        this.results = data.results || [];
         this.serverTime = data.serverTime;
+        
+        this.coreLoaded = true;
+        this.coreLoading = false;
+        this.coreError = null;
+        
+        this.rankingsLoaded = true;
+        this.rankingsLoading = false;
+        this.rankingsError = null;
+    }
+
+    initializeLight(data) {
+        this.config = data.config;
+        this.activeMonth = data.activeMonth;
+        this.participants = data.participants || [];
+        this.matches = data.matches || [];
+        this.predictionsSummary = data.predictionsSummary || {};
+        this.results = data.results || [];
+        this.serverTime = data.serverTime;
+        
+        this.coreLoaded = true;
+        this.coreLoading = false;
+        this.coreError = null;
+    }
+
+    updateRankings(data) {
+        this.rankingMonthly = data.rankingMonthly || [];
+        this.rankingGlobal = data.rankingGlobal || [];
+        this.rankingsLoaded = true;
+        this.rankingsLoading = false;
+        this.rankingsError = null;
+    }
+
+    setRankingsLoading(isLoading) {
+        this.rankingsLoading = isLoading;
+    }
+
+    setRankingsError(error) {
+        this.rankingsError = error;
+        this.rankingsLoading = false;
     }
 
     getParticipant(userId) {
         return this.participants.find(p => p.user_id === userId);
+    }
+
+    getResultForMatch(matchId) {
+        return this.results.find(r => r.match_id === matchId) || null;
     }
 
     getMatchesSorted() {

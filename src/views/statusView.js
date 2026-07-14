@@ -1,8 +1,27 @@
 import { state } from '../state.js';
-import { formatDate } from '../utils/dates.js';
+import { formatDate, getActiveMonthTitle } from '../utils/dates.js';
 
 export const statusView = {
     render() {
+        if (!state.coreLoaded) {
+            return `
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <h2 class="card-title">Cargando estado de apuestas...</h2>
+                    <p style="color: var(--text-secondary); margin-top: 1rem;">Recopilando la participación del mes.</p>
+                </div>
+            `;
+        }
+
+        if (state.coreError) {
+            return `
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <h2 class="card-title" style="color: var(--accent-danger);">Error al cargar estado</h2>
+                    <p style="color: var(--text-secondary); margin-top: 1rem;">${state.coreError}</p>
+                    <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="window.location.reload()">Recargar aplicación</button>
+                </div>
+            `;
+        }
+
         const activeParticipants = state.participants.filter(p => p.active);
         
         let submittedCount = 0;
@@ -43,7 +62,7 @@ export const statusView = {
             <div class="card">
                 <h2 class="card-title">Estado de Apuestas</h2>
                 <p class="text-muted" style="margin-bottom: 1.5rem;">
-                    Resumen de participación para <strong>${state.activeMonth ? state.activeMonth.title : ''}</strong>
+                    Resumen de participación para <strong>${getActiveMonthTitle(state.activeMonth)}</strong>
                 </p>
 
                 <div class="stat-grid" style="margin-bottom: 2rem;">

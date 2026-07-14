@@ -186,6 +186,10 @@ function handleRequest(params) {
     switch (action) {
       case "bootstrap":
         return actionBootstrap();
+      case "bootstrapLight":
+        return actionBootstrapLight();
+      case "rankings":
+        return actionRankings();
       case "savePrediction":
         return actionSavePrediction(params);
       case "getUserPredictions":
@@ -196,6 +200,14 @@ function handleRequest(params) {
         return actionDebugLiveRanking(params);
       case "recalculateRankings":
         return actionRecalculateRankings(params);
+      case "adminGetMonths":
+        return actionAdminGetMonths(params);
+      case "adminGetMonthMatches":
+        return actionAdminGetMonthMatches(params);
+      case "adminSaveResults":
+        return actionAdminSaveResults(params);
+      case "adminSetMonthStatus":
+        return actionAdminSetMonthStatus(params);
       default:
         return buildErrorResponse("UNKNOWN_ACTION", "Action not supported: " + action);
     }
@@ -207,6 +219,19 @@ function handleRequest(params) {
 // ==========================================
 // ACTIONS
 // ==========================================
+
+function buildMonthTitle(monthId) {
+    if (!monthId) return 'Mes activo';
+    const parts = String(monthId).split('-');
+    if (parts.length !== 2) return monthId;
+    const year = parts[0];
+    const month = parseInt(parts[1], 10);
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    if (month >= 1 && month <= 12) {
+        return months[month - 1] + ' ' + year;
+    }
+    return monthId;
+}
 
 function getSign(home, away) {
     if (home > away) return 1;
@@ -269,6 +294,10 @@ function buildMonthlyRanking(participants, matches, predictionsCurrent, results,
                 user_id: normalizeId(p.user_id),
                 display_name: p.display_name,
                 points: 0,
+                s1_points: 0,
+                s2_points: 0,
+                s3_points: 0,
+                s4_points: 0,
                 exact_scores: 0,
                 correct_signs: 0,
                 failed: 0,
@@ -282,6 +311,8 @@ function buildMonthlyRanking(participants, matches, predictionsCurrent, results,
 
     const monthMatches = matches.filter(m => normalizeId(m.month_id) === activeMonthId);
     const monthMatchIds = monthMatches.map(m => normalizeId(m.match_id));
+    const matchMap = {};
+    monthMatches.forEach(m => matchMap[normalizeId(m.match_id)] = m);
 
     predictionsCurrent.forEach(pred => {
         const matchId = normalizeId(pred.match_id);
@@ -289,16 +320,28 @@ function buildMonthlyRanking(participants, matches, predictionsCurrent, results,
         
         const participantId = normalizeId(pred.user_id);
         const result = resultMap[matchId];
+        const match = matchMap[matchId];
 
-        if (!result) return;
+        if (!result || !match) return;
         const rankEntry = rankingMap[participantId];
         if (!rankEntry) return;
 
         const scoreObj = scorePrediction(pred, result, scoringRules);
         if (!scoreObj.computable) return;
 
+        let weekNo = match.week_no;
+        if (!weekNo || isNaN(parseInt(weekNo))) {
+            let displayOrder = parseInt(match.display_order) || 1;
+            weekNo = Math.ceil(displayOrder / 6);
+        } else {
+            weekNo = parseInt(weekNo);
+        }
+        if (weekNo > 4) weekNo = 4;
+        if (weekNo < 1) weekNo = 1;
+
         rankEntry.played_matches += 1;
         rankEntry.points += scoreObj.points;
+        rankEntry[`s${weekNo}_points`] += scoreObj.points;
 
         if (scoreObj.rule_id === 'exact_draw' || scoreObj.rule_id === 'exact_non_draw') {
             rankEntry.exact_scores += 1;
@@ -389,6 +432,7 @@ function buildGlobalRanking(participants, matches, predictionsCurrent, results, 
 }
 
 function actionGetUserPredictions(params) {
+  const startTotal = Date.now();
   const { user_id, pin, month_id } = params;
 
   if (!user_id || !month_id) {
@@ -436,11 +480,14 @@ function actionGetUserPredictions(params) {
     message: "Apuestas cargadas",
     user_id: user_id,
     month_id: month_id,
-    predictions: predictions
+    predictions: predictions,
+    debug: { timings: { total_ms: Date.now() - startTotal } }
   });
 }
 
 function actionBootstrap() {
+  const startTotal = Date.now();
+  let startReadConfig = Date.now();
   const configRows = getSheetData("Config");
   let config = {};
   configRows.forEach(r => {
@@ -449,19 +496,33 @@ function actionBootstrap() {
     else if (val === "false" || val === false) val = false;
     config[r.key] = val;
   });
+  let readConfigMs = Date.now() - startReadConfig;
 
+  let startReadCore = Date.now();
   const participants = getSheetData("Participants").map(p => {
     delete p.pin;
+    delete p.email;
     p.active = (p.active === true || p.active === "true" || p.active === "TRUE");
     return p;
   });
 
-  const months = getSheetData("Months");
-  const activeMonthId = normalizeId(config.active_month_id);
-  const activeMonth = months.find(m => normalizeId(m.month_id) === activeMonthId) || null;
+  const activeMonthId = normalizeMonthId(config.active_month_id);
+  const months = getSheetData("Months").map(m => {
+    m.month_id = normalizeMonthId(m.month_id);
+    return m;
+  });
+  
+  let activeMonth = months.find(m => m.month_id === activeMonthId) || null;
+  if (activeMonth) {
+    activeMonth.month_id = activeMonthId;
+    activeMonth.title = sanitizeMonthTitle(activeMonth.title, activeMonthId);
+  }
 
-  const matches = getSheetData("Matches");
-  const activeMatches = matches.filter(m => normalizeId(m.month_id) === activeMonthId);
+  const matches = getSheetData("Matches").map(m => {
+    m.month_id = normalizeMonthId(m.month_id);
+    return m;
+  });
+  const activeMatches = matches.filter(m => m.month_id === activeMonthId);
   const results = getSheetData("Results");
   let scoringRules = getSheetData("Scoring_Rules");
 
@@ -532,42 +593,92 @@ function actionBootstrap() {
     }
   });
 
+  let readCoreMs = Date.now() - startReadCore;
+
   let rankingMonthly = [];
   let rankingGlobal = [];
   
-  // ÚLTIMA ITERACIÓN / modo robusto:
-  // Para evitar rankings persistidos obsoletos, bootstrap recalcula SIEMPRE antes de responder.
-  // Con 40-60 usuarios el coste es bajo y elimina dependencia de triggers, ranking_dirty y caché.
   let debugInfo = {
     ranking_recalculated: false,
-    ranking_recalc_reason: "bootstrap_always_recalc",
+    ranking_recalc_reason: "",
     ranking_last_recalc_at: null,
     ranking_monthly_rows: 0,
-    ranking_global_rows: 0
+    ranking_global_rows: 0,
+    timings: {
+      read_config_ms: readConfigMs,
+      read_core_data_ms: readCoreMs,
+      recalc_rankings_ms: 0,
+      read_rankings_ms: 0,
+      total_ms: 0
+    }
   };
 
-  try {
-      updateRankingsInSheets();
-      rankingMonthly = getSheetData("Ranking_Monthly");
-      rankingGlobal = getSheetData("Ranking_Global");
-      debugInfo.ranking_recalculated = true;
-      debugInfo.ranking_last_recalc_at = new Date().toISOString();
-      debugInfo.ranking_monthly_rows = rankingMonthly.length;
-      debugInfo.ranking_global_rows = rankingGlobal.length;
-  } catch(e) {
-      // Si la persistencia falla por cabeceras/permisos, al menos devolver ranking vivo correcto a la web.
-      rankingMonthly = buildMonthlyRanking(participants, matches, currentPredictions, results, scoringRules, normalizeId(activeMonthId), config);
-      rankingGlobal = buildGlobalRanking(participants, matches, currentPredictions, results, scoringRules, config);
-      debugInfo.ranking_recalculated = false;
-      debugInfo.ranking_recalc_reason = "persist_failed_live_fallback: " + e.message;
-      debugInfo.ranking_monthly_rows = rankingMonthly.length;
-      debugInfo.ranking_global_rows = rankingGlobal.length;
+  let startReadRankings = Date.now();
+  rankingMonthly = getSheetData("Ranking_Monthly").map(r => {
+    if (r.month_id !== undefined) r.month_id = normalizeMonthId(r.month_id);
+    return r;
+  });
+  rankingGlobal = getSheetData("Ranking_Global");
+  debugInfo.timings.read_rankings_ms = Date.now() - startReadRankings;
+
+  let forceRecalc = config.testing_force_recalc_on_bootstrap === true;
+  let isDirty = config.ranking_dirty === true || config.ranking_dirty === "true";
+  
+  let isMissingParticipants = false;
+  let activeParticipantIds = participants.filter(p => p.active).map(p => normalizeId(p.user_id));
+  let monthlyParticipantIds = rankingMonthly.map(r => normalizeId(r.user_id));
+  let globalParticipantIds = rankingGlobal.map(r => normalizeId(r.user_id));
+  
+  for (let pid of activeParticipantIds) {
+    if (!monthlyParticipantIds.includes(pid) || !globalParticipantIds.includes(pid)) {
+      isMissingParticipants = true;
+      break;
+    }
   }
+
+  let isEmpty = rankingMonthly.length === 0 || rankingGlobal.length === 0;
+
+  if (forceRecalc || isDirty || isEmpty || isMissingParticipants) {
+      let startRecalc = Date.now();
+      try {
+          updateRankingsInSheets(); 
+          rankingMonthly = getSheetData("Ranking_Monthly").map(r => {
+            if (r.month_id !== undefined) r.month_id = normalizeMonthId(r.month_id);
+            return r;
+          });
+          rankingGlobal = getSheetData("Ranking_Global");
+          debugInfo.ranking_recalculated = true;
+          
+          if (forceRecalc) {
+              debugInfo.ranking_recalc_reason = "testing_force_recalc_on_bootstrap";
+          } else if (isDirty) {
+              debugInfo.ranking_recalc_reason = "ranking_dirty";
+          } else if (isEmpty) {
+              debugInfo.ranking_recalc_reason = "rankings_empty";
+          } else {
+              debugInfo.ranking_recalc_reason = "missing_participants";
+          }
+          debugInfo.ranking_last_recalc_at = new Date().toISOString();
+      } catch(e) {
+          rankingMonthly = buildMonthlyRanking(participants, matches, currentPredictions, results, scoringRules, normalizeId(activeMonthId), config);
+          rankingGlobal = buildGlobalRanking(participants, matches, currentPredictions, results, scoringRules, config);
+          debugInfo.ranking_recalculated = false;
+          debugInfo.ranking_recalc_reason = "persist_failed_live_fallback: " + e.message;
+      }
+      debugInfo.timings.recalc_rankings_ms = Date.now() - startRecalc;
+  } else {
+      debugInfo.ranking_recalculated = false;
+      debugInfo.ranking_recalc_reason = "none";
+  }
+
+  debugInfo.ranking_monthly_rows = rankingMonthly.length;
+  debugInfo.ranking_global_rows = rankingGlobal.length;
+  debugInfo.timings.total_ms = Date.now() - startTotal;
 
   const responsePayload = {
     code: "SUCCESS",
     message: "Data loaded",
-    backend_version: "ranking-force-bootstrap-20260713-ULTIMA",
+    backend_version: "ranking-force-bootstrap-20260714-OPTIMIZED",
     config: config,
     activeMonth: activeMonth,
     participants: participants,
@@ -584,6 +695,225 @@ function actionBootstrap() {
   }
 
   return buildSuccessResponse(responsePayload);
+}
+
+function actionBootstrapLight() {
+  const startTotal = Date.now();
+  let startReadConfig = Date.now();
+  const configRows = getSheetData("Config");
+  let config = {};
+  configRows.forEach(r => {
+    let val = r.value;
+    if (val === "true" || val === true) val = true;
+    else if (val === "false" || val === false) val = false;
+    config[r.key] = val;
+  });
+  let readConfigMs = Date.now() - startReadConfig;
+
+  let startReadCore = Date.now();
+  const participants = getSheetData("Participants").map(p => {
+    delete p.pin;
+    delete p.email;
+    p.active = (p.active === true || p.active === "true" || p.active === "TRUE");
+    return p;
+  });
+
+  const raw_config_active_month_id = config.active_month_id;
+  const activeMonthId = normalizeMonthId(config.active_month_id);
+  const months = getSheetData("Months").map(m => {
+    m.month_id = normalizeMonthId(m.month_id);
+    return m;
+  });
+  
+  let activeMonth = months.find(m => m.month_id === activeMonthId) || null;
+  let active_month_raw_title = "";
+  if (activeMonth) {
+    active_month_raw_title = activeMonth.title;
+    activeMonth.month_id = activeMonthId;
+    activeMonth.title = sanitizeMonthTitle(activeMonth.title, activeMonthId);
+  }
+
+  const matches = getSheetData("Matches").map(m => {
+    m.month_id = normalizeMonthId(m.month_id);
+    return m;
+  });
+  const activeMatches = matches.filter(m => m.month_id === activeMonthId);
+  const currentPredictions = getSheetData("Predictions_Current");
+
+  const monthMatchesCount = activeMatches.length;
+  const activeMonthMatchIds = activeMatches.map(m => normalizeId(m.match_id));
+  const allResults = getSheetData("Results");
+  const activeMonthResults = allResults.filter(r => activeMonthMatchIds.includes(normalizeId(r.match_id)));
+
+  const userBetCounts = {};
+  participants.forEach(p => userBetCounts[p.user_id] = { count: 0, latest_date: null });
+
+  currentPredictions.forEach(p => {
+    if (activeMonthMatchIds.includes(normalizeId(p.match_id))) {
+       if (userBetCounts[normalizeId(p.user_id)]) {
+           userBetCounts[normalizeId(p.user_id)].count++;
+           let newSub = new Date(p.submitted_at);
+           let currentSub = userBetCounts[normalizeId(p.user_id)].latest_date ? new Date(userBetCounts[normalizeId(p.user_id)].latest_date) : new Date(0);
+           if (newSub > currentSub) {
+               userBetCounts[normalizeId(p.user_id)].latest_date = p.submitted_at;
+           }
+       }
+    }
+  });
+
+  const predictionsSummary = {};
+  participants.forEach(p => {
+    if (p.active) {
+      const data = userBetCounts[p.user_id];
+      let status = "pending";
+      if (data.count > 0 && data.count < monthMatchesCount) status = "partial";
+      else if (data.count >= monthMatchesCount && monthMatchesCount > 0) status = "submitted";
+
+      predictionsSummary[p.user_id] = {
+        user_id: p.user_id,
+        display_name: p.display_name,
+        status: status,
+        submitted_at: data.latest_date,
+        submitted_count: data.count,
+        total_matches: monthMatchesCount
+      };
+    }
+  });
+
+  let readCoreMs = Date.now() - startReadCore;
+
+  let debugInfo = {
+    light: true,
+    month_resolution: {
+      raw_config_active_month_id: String(raw_config_active_month_id),
+      normalized_active_month_id: activeMonthId,
+      active_month_raw_title: String(active_month_raw_title),
+      active_month_final_title: activeMonth ? activeMonth.title : ""
+    },
+    timings: {
+      read_config_ms: readConfigMs,
+      read_core_ms: readCoreMs,
+      total_ms: Date.now() - startTotal
+    }
+  };
+
+  return buildSuccessResponse({
+    code: "SUCCESS",
+    message: "Light data loaded",
+    backend_version: "ranking-force-bootstrap-20260714-OPTIMIZED",
+    config: config,
+    activeMonth: activeMonth,
+    participants: participants,
+    matches: activeMatches,
+    predictionsSummary: predictionsSummary,
+    results: activeMonthResults,
+    debug: debugInfo
+  });
+}
+
+function actionRankings() {
+  const startTotal = Date.now();
+  let startReadConfig = Date.now();
+  
+  const configRows = getSheetData("Config");
+  let config = {};
+  configRows.forEach(r => {
+    let val = r.value;
+    if (val === "true" || val === true) val = true;
+    else if (val === "false" || val === false) val = false;
+    config[r.key] = val;
+  });
+  let readConfigMs = Date.now() - startReadConfig;
+
+  let rankingMonthly = [];
+  let rankingGlobal = [];
+  
+  let debugInfo = {
+    rankings: true,
+    ranking_recalculated: false,
+    ranking_recalc_reason: "none",
+    timings: {
+      read_config_ms: readConfigMs,
+      recalc_rankings_ms: 0,
+      read_rankings_ms: 0,
+      total_ms: 0
+    }
+  };
+
+  let startReadRankings = Date.now();
+  rankingMonthly = getSheetData("Ranking_Monthly").map(r => {
+    if (r.month_id !== undefined) r.month_id = normalizeMonthId(r.month_id);
+    return r;
+  });
+  rankingGlobal = getSheetData("Ranking_Global");
+  debugInfo.timings.read_rankings_ms = Date.now() - startReadRankings;
+
+  let forceRecalc = config.testing_force_recalc_on_bootstrap === true;
+  let isDirty = config.ranking_dirty === true || config.ranking_dirty === "true";
+  
+  let isMissingParticipants = false;
+  const participants = getSheetData("Participants").map(p => {
+    p.active = (p.active === true || p.active === "true" || p.active === "TRUE");
+    return p;
+  });
+  
+  let activeParticipantIds = participants.filter(p => p.active).map(p => normalizeId(p.user_id));
+  let monthlyParticipantIds = rankingMonthly.map(r => normalizeId(r.user_id));
+  let globalParticipantIds = rankingGlobal.map(r => normalizeId(r.user_id));
+  
+  for (let pid of activeParticipantIds) {
+    if (!monthlyParticipantIds.includes(pid) || !globalParticipantIds.includes(pid)) {
+      isMissingParticipants = true;
+      break;
+    }
+  }
+
+  let isEmpty = rankingMonthly.length === 0 || rankingGlobal.length === 0;
+
+  if (forceRecalc || isDirty || isEmpty || isMissingParticipants) {
+      let startRecalc = Date.now();
+      try {
+          updateRankingsInSheets(); 
+          rankingMonthly = getSheetData("Ranking_Monthly").map(r => {
+            if (r.month_id !== undefined) r.month_id = normalizeMonthId(r.month_id);
+            return r;
+          });
+          rankingGlobal = getSheetData("Ranking_Global");
+          debugInfo.ranking_recalculated = true;
+          
+          if (forceRecalc) {
+              debugInfo.ranking_recalc_reason = "testing_force_recalc_on_bootstrap";
+          } else if (isDirty) {
+              debugInfo.ranking_recalc_reason = "ranking_dirty";
+          } else if (isEmpty) {
+              debugInfo.ranking_recalc_reason = "rankings_empty";
+          } else {
+              debugInfo.ranking_recalc_reason = "missing_participants";
+          }
+      } catch(e) {
+          debugInfo.ranking_recalculated = false;
+          debugInfo.ranking_recalc_reason = "persist_failed_live_fallback: " + e.message;
+          const activeMonthId = normalizeId(config.active_month_id);
+          const matches = getSheetData("Matches");
+          const results = getSheetData("Results");
+          const scoringRules = getSheetData("Scoring_Rules");
+          const currentPredictions = getSheetData("Predictions_Current");
+          rankingMonthly = buildMonthlyRanking(participants, matches, currentPredictions, results, scoringRules, activeMonthId, config);
+          rankingGlobal = buildGlobalRanking(participants, matches, currentPredictions, results, scoringRules, config);
+      }
+      debugInfo.timings.recalc_rankings_ms = Date.now() - startRecalc;
+  }
+
+  debugInfo.timings.total_ms = Date.now() - startTotal;
+
+  return buildSuccessResponse({
+    code: "SUCCESS",
+    message: "Rankings loaded",
+    backend_version: "ranking-force-bootstrap-20260714-OPTIMIZED",
+    rankingMonthly: rankingMonthly,
+    rankingGlobal: rankingGlobal,
+    debug: debugInfo
+  });
 }
 
 function actionSavePrediction(params) {
@@ -712,7 +1042,24 @@ function actionSavePrediction(params) {
     logAction(user_id, "SAVE_PREDICTION", `Guardadas ${validPredictionsToSave.length} predicciones.`, serverTime);
 
     try {
-      updateRankingsInSheetsUnsafe();
+      if (config.recalculate_after_prediction === true || config.recalculate_after_prediction === "true") {
+        updateRankingsInSheetsUnsafe();
+      } else {
+        const results = getSheetData("Results");
+        let hasValidResultForMonth = false;
+        for (let r of results) {
+          if (matchMap[r.match_id] && isFilledGoal(r.home_goals) && isFilledGoal(r.away_goals)) {
+            let resultStatus = String(r.status || "").toLowerCase().trim();
+            if (resultStatus !== 'cancelled' && resultStatus !== 'cancelado') {
+                hasValidResultForMonth = true;
+                break;
+            }
+          }
+        }
+        if (hasValidResultForMonth) {
+          markRankingsDirty("savePrediction_with_results");
+        }
+      }
     } catch(e) {
       markRankingsDirty("savePrediction_error");
     }
@@ -734,7 +1081,7 @@ function actionRegisterParticipant(params) {
   }
 
   try {
-    const { display_name, registration_code } = params;
+    const { display_name, email, registration_code } = params;
     
     const configRows = getSheetData("Config");
     let config = {};
@@ -759,6 +1106,15 @@ function actionRegisterParticipant(params) {
       return buildErrorResponse("VALIDATION_ERROR", "Nombre visible inválido (debe tener entre 2 y 60 caracteres)");
     }
 
+    if (!email || typeof email !== "string") {
+      return buildErrorResponse("VALIDATION_ERROR", "El email es obligatorio");
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return buildErrorResponse("VALIDATION_ERROR", "Formato de email inválido");
+    }
+
     const cleanName = display_name.trim();
     
     const participants = getSheetData("Participants");
@@ -767,6 +1123,9 @@ function actionRegisterParticipant(params) {
     for (let p of participants) {
       if (p.display_name && p.display_name.trim().toLowerCase() === nameLower) {
         return buildErrorResponse("VALIDATION_ERROR", "El nombre ya está en uso");
+      }
+      if (p.email && p.email.trim().toLowerCase() === cleanEmail) {
+        return buildErrorResponse("VALIDATION_ERROR", "El email ya está en uso");
       }
     }
     
@@ -781,10 +1140,8 @@ function actionRegisterParticipant(params) {
     }
     
     const pinLength = config.pin_length || 4;
-    let pin = "";
-    for (let i=0; i<pinLength; i++) {
-      pin += Math.floor(Math.random() * 10).toString();
-    }
+    let randomNumber = Math.floor(Math.random() * Math.pow(10, pinLength));
+    const pin = String(randomNumber).padStart(pinLength, "0");
     
     const serverTime = new Date();
     
@@ -792,13 +1149,18 @@ function actionRegisterParticipant(params) {
     if (!sheetPart) return buildErrorResponse("SERVER_ERROR", "No existe la hoja Participants");
     
     const dataRange = sheetPart.getDataRange().getValues();
-    const headers = dataRange.length > 0 ? dataRange[0] : ["user_id", "display_name", "pin", "active", "created_at", "notes"];
+    const headers = dataRange.length > 0 ? dataRange[0] : ["user_id", "display_name", "email", "pin", "active", "created_at", "notes"];
+    
+    if (!headers.includes("email")) {
+      return buildErrorResponse("SHEET_SCHEMA_ERROR", "Falta la columna email en Participants");
+    }
     
     const newRow = new Array(headers.length).fill("");
     
     const newParticipantObj = {
       user_id: slug,
       display_name: cleanName,
+      email: cleanEmail,
       pin: pin,
       active: true,
       created_at: serverTime.toISOString(),
@@ -807,16 +1169,22 @@ function actionRegisterParticipant(params) {
 
     headers.forEach((h, i) => {
       if (newParticipantObj[h] !== undefined) {
-        newRow[i] = newParticipantObj[h];
+        newRow[i] = String(newParticipantObj[h]);
       }
     });
     
-    sheetPart.appendRow(newRow);
+    const pinColIndex = headers.indexOf("pin") + 1;
+    if (pinColIndex > 0) {
+      sheetPart.getRange(1, pinColIndex, sheetPart.getMaxRows() || 1000, 1).setNumberFormat("@");
+    }
+    
+    const newRowIndex = sheetPart.getLastRow() + 1;
+    sheetPart.getRange(newRowIndex, 1, 1, headers.length).setValues([newRow]);
     
     logAction(slug, "REGISTER_PARTICIPANT", `Registrado desde web con nombre ${cleanName}`, serverTime);
     
     try {
-      updateRankingsInSheetsUnsafe();
+      markRankingsDirty("registerParticipant");
     } catch(e) {
       markRankingsDirty("registerParticipant_error");
     }
@@ -848,6 +1216,48 @@ function getSpreadsheet() {
 function normalizeId(value) {
   if (value === null || value === undefined) return "";
   return String(value).trim();
+}
+
+function normalizeMonthId(value) {
+  if (value === null || value === undefined || value === "") return "";
+  if (value instanceof Date) {
+    let tz = Session.getScriptTimeZone();
+    try { tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone() || tz; } catch(e) {}
+    return Utilities.formatDate(value, tz, "yyyy-MM");
+  }
+  let str = String(value).trim();
+  if (/^\\d{4}-\\d{2}-\\d{2}T/.test(str)) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      let tz = Session.getScriptTimeZone();
+      try { tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone() || tz; } catch(e) {}
+      return Utilities.formatDate(d, tz, "yyyy-MM");
+    }
+  }
+  return str;
+}
+
+function buildMonthTitleFromMonthId(monthId) {
+  if (!monthId) return 'Mes activo';
+  const parts = String(monthId).split('-');
+  if (parts.length !== 2) return monthId;
+  const year = parts[0];
+  const month = parseInt(parts[1], 10);
+  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  if (month >= 1 && month <= 12) {
+      return months[month - 1] + ' ' + year;
+  }
+  return monthId;
+}
+
+function sanitizeMonthTitle(title, monthId) {
+  if (!title) return buildMonthTitleFromMonthId(monthId);
+  if (title instanceof Date) return buildMonthTitleFromMonthId(monthId);
+  let str = String(title).trim();
+  if (/^\\d{4}-\\d{2}-\\d{2}T/.test(str) || /^\\d{4}-\\d{2}$/.test(str)) {
+      return buildMonthTitleFromMonthId(monthId);
+  }
+  return str;
 }
 
 function isFilledGoal(value) {
@@ -1029,6 +1439,10 @@ function updateRankingsInSheetsUnsafe() {
       user_id: r.user_id,
       display_name: r.display_name,
       points: r.points,
+      s1_points: r.s1_points || 0,
+      s2_points: r.s2_points || 0,
+      s3_points: r.s3_points || 0,
+      s4_points: r.s4_points || 0,
       exact_scores: r.exact_scores,
       correct_signs: r.correct_signs,
       failed: r.failed,
@@ -1049,7 +1463,7 @@ function updateRankingsInSheetsUnsafe() {
       updated_at: timestamp
   }));
 
-  const monthlyHeaders = ["month_id", "user_id", "display_name", "points", "exact_scores", "correct_signs", "failed", "played_matches", "position", "updated_at"];
+  const monthlyHeaders = ["month_id", "user_id", "display_name", "points", "s1_points", "s2_points", "s3_points", "s4_points", "exact_scores", "correct_signs", "failed", "played_matches", "position", "updated_at"];
   const globalHeaders = ["user_id", "display_name", "total_points", "months_played", "monthly_wins", "exact_scores", "correct_signs", "position", "updated_at"];
 
   writeSheetRows("Ranking_Monthly", monthlyRows, monthlyHeaders);
@@ -1068,8 +1482,9 @@ function writeSheetRows(sheetName, rows, headers) {
     if (existingData.length === 0) throw new Error("La hoja " + sheetName + " está vacía, faltan cabeceras.");
     
     const actualHeaders = existingData[0];
-    if (actualHeaders.join(",") !== headers.join(",")) {
-        throw new Error("Las cabeceras de " + sheetName + " no coinciden con las esperadas. Esperadas: " + headers.join(",") + ". Encontradas: " + actualHeaders.join(","));
+    const missingCols = headers.filter(h => !actualHeaders.includes(h));
+    if (missingCols.length > 0) {
+        throw new Error(`Faltan columnas en ${sheetName}: ${missingCols.join(", ")}. Por favor, actualiza las cabeceras en Google Sheets.`);
     }
     
     if (sheet.getLastRow() > 1) {
@@ -1079,14 +1494,18 @@ function writeSheetRows(sheetName, rows, headers) {
     if (rows.length === 0) return;
     
     const dataToWrite = rows.map(rowObj => {
-        return headers.map(h => rowObj[h] !== undefined ? rowObj[h] : "");
+        return actualHeaders.map(h => rowObj[h] !== undefined ? rowObj[h] : "");
     });
     
-    const targetRange = sheet.getRange(2, 1, dataToWrite.length, headers.length);
+    const targetRange = sheet.getRange(2, 1, dataToWrite.length, actualHeaders.length);
     if (sheetName === "Ranking_Monthly") {
-        sheet.getRange(2, 1, dataToWrite.length, 2).setNumberFormat("@");
+        const monthCol = actualHeaders.indexOf("month_id") + 1;
+        const userCol = actualHeaders.indexOf("user_id") + 1;
+        if (monthCol > 0) sheet.getRange(2, monthCol, dataToWrite.length, 1).setNumberFormat("@");
+        if (userCol > 0) sheet.getRange(2, userCol, dataToWrite.length, 1).setNumberFormat("@");
     } else if (sheetName === "Ranking_Global") {
-        sheet.getRange(2, 1, dataToWrite.length, 1).setNumberFormat("@");
+        const userCol = actualHeaders.indexOf("user_id") + 1;
+        if (userCol > 0) sheet.getRange(2, userCol, dataToWrite.length, 1).setNumberFormat("@");
     }
     targetRange.setValues(dataToWrite);
 }
@@ -1206,4 +1625,210 @@ function actionDebugLiveRanking(params) {
     ranking_dirty: diag.ranking_dirty,
     ranking_last_recalc_at: diag.ranking_last_recalc_at
   });
+}
+
+// ==========================================
+// ADMIN ACTIONS
+// ==========================================
+
+function validateAdminToken(params, config) {
+  if (config.admin_enabled !== true && config.admin_enabled !== "true") {
+    return false;
+  }
+  if (!params.admin_token || params.admin_token !== config.admin_token) {
+    return false;
+  }
+  return true;
+}
+
+function actionAdminGetMonths(params) {
+  const config = getConfigMap();
+  if (!validateAdminToken(params, config)) {
+    return buildErrorResponse("UNAUTHORIZED", "Código admin incorrecto");
+  }
+
+  const months = getSheetData("Months").map(m => {
+    m.month_id = normalizeMonthId(m.month_id);
+    m.title = sanitizeMonthTitle(m.title, m.month_id);
+    return m;
+  });
+
+  return buildSuccessResponse({
+    code: "ADMIN_MONTHS",
+    months: months,
+    active_month_id: normalizeMonthId(config.active_month_id)
+  });
+}
+
+function actionAdminGetMonthMatches(params) {
+  const config = getConfigMap();
+  if (!validateAdminToken(params, config)) {
+    return buildErrorResponse("UNAUTHORIZED", "Código admin incorrecto");
+  }
+
+  const monthId = normalizeId(params.month_id);
+  if (!monthId) return buildErrorResponse("VALIDATION_ERROR", "Falta month_id");
+
+  const matches = getSheetData("Matches").filter(m => normalizeId(m.month_id) === monthId);
+  const results = getSheetData("Results");
+  
+  const matchIds = matches.map(m => normalizeId(m.match_id));
+  const monthResults = results.filter(r => matchIds.includes(normalizeId(r.match_id)));
+
+  return buildSuccessResponse({
+    code: "ADMIN_MATCHES",
+    matches: matches,
+    results: monthResults
+  });
+}
+
+function actionAdminSaveResults(params) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const config = getConfigMap();
+    if (!validateAdminToken(params, config)) {
+      return buildErrorResponse("UNAUTHORIZED", "Código admin incorrecto");
+    }
+
+    const monthId = normalizeId(params.month_id);
+    const resultsToSave = params.results;
+    if (!monthId || !Array.isArray(resultsToSave)) {
+      return buildErrorResponse("VALIDATION_ERROR", "Falta month_id o results");
+    }
+
+    const matches = getSheetData("Matches");
+    const validMatchIds = matches.filter(m => normalizeId(m.month_id) === monthId).map(m => normalizeId(m.match_id));
+
+    const ss = getSpreadsheet();
+    const sheetResults = ss.getSheetByName("Results");
+    if (!sheetResults) throw new Error("Pestaña Results no encontrada");
+
+    const data = sheetResults.getDataRange().getValues();
+    const headers = data[0].map(h => String(h).trim().toLowerCase());
+    
+    const idxMatchId = headers.indexOf("match_id");
+    const idxHomeGoals = headers.indexOf("home_goals");
+    const idxAwayGoals = headers.indexOf("away_goals");
+    const idxStatus = headers.indexOf("status");
+    const idxUpdatedAt = headers.indexOf("updated_at");
+    const idxUpdatedBy = headers.indexOf("updated_by");
+
+    if (idxMatchId < 0) throw new Error("Schema Results inválido");
+
+    const now = new Date().toISOString();
+    let updatedCount = 0;
+
+    resultsToSave.forEach(res => {
+      const matchId = normalizeId(res.match_id);
+      if (!validMatchIds.includes(matchId)) return;
+      
+      let status = String(res.status || "").toLowerCase().trim();
+      if (!["pending", "final", "cancelled"].includes(status)) return;
+      
+      let hG = res.home_goals;
+      let aG = res.away_goals;
+      
+      if (status === "final") {
+        hG = parseInt(hG, 10);
+        aG = parseInt(aG, 10);
+        if (isNaN(hG) || hG < 0 || hG > 20 || isNaN(aG) || aG < 0 || aG > 20) {
+          return; 
+        }
+      } else if (status === "pending" || status === "cancelled") {
+        if (hG === "" || hG === null || hG === undefined) hG = "";
+        if (aG === "" || aG === null || aG === undefined) aG = "";
+      }
+
+      let rowFound = -1;
+      for (let i = 1; i < data.length; i++) {
+        if (normalizeId(data[i][idxMatchId]) === matchId) {
+          rowFound = i + 1;
+          break;
+        }
+      }
+
+      const rowData = [];
+      headers.forEach(h => rowData.push(""));
+      rowData[idxMatchId] = matchId;
+      rowData[idxHomeGoals] = hG;
+      rowData[idxAwayGoals] = aG;
+      rowData[idxStatus] = status;
+      rowData[idxUpdatedAt] = now;
+      rowData[idxUpdatedBy] = "admin_web";
+
+      if (rowFound > 0) {
+        sheetResults.getRange(rowFound, 1, 1, headers.length).setValues([rowData]);
+      } else {
+        sheetResults.appendRow(rowData);
+      }
+      updatedCount++;
+    });
+
+    logAction("admin", "SAVE_RESULTS", `Admin guardó ${updatedCount} resultados del mes ${monthId}`, new Date());
+
+    updateRankingsInSheetsUnsafe();
+
+    return buildSuccessResponse({
+      code: "ADMIN_RESULTS_SAVED",
+      message: `Se actualizaron ${updatedCount} resultados`,
+      updatedCount: updatedCount
+    });
+
+  } catch (err) {
+    return buildErrorResponse("SERVER_ERROR", "Error al guardar resultados: " + err.message);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function actionAdminSetMonthStatus(params) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(5000);
+  try {
+    const config = getConfigMap();
+    if (!validateAdminToken(params, config)) {
+      return buildErrorResponse("UNAUTHORIZED", "Código admin incorrecto");
+    }
+
+    const monthId = normalizeId(params.month_id);
+    let status = String(params.status || "").toLowerCase().trim();
+    
+    if (!monthId || !["open", "locked"].includes(status)) {
+      return buildErrorResponse("VALIDATION_ERROR", "Parámetros inválidos");
+    }
+
+    const ss = getSpreadsheet();
+    const sheetMonths = ss.getSheetByName("Months");
+    const data = sheetMonths.getDataRange().getValues();
+    const headers = data[0].map(h => String(h).trim().toLowerCase());
+    
+    const idxMonthId = headers.indexOf("month_id");
+    const idxStatus = headers.indexOf("status");
+
+    let updated = false;
+    for (let i = 1; i < data.length; i++) {
+      if (normalizeId(data[i][idxMonthId]) === monthId) {
+        sheetMonths.getRange(i + 1, idxStatus + 1).setValue(status);
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+      return buildErrorResponse("VALIDATION_ERROR", "Mes no encontrado");
+    }
+
+    logAction("admin", "SET_MONTH_STATUS", `Admin cambió estado de ${monthId} a ${status}`, new Date());
+
+    return buildSuccessResponse({
+      code: "ADMIN_MONTH_STATUS_UPDATED",
+      message: `Mes ${monthId} actualizado a ${status}`
+    });
+
+  } catch (err) {
+    return buildErrorResponse("SERVER_ERROR", "Error al cambiar estado: " + err.message);
+  } finally {
+    lock.releaseLock();
+  }
 }

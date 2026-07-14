@@ -17,7 +17,7 @@ Para iniciar un proyecto nuevo o un nuevo mes de porra, sigue estos pasos riguro
     - `registration_enabled`: `true` si permites alta desde web.
     - `registration_code`: Código de invitación opcional (ej. `PORRA2026`).
     - `pin_length`: Longitud del PIN generado (por defecto `4`).
-5. [ ] **Cargar Participantes (`Participants`):** Añadir a todos los participantes con su `user_id` único, nombre para mostrar, `pin` y marcar `active` como `true`. Si el autoregistro web está activado, los usuarios aparecerán aquí automáticamente.
+5. [ ] **Cargar Participantes (`Participants`):** Añadir a todos los participantes con su `user_id` único, nombre para mostrar, `email`, `pin` y marcar `active` como `true`. Si el autoregistro web está activado, los usuarios aparecerán aquí automáticamente. **Importante:** Asegúrate de que las columnas `user_id`, `email` y `pin` tengan formato de **Texto Plano** (`@`) para evitar que se pierdan los ceros iniciales de los PINs.
 6. [ ] **Crear Mes (`Months`):** Definir el mes inicial con estado `open` y su `lock_at` (fecha límite de apuestas en formato ISO 8601, ej. `2026-09-14T20:00:00Z`).
 7. [ ] **Cargar Partidos (`Matches`):** Añadir los partidos del mes, asegurándose de que la columna `month_id` coincida con el mes creado.
 8. [ ] **Desplegar Apps Script:** Ir a Extensiones > Apps Script, pegar `Code.gs`, realizar una "Nueva Implementación" como "Aplicación web" ejecutada como "Tú" y accesible para "Cualquiera".
@@ -26,16 +26,39 @@ Para iniciar un proyecto nuevo o un nuevo mes de porra, sigue estos pasos riguro
 
 ---
 
-## Qué edita el Administrador Manualmente
+## Administración desde la Web (Novedad V2.8)
 
-La gran mayoría de la gestión de la porra se realiza editando la Google Sheet manualmente.
+A partir de la versión 2.8, se puede gestionar la porra directamente desde la web (pestaña **Admin**) sin necesidad de abrir Google Sheets.
+
+### Requisitos previos
+En la pestaña `Config` de Google Sheets deben existir estas dos filas:
+- `admin_enabled`: `true`
+- `admin_token`: `<tu-codigo-secreto>`
+
+*Importante: Este código es como una contraseña. Nunca lo compartas ni lo incluyas en archivos `.js` o `.html` del proyecto.*
+
+### Uso del Panel Web
+1. Entra a la pestaña **Admin** en la web.
+2. Introduce tu `admin_token` (Código admin).
+3. Selecciona el mes a administrar (por defecto carga el activo).
+4. **Abrir / Cerrar Porra:** Utiliza los botones superiores para cambiar el estado de las apuestas de forma inmediata.
+5. **Guardar Resultados:** Introduce los goles y selecciona el status (`pending`, `final` o `cancelled`). Solo los resultados en status `final` sumarán puntos.
+6. Pulsa **Guardar Resultados**. El backend actualizará Google Sheets, recalculará los rankings automáticamente y refrescará la vista.
+
+*Nota técnica: Por seguridad, todas las acciones del admin viajan por peticiones POST encriptadas.*
+
+---
+
+## Administración Manual Avanzada (Google Sheets)
+
+Si prefieres o necesitas operar directamente en Google Sheets, a continuación se detalla el comportamiento de cada pestaña.
 
 ### 1. Gestión de Usuarios
 - **Pestaña:** `Participants`
 - **Acciones:**
-  - Añadir nuevos usuarios (nuevas filas). **Nota:** Si `registration_enabled` es `true`, los usuarios creados desde la web se añaden como nuevas filas automáticamente al final de la hoja.
+  - Añadir nuevos usuarios (nuevas filas). **Nota:** Si `registration_enabled` es `true`, los usuarios creados desde la web se añaden como nuevas filas automáticamente al final de la hoja. Es obligatorio proporcionar un `email` válido para evitar duplicados. Los usuarios antiguos sin `email` seguirán funcionando con normalidad, pero el `email` es necesario para nuevos registros.
   - Desactivar usuarios (cambiar `active` a `false`).
-  - Resetear PIN (escribir un nuevo PIN en la columna `pin` e informarlo al usuario).
+  - Resetear PIN (escribir un nuevo PIN en la columna `pin` e informarlo al usuario). **Precaución:** Nunca cambies el formato de la columna PIN a "Número". Si un PIN generado empieza por cero (ej. `0838`), debe mantenerlo. Si vas a escribirlo manualmente y la columna no es de texto, usa un apóstrofe inicial (`'0838`).
 
 ### 2. Gestión de Meses (Abrir/Cerrar Porra)
 - **Pestaña:** `Months`
@@ -48,14 +71,16 @@ La gran mayoría de la gestión de la porra se realiza editando la Google Sheet 
 - **Pestaña:** `Matches`
 - **Acciones:**
   - Añadir los partidos antes de abrir el mes.
+  - Asignar la semana del partido en la columna opcional `week_no` (valores: 1, 2, 3 o 4) para el ranking por semanas. Si se deja vacío, el sistema asignará la semana automáticamente según el `display_order` (1-6 a S1, 7-12 a S2, etc.).
   - Modificar un horario si hay cambios antes del cierre (`kickoff_at`).
 
 ### 4. Puntuaciones y Resultados
 - **Pestaña:** `Results`, `Scoring_Rules`
 - **Acciones:**
   - Cuando terminen los partidos, el admin rellena `home_goals` y `away_goals` en `Results`. Si por algún motivo se cancela el partido, se debe poner `cancelled` o `cancelado` en la columna `status` para que no compute. En cualquier otro caso, el sistema lo computará si los goles son válidos.
+  - **Novedad visual:** Cuando se guardan los resultados (sean parciales o finales), estos se mostrarán automáticamente en la pestaña de "Apuestas" para todos los usuarios.
   - Las reglas de juego definitivas se configuran en `Scoring_Rules` (ej. exact_draw=20, exact_non_draw=15, draw_not_exact=10, winner_not_exact=5, wrong=0). Puedes cambiar los puntos asignados, pero **NUNCA debes renombrar los `rule_id`**, ya que el código del backend depende estrictamente de ellos.
-  - El backend (Apps Script) calcula de forma automática los rankings mensual y global y los escribe en las pestañas `Ranking_Monthly` y `Ranking_Global`. Estas pestañas son la fuente de verdad visual y auditable que lee el frontend.
+  - El backend (Apps Script) calcula de forma automática los rankings mensual y global y los escribe en las pestañas `Ranking_Monthly` y `Ranking_Global`. El ranking mensual reparte los puntos en las columnas S1, S2, S3 y S4 basándose en el `week_no` configurado en los partidos.
   - Al cambiar cualquier dato en `Results`, `Predictions_Current`, `Participants`, `Matches` o `Scoring_Rules`, el ranking debería recalcularse automáticamente y verás un mensaje flotante verde ("Rankings recalculados automáticamente").
 - **Menú Porra Admin y Resolución de Problemas:**
   En la barra superior de Sheets dispones del menú "Porra Admin". Si editas un resultado y el ranking NO se actualiza (la web sigue igual o no ves el mensaje verde), debes:
@@ -64,14 +89,26 @@ La gran mayoría de la gestión de la porra se realiza editando la Google Sheet 
   3. Asegúrate de haber ejecutado **Porra Admin > Instalar trigger de ranking** al menos una vez tras configurar el Script para que Apps Script tenga permiso total en segundo plano.
   4. Revisar que las cabeceras (fila 1) de `Ranking_Monthly` y `Ranking_Global` no han sido alteradas o reordenadas.
   5. Revisar que no haya reglas borradas en `Scoring_Rules`.
-  6. **Importante sobre los IDs:** Google Sheets a veces convierte IDs como `2026-09` en fechas. Para evitar fallos en los cruces de datos, asegúrate de que columnas como `user_id`, `match_id`, `month_id`, `active_month_id` y `status` tienen **formato de Texto Sencillo** (puedes forzarlo escribiendo una comilla simple delante, ej. `'2026-09`).
+  6. **Importante sobre los IDs y Fechas ISO:** Estas columnas deben tener formato texto plano:
+     - `Config.value` cuando `key = active_month_id`
+     - `Months.month_id`
+     - `Matches.month_id`
+     - `Ranking_Monthly.month_id`
+     - `Results.match_id`
+     - `Predictions_Current.match_id`
+     - `Participants.user_id`
 
-### 5. Modo de Pruebas / Simulación (Opcional)
+     Si Google Sheets convierte `2026-08` en fecha (provocando que el sistema muestre fechas ISO como "2026-07-31T22:00:00.000Z"), debes escribirlo obligatoriamente con una comilla simple delante:
+     `'2026-08`
+### 5. Configuración de Rendimiento y Modo de Pruebas (Opcional)
 - **Pestaña:** `Config`
 - **Acción:** Puedes añadir una fila con la clave `testing_allow_result_simulation` y valor `true`.
 - **Efecto:** Permite a los administradores probar libremente el sistema de puntuación rellenando resultados en la pestaña `Results` (si hay goles numéricos computará automáticamente) y luego usar la herramienta **Porra Admin > Diagnóstico scoring partido activo**. 
-- **Acción:** Puedes añadir una fila con la clave `testing_force_recalc_on_bootstrap` y valor `true`.
-- **Efecto:** Fuerza un recálculo del ranking cada vez que la web carga los datos iniciales, útil para aislar problemas de caché durante desarrollo.
+- **Acción:** Puedes añadir las variables de optimización de carga:
+  - `testing_force_recalc_on_bootstrap`: `false` para uso normal (carga rápida). `true` para pruebas intensivas donde quieras ver el ranking cambiar en vivo tras cada F5.
+  - `recalculate_after_prediction`: `false` recomendado. Evita que la app espere a un recálculo al guardar apuestas.
+  - `ranking_dirty`: El backend lo pondrá a `true` si detecta cambios. El siguiente usuario que cargue la web experimentará un pequeño retraso y desencadenará el recálculo y limpieza del flag.
+- **Efecto:** Mantiene la web rápida leyendo la caché de `Ranking_Monthly` y `Ranking_Global`, a menos que haya cambios pendientes (`ranking_dirty=true`).
 - **Restricción:** Este modo NO exime las fechas de bloqueo (`lock_at`); los usuarios no podrán modificar apuestas fuera de plazo. Solo sirve para que el backend calcule ránkings provisionales sin restricciones de "estado" de partido, útil para QA y simular quién ganará la porra. **Al terminar las pruebas, asegúrate de devolver `testing_force_recalc_on_bootstrap` a `false`.**
 
 ### 6. Endpoints API de Depuración (Opcional, Solo Desarrolladores)

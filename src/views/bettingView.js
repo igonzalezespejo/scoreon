@@ -1,10 +1,29 @@
 import { state } from '../state.js';
-import { savePrediction, loadBootstrapData, registerParticipant, getUserPredictions } from '../api.js';
+import { savePrediction, loadBootstrapLight, loadRankingsData, registerParticipant, getUserPredictions } from '../api.js';
 import { showToast, htmlToElements, empty } from '../utils/dom.js';
-import { formatDate } from '../utils/dates.js';
+import { formatDate, getActiveMonthTitle } from '../utils/dates.js';
 
 export const bettingView = {
     render() {
+        if (!state.coreLoaded) {
+            return `
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <h2 class="card-title">Cargando datos de la porra...</h2>
+                    <p style="color: var(--text-secondary); margin-top: 1rem;">En unos segundos podrás seleccionar tu nombre y apostar.</p>
+                </div>
+            `;
+        }
+
+        if (state.coreError) {
+            return `
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <h2 class="card-title" style="color: var(--accent-danger);">Error al cargar datos</h2>
+                    <p style="color: var(--text-secondary); margin-top: 1rem;">${state.coreError}</p>
+                    <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="window.location.reload()">Recargar aplicación</button>
+                </div>
+            `;
+        }
+
         if (!state.activeMonth) {
             return `<div class="card"><p>No hay mes activo configurado.</p></div>`;
         }
@@ -14,7 +33,7 @@ export const bettingView = {
 
         return `
             <div class="card">
-                <h2 class="card-title">Participar en ${state.activeMonth.title}</h2>
+                <h2 class="card-title">Participar en ${getActiveMonthTitle(state.activeMonth)}</h2>
                 
                 <div class="form-group" style="max-width: 400px;">
                     <label class="form-label" for="participant-select">Selecciona tu nombre:</label>
@@ -33,6 +52,10 @@ export const bettingView = {
                         <div class="form-group">
                             <label class="form-label" for="reg-name">Nombre visible:</label>
                             <input type="text" id="reg-name" class="form-input" required minlength="2" maxlength="60" placeholder="Ej: Juan Pérez">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="reg-email">Email:</label>
+                            <input type="email" id="reg-email" class="form-input" required placeholder="tu@email.com">
                         </div>
                         ${state.config && state.config.registration_code ? `
                         <div class="form-group">
@@ -96,16 +119,17 @@ export const bettingView = {
 
         try {
             const name = container.querySelector('#reg-name').value;
+            const email = container.querySelector('#reg-email').value;
             const codeInput = container.querySelector('#reg-code');
             const code = codeInput ? codeInput.value : '';
 
-            const response = await registerParticipant(name, code);
+            const response = await registerParticipant(name, email, code);
             
             if (response.ok) {
                 const pin = response.participant.pin;
                 alert(`¡Participante creado!\n\nTu PIN de seguridad es: ${pin}\n\nGuarda este PIN, lo necesitarás para apostar.`);
                 
-                await loadBootstrapData();
+                await loadBootstrapLight();
                 
                 const select = container.querySelector('#participant-select');
                 const participants = state.participants.filter(p => p.active);
@@ -228,19 +252,47 @@ export const bettingView = {
             
             const matchStatus = pred ? '<span class="badge badge-success" style="font-size: 0.7rem; padding: 2px 6px;">Guardado</span>' : '<span class="badge badge-secondary" style="font-size: 0.7rem; padding: 2px 6px;">Pendiente</span>';
 
+            const realResult = state.getResultForMatch(match.match_id);
+            let realResultText = '- -';
+            let realStatusBadge = '';
+            if (realResult) {
+                const statusLower = String(realResult.status || '').toLowerCase().trim();
+                if (statusLower === 'cancelled' || statusLower === 'cancelado') {
+                    realStatusBadge = `<span class="badge badge-danger" style="margin-left: 5px; font-size: 0.7rem; padding: 2px 4px;">Cancelado</span>`;
+                } else if (statusLower === 'final') {
+                    realStatusBadge = `<span class="badge badge-primary" style="margin-left: 5px; font-size: 0.7rem; padding: 2px 4px;">Final</span>`;
+                    if (realResult.home_goals !== '' && realResult.away_goals !== '') {
+                        realResultText = `${realResult.home_goals} - ${realResult.away_goals}`;
+                    }
+                } else {
+                    if (realResult.home_goals !== '' && realResult.away_goals !== '') {
+                        realResultText = `${realResult.home_goals} - ${realResult.away_goals}`;
+                    }
+                }
+            }
+
             formHtml += `
-                <div class="match-bet-row">
-                    <div class="match-info">
-                        <div class="match-meta" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="match-bet-row" style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div class="match-info" style="margin-bottom: 0;">
+                        <div class="match-meta" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span>${match.competition} - ${formatDate(match.kickoff_at)}</span>
                             ${matchStatus}
                         </div>
-                        <div class="match-teams">${match.home_team} vs ${match.away_team}</div>
+                        <div class="match-teams" style="font-size: 1.1rem;">${match.home_team} vs ${match.away_team}</div>
                     </div>
-                    <div class="match-inputs">
-                        <input type="number" min="0" max="20" class="form-input goal-input" data-match="${match.match_id}" data-team="home" value="${hg}" ${!canBet ? 'disabled' : ''}>
-                        <span class="divider">-</span>
-                        <input type="number" min="0" max="20" class="form-input goal-input" data-match="${match.match_id}" data-team="away" value="${ag}" ${!canBet ? 'disabled' : ''}>
+                    
+                    <div class="match-real-result" style="text-align: center; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); padding: 0 1.5rem;">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Resultado real${realStatusBadge}</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px; color: var(--text-color);">${realResultText}</div>
+                    </div>
+
+                    <div class="match-inputs" style="margin-top: 0; display: flex; flex-direction: column; align-items: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Tu apuesta</div>
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            <input type="number" min="0" max="20" class="form-input goal-input" style="width: 50px; text-align: center; font-size: 1.2rem; padding: 0.5rem;" data-match="${match.match_id}" data-team="home" value="${hg}" ${!canBet ? 'disabled' : ''}>
+                            <span class="divider" style="margin: 0 10px; font-weight: bold;">-</span>
+                            <input type="number" min="0" max="20" class="form-input goal-input" style="width: 50px; text-align: center; font-size: 1.2rem; padding: 0.5rem;" data-match="${match.match_id}" data-team="away" value="${ag}" ${!canBet ? 'disabled' : ''}>
+                        </div>
                     </div>
                 </div>
             `;
@@ -296,7 +348,16 @@ export const bettingView = {
             
             if (response.ok) {
                 showToast(response.message || '¡Apuesta guardada correctamente!');
-                await loadBootstrapData();
+                await loadBootstrapLight();
+                
+                // Load rankings in background as ranking might be dirty
+                state.setRankingsLoading(true);
+                loadRankingsData()
+                    .then(data => state.updateRankings(data))
+                    .catch(err => {
+                        console.error("Error refreshing rankings:", err);
+                        state.setRankingsError("Error al recargar rankings");
+                    });
                 const container = document.getElementById('view-betting');
                 const select = container.querySelector('#participant-select');
                 if (select) select.value = userId;

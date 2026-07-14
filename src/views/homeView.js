@@ -1,54 +1,60 @@
 import { state } from '../state.js';
-import { formatDate, getDaysRemaining } from '../utils/dates.js';
+import { getActiveMonthTitle, formatDate } from '../utils/dates.js';
 
 export const homeView = {
     render() {
-        const activeMonth = state.activeMonth;
-        if (!activeMonth) {
-            return `<div class="card"><p>No hay mes activo configurado.</p></div>`;
+        let statsHtml = `
+            <div style="text-align: center; padding: 2rem;">
+                <p style="color: var(--text-secondary);">Los datos reales de participación y ranking se están cargando en segundo plano...</p>
+            </div>
+        `;
+
+        if (state.coreLoaded) {
+            const submittedCount = Object.values(state.predictionsSummary).filter(p => p.status === 'submitted').length;
+            const totalCount = state.participants.filter(p => p.active).length;
+            
+            statsHtml = `
+                <div class="stat-grid" style="margin-bottom: 0;">
+                    <div class="stat-box" style="box-shadow: none;">
+                        <div class="stat-value">${state.matches.length}</div>
+                        <div class="stat-label">Partidos</div>
+                    </div>
+                    <div class="stat-box" style="box-shadow: none;">
+                        <div class="stat-value" style="color: var(--accent-secondary);">${submittedCount} / ${totalCount}</div>
+                        <div class="stat-label">Apuestas Recibidas</div>
+                    </div>
+                    <div class="stat-box" style="box-shadow: none;">
+                        <div class="stat-value" style="color: var(--accent-info);">${totalCount}</div>
+                        <div class="stat-label">Participantes Activos</div>
+                    </div>
+                </div>
+            `;
         }
 
-        const daysRemaining = getDaysRemaining(activeMonth.lock_at, state.serverTime);
-        const isOpen = activeMonth.status === 'open';
-        
-        let statusHtml = '';
-        if (isOpen && daysRemaining > 0) {
-            statusHtml = `<span class="badge badge-success">Abierta</span><p class="text-muted" style="margin-top: 5px;">Cierra en ${daysRemaining} días</p>`;
-        } else if (isOpen) {
-            statusHtml = `<span class="badge badge-warning">Cierra hoy</span>`;
-        } else {
-            statusHtml = `<span class="badge badge-danger">Cerrada</span>`;
+        let monthTitle = 'PORRA MENSUAL';
+        if (state.coreLoaded && state.activeMonth) {
+            monthTitle = getActiveMonthTitle(state.activeMonth).toUpperCase();
         }
 
-        const submittedCount = Object.values(state.predictionsSummary).filter(p => p.status === 'submitted').length;
-        const totalCount = state.participants.filter(p => p.active).length;
+        let limitHtml = '<p class="text-muted">Fecha límite: <strong>31 julio 23:59</strong></p>';
+        if (state.coreLoaded && state.activeMonth && state.activeMonth.lock_at) {
+            limitHtml = `<p class="text-muted">Fecha límite: <strong>${formatDate(state.activeMonth.lock_at)}</strong></p>`;
+        }
 
         return `
-            <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
-                <h2 style="font-size: 2.5rem; color: var(--accent-primary); margin-bottom: 0.5rem;">AGOSTO 2026</h2>
+            <div class="card" style="text-align: center; padding: 3rem 1.5rem 1.5rem 1.5rem;">
+                <h2 style="font-size: 2.5rem; color: var(--accent-primary); margin-bottom: 0.5rem;">${monthTitle}</h2>
                 <div style="margin: 1.5rem 0;">
-                    ${statusHtml}
+                    <span class="badge badge-success">Abierta</span>
                 </div>
-                <p class="text-muted">Fecha límite: <strong>31 julio 23:59</strong></p>
-            </div>
-
-            <div class="stat-grid">
-                <div class="stat-box">
-                    <div class="stat-value">${state.matches.length}</div>
-                    <div class="stat-label">Partidos</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" style="color: var(--accent-secondary);">${submittedCount} / ${totalCount}</div>
-                    <div class="stat-label">Apuestas Recibidas</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" style="color: var(--accent-info);">${state.rankingGlobal.length}</div>
-                    <div class="stat-label">Participantes Ranking</div>
-                </div>
+                ${limitHtml}
+                
+                <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);">
+                ${statsHtml}
             </div>
 
             <div class="matches-preview-section">
-                <h3 class="preview-title">Calendario de Partidos - Agosto 2026</h3>
+                <h3 class="preview-title">Calendario de Partidos</h3>
                 
                 <div class="week-card">
                     <h4 class="week-title">Semana 1 (1 al 12 de agosto): Supercopas y Clásicos de Verano</h4>

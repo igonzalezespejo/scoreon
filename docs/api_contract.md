@@ -16,7 +16,7 @@ El parámetro `action` determina la operación. Todas las respuestas incluyen:
 ### 1. Bootstrap (`action=bootstrap`)
 **Método:** `GET` o `POST`
 
-**Descripción:** Obtiene los datos iniciales necesarios para cargar la aplicación. 
+**Descripción:** Obtiene los datos iniciales necesarios para cargar la aplicación (Completo). **Nota (V2.5)**: Este endpoint se mantiene como fallback o para propósito de debug. El frontend utiliza `bootstrapLight` y `rankings` de forma progresiva.
 El objeto `predictionsSummary` devuelve el estado de todos los usuarios activos (`submitted`, `partial` o `pending`), indicando también cuántos partidos han apostado (`submitted_count`) de un total (`total_matches`). 
 Los arreglos `rankingMonthly` y `rankingGlobal` **se leen directamente de las pestañas `Ranking_Monthly` y `Ranking_Global` de Google Sheets**, que actúan como la fuente visual auditable. 
 Como medida de seguridad, si estas pestañas están vacías, falta algún participante activo en ellas, o la variable `ranking_dirty` en la pestaña `Config` está en `true`, el backend invoca automáticamente una función de recálculo que actualiza las hojas antes de enviar la respuesta, garantizando así la coherencia de los datos en el frontend, y luego limpia la variable `ranking_dirty`.
@@ -63,7 +63,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
     "pedro": { "status": "pending", "submitted_at": null, "submitted_count": 0, "total_matches": 4 }
   },
   "rankingMonthly": [
-    // Derivado: incluye todos los usuarios activos automáticamente, incluso si no tienen apuestas (con 0 puntos).
+    // Derivado: incluye todos los usuarios activos automáticamente. Contiene s1_points, s2_points, s3_points, s4_points, etc.
   ],
   "rankingGlobal": [
     // Derivado: incluye todos los usuarios activos automáticamente, incluso si no tienen histórico (con 0 puntos).
@@ -135,6 +135,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
 {
   "action": "registerParticipant",
   "display_name": "Juan Pérez",
+  "email": "juan@email.com",
   "registration_code": "PORRA2026"
 }
 ```
@@ -142,7 +143,8 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
 **Validaciones Realizadas (Backend / Code.gs):**
 1. **Configuración:** `config.registration_enabled` debe ser `true`. Si `config.registration_code` existe, debe coincidir.
 2. **Nombre:** `display_name` debe tener entre 2 y 60 caracteres y no estar duplicado.
-3. **Generación:** Genera un `user_id` limpio y único y un `pin` aleatorio.
+3. **Email:** `email` es obligatorio, debe tener formato válido y no estar duplicado.
+4. **Generación:** Genera un `user_id` limpio y único y un `pin` aleatorio en formato de texto.
 
 **Respuesta Exitosa:**
 ```json
@@ -244,5 +246,131 @@ Estos endpoints están diseñados estrictamente para depuración, QA o uso de ad
 {
   "action": "recalculateRankings",
   "admin_token": "MI_TOKEN_SECRETO"
+}
+```
+
+---
+
+## Endpoints de Administración (Panel Web - V2.8)
+
+Estos endpoints dan soporte a la funcionalidad real de administración desde la web.
+
+**Requisitos Comunes:**
+- Se deben invocar exclusivamente por el método `POST`.
+- Se requiere el parámetro `admin_token` en el payload, el cual debe coincidir con `Config.admin_token`.
+- En caso de fallo de autenticación devuelven:
+```json
+{
+  "ok": false,
+  "code": "UNAUTHORIZED",
+  "message": "Código admin incorrecto"
+}
+```
+
+### 7. Obtener Meses Admin (`action=adminGetMonths`)
+**Método:** `POST`
+
+**Descripción:** Devuelve la lista de todos los meses configurados y el mes activo actual, útil para popular el selector en el panel.
+
+**Payload:**
+```json
+{
+  "action": "adminGetMonths",
+  "admin_token": "MI_TOKEN_SECRETO"
+}
+```
+
+### 8. Obtener Partidos y Resultados del Mes (`action=adminGetMonthMatches`)
+**Método:** `POST`
+
+**Descripción:** Devuelve los partidos del mes seleccionado y el estado de resultados actual registrado en la hoja `Results`.
+
+**Payload:**
+```json
+{
+  "action": "adminGetMonthMatches",
+  "admin_token": "MI_TOKEN_SECRETO",
+  "month_id": "2026-09"
+}
+```
+
+### 9. Guardar Resultados Admin (`action=adminSaveResults`)
+**Método:** `POST`
+
+**Descripción:** Realiza un upsert en la hoja `Results` para los partidos editados. Solo los partidos con status `final` o `cancelled` actualizan de forma definitiva; si se mandan con goles vacíos o status `pending`, no computan. Al guardar, automáticamente dispara `updateRankingsInSheets()` para actualizar `Ranking_Monthly` y `Ranking_Global`.
+
+**Payload:**
+```json
+{
+  "action": "adminSaveResults",
+  "admin_token": "MI_TOKEN_SECRETO",
+  "month_id": "2026-09",
+  "results": [
+    {
+      "match_id": "m001",
+      "home_goals": 2,
+      "away_goals": 1,
+      "status": "final"
+    }
+  ]
+}
+```
+
+### 10. Cambiar Estado del Mes (`action=adminSetMonthStatus`)
+**Método:** `POST`
+
+**Descripción:** Permite bloquear (`locked`) o abrir (`open`) las apuestas para un mes determinado desde el panel.
+
+**Payload:**
+```json
+{
+  "action": "adminSetMonthStatus",
+  "admin_token": "MI_TOKEN_SECRETO",
+  "month_id": "2026-09",
+  "status": "locked"
+}
+```
+
+---
+
+## Endpoints de Carga Progresiva (V2.5)
+
+Los siguientes endpoints están activos en producción para optimizar la carga:
+
+### 7. Bootstrap Light (`action=bootstrapLight`)
+**Método:** `GET` o `POST`
+
+**Descripción:** Obtiene los datos iniciales mínimos para cargar la aplicación rápidamente. A diferencia del bootstrap completo, **no incluye rankings y no dispara el recálculo síncrono** incluso si el flag `ranking_dirty` es `true`.
+
+**Respuesta Exitosa (igual que bootstrap, pero sin rankings):**
+```json
+{
+  "ok": true,
+  "code": "SUCCESS",
+  "message": "Light data loaded",
+  "serverTime": "...",
+  "config": { ... },
+  "activeMonth": { ... },
+  "participants": [ ... ],
+  "matches": [ ... ],
+  "results": [ ... ],
+  "predictionsSummary": { ... }
+}
+```
+
+### 8. Rankings (`action=rankings`)
+**Método:** `GET` o `POST`
+
+**Descripción:** Obtiene exclusivamente los arrays de rankings. Si la variable `ranking_dirty` en la pestaña `Config` está en `true`, ejecuta el recálculo de forma síncrona antes de devolver los resultados.
+
+**Respuesta Exitosa:**
+```json
+{
+  "ok": true,
+  "code": "SUCCESS",
+  "message": "Rankings loaded",
+  "serverTime": "...",
+  "rankingMonthly": [ ... ],
+  "rankingGlobal": [ ... ]
 }
 ```
