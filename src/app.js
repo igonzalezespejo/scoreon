@@ -91,7 +91,7 @@ function setupNavigation() {
     });
 }
 
-function navigateTo(viewName) {
+export function navigateTo(viewName) {
     const appContainer = document.getElementById('app-container');
     const view = VIEWS[viewName];
     

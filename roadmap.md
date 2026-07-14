@@ -68,6 +68,16 @@
 - **Asignación de Semanas:** Soporte para la columna `week_no` en la hoja `Matches`. Si está ausente, el backend calcula automáticamente a qué semana pertenece el partido basado en `display_order` (1-6 a S1, 7-12 a S2, etc.).
 - **Backend Refactor:** Actualización de `Code.gs` para retornar resultados activos en `bootstrapLight` y computar `s1_points`, `s2_points`, `s3_points`, `s4_points` en el recálculo dinámico.
 
+## V2.11 — Multi-mes / temporada completa
+- Home con tarjetas por mes.
+- Apuestas por mes seleccionado.
+- Ranking mensual por mes.
+- Ranking global temporada.
+- Estado por mes.
+- active_month_id como default.
+- match_id global único tipo 2026-08-m001.
+- month_id explícito en Predictions_Current y Results.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

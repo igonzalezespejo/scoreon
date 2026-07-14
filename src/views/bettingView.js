@@ -24,16 +24,33 @@ export const bettingView = {
             `;
         }
 
-        if (!state.activeMonth) {
-            return `<div class="card"><p>No hay mes activo configurado.</p></div>`;
+        if (!state.months || state.months.length === 0) {
+            return `<div class="card"><p>No hay meses configurados.</p></div>`;
+        }
+
+        const selectedMonthObj = state.getSelectedMonthObj();
+        if (!selectedMonthObj) {
+            return `<div class="card"><p>Mes no encontrado.</p></div>`;
         }
 
         const participants = state.participants.filter(p => p.active);
         const optionsHtml = participants.map(p => `<option value="${p.user_id}">${p.display_name}</option>`).join('');
+        
+        const monthOptionsHtml = state.months.map(m => {
+            const title = m.title || m.month_id;
+            return `<option value="${m.month_id}" ${m.month_id === state.selectedMonthId ? 'selected' : ''}>${title}</option>`;
+        }).join('');
 
         return `
             <div class="card">
-                <h2 class="card-title">Participar en ${getActiveMonthTitle(state.activeMonth)}</h2>
+                <div style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="betting-month-select" style="font-size: 0.9rem; color: var(--text-secondary);">Selecciona el mes:</label>
+                    <select id="betting-month-select" class="form-select" style="max-width: 300px;">
+                        ${monthOptionsHtml}
+                    </select>
+                </div>
+                
+                <h2 class="card-title">Participar en ${selectedMonthObj.title || selectedMonthObj.month_id}</h2>
                 
                 <div class="form-group" style="max-width: 400px;">
                     <label class="form-label" for="participant-select">Selecciona tu nombre:</label>
@@ -80,6 +97,26 @@ export const bettingView = {
     },
 
     mount(container) {
+        const monthSelect = container.querySelector('#betting-month-select');
+        if (monthSelect) {
+            monthSelect.addEventListener('change', async (e) => {
+                const newMonthId = e.target.value;
+                monthSelect.disabled = true;
+                
+                try {
+                    import('../api.js').then(async (api) => {
+                        await api.loadMonthData(newMonthId);
+                        state.setSelectedMonth(newMonthId);
+                        
+                        import('../app.js').then(app => app.navigateTo('betting'));
+                    });
+                } catch (err) {
+                    showToast("Error al cargar datos del mes", "error");
+                    monthSelect.disabled = false;
+                }
+            });
+        }
+
         const select = container.querySelector('#participant-select');
         select.addEventListener('change', (e) => {
             this.handleParticipantChange(e.target.value, container);
@@ -215,7 +252,7 @@ export const bettingView = {
             if (pinInput) pin = pinInput.value;
 
             try {
-                const response = await getUserPredictions(userId, pin, state.activeMonth.month_id);
+                const response = await getUserPredictions(userId, pin, state.selectedMonthId);
                 if (response.ok) {
                     this.renderMatchesForm(userId, container, response.predictions, pin);
                 } else {
@@ -342,7 +379,7 @@ export const bettingView = {
             const hiddenPin = document.getElementById('hidden-pin');
             if (hiddenPin) pin = hiddenPin.value;
 
-            const monthId = state.activeMonth.month_id;
+            const monthId = state.selectedMonthId;
 
             const response = await savePrediction(userId, pin, monthId, predictions);
             

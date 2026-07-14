@@ -16,8 +16,7 @@ El parámetro `action` determina la operación. Todas las respuestas incluyen:
 ### 1. Bootstrap (`action=bootstrap`)
 **Método:** `GET` o `POST`
 
-**Descripción:** Obtiene los datos iniciales necesarios para cargar la aplicación (Completo). **Nota (V2.5)**: Este endpoint se mantiene como fallback o para propósito de debug. El frontend utiliza `bootstrapLight` y `rankings` de forma progresiva.
-El objeto `predictionsSummary` devuelve el estado de todos los usuarios activos (`submitted`, `partial` o `pending`), indicando también cuántos partidos han apostado (`submitted_count`) de un total (`total_matches`). 
+**Descripción:** Obtiene los datos iniciales necesarios para cargar la aplicación (Completo). **Nota (V2.5)**: Este endpoint se mantiene como fallback o para propósito de debug. El frontend utiliza `bootstrapLight` y `rankings` de forma progresiva. En multi-mes, se recomienda usar `bootstrapLight` + `monthData`.
 Los arreglos `rankingMonthly` y `rankingGlobal` **se leen directamente de las pestañas `Ranking_Monthly` y `Ranking_Global` de Google Sheets**, que actúan como la fuente visual auditable. 
 Como medida de seguridad, si estas pestañas están vacías, falta algún participante activo en ellas, o la variable `ranking_dirty` en la pestaña `Config` está en `true`, el backend invoca automáticamente una función de recálculo que actualiza las hojas antes de enviar la respuesta, garantizando así la coherencia de los datos en el frontend, y luego limpia la variable `ranking_dirty`.
 **Respuesta Exitosa:**
@@ -100,6 +99,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
 5. **Partidos:**
    - Cada `match_id` proporcionado en el payload debe existir y corresponder al `month_id`.
    - El partido no puede haber comenzado (`serverTime < match.lock_at` y `serverTime < kickoff_at`).
+   - Se debe realizar el upsert usando la clave compuesta `month_id + user_id + match_id` en `Predictions_Current`.
 6. **Estructura de Goles:** `home_goals` y `away_goals` deben ser números enteros y >= 0.
 
 **Respuesta Exitosa:**
@@ -183,7 +183,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
 **Validaciones Realizadas (Backend / Code.gs):**
 1. **Usuario:** `user_id` debe existir y tener `active=true`.
 2. **PIN:** Si `config.pin_enabled` es true, el PIN enviado debe coincidir.
-3. **Mes:** Devuelve únicamente apuestas correspondientes a `month_id` y `user_id`.
+3. **Mes:** Devuelve únicamente apuestas correspondientes a `month_id` y `user_id`. (El backend filtra `Predictions_Current` usando ambos campos).
 
 **Respuesta Exitosa:**
 ```json
@@ -297,7 +297,7 @@ Estos endpoints dan soporte a la funcionalidad real de administración desde la 
 ### 9. Guardar Resultados Admin (`action=adminSaveResults`)
 **Método:** `POST`
 
-**Descripción:** Realiza un upsert en la hoja `Results` para los partidos editados. Solo los partidos con status `final` o `cancelled` actualizan de forma definitiva; si se mandan con goles vacíos o status `pending`, no computan. Al guardar, automáticamente dispara `updateRankingsInSheets()` para actualizar `Ranking_Monthly` y `Ranking_Global`.
+**Descripción:** Realiza un upsert en la hoja `Results` para los partidos editados usando la clave compuesta `month_id + match_id`. Solo los partidos con status `final` o `cancelled` actualizan de forma definitiva; si se mandan con goles vacíos o status `pending`, no computan. Al guardar, automáticamente dispara `updateRankingsInSheets()` para actualizar `Ranking_Monthly` y `Ranking_Global`.
 
 **Payload:**
 ```json
@@ -340,9 +340,9 @@ Los siguientes endpoints están activos en producción para optimizar la carga:
 ### 7. Bootstrap Light (`action=bootstrapLight`)
 **Método:** `GET` o `POST`
 
-**Descripción:** Obtiene los datos iniciales mínimos para cargar la aplicación rápidamente. A diferencia del bootstrap completo, **no incluye rankings y no dispara el recálculo síncrono** incluso si el flag `ranking_dirty` es `true`.
+**Descripción:** Obtiene los datos iniciales mínimos para cargar la aplicación rápidamente. A diferencia del bootstrap completo, **no incluye rankings y no dispara el recálculo síncrono** incluso si el flag `ranking_dirty` es `true`. Devuelve la lista completa de meses configurados (array `months`) y por compatibilidad legacy los datos del `active_month_id`.
 
-**Respuesta Exitosa (igual que bootstrap, pero sin rankings):**
+**Respuesta Exitosa:**
 ```json
 {
   "ok": true,
@@ -350,6 +350,7 @@ Los siguientes endpoints están activos en producción para optimizar la carga:
   "message": "Light data loaded",
   "serverTime": "...",
   "config": { ... },
+  "months": [ ... ],
   "activeMonth": { ... },
   "participants": [ ... ],
   "matches": [ ... ],
@@ -358,7 +359,31 @@ Los siguientes endpoints están activos en producción para optimizar la carga:
 }
 ```
 
-### 8. Rankings (`action=rankings`)
+### 8. Datos de Mes (`action=monthData`)
+**Método:** `GET` o `POST`
+
+**Descripción:** Obtiene los partidos, resultados y resumen de predicciones para un `month_id` específico. Utilizado para cargar los datos cuando el usuario selecciona un mes diferente al default en la UI.
+
+**Payload:**
+```json
+{
+  "action": "monthData",
+  "month_id": "2026-09"
+}
+```
+
+**Respuesta Exitosa:**
+```json
+{
+  "ok": true,
+  "month": { ... },
+  "matches": [ ... ],
+  "results": [ ... ],
+  "predictionsSummary": { ... }
+}
+```
+
+### 9. Rankings (`action=rankings`)
 **Método:** `GET` o `POST`
 
 **Descripción:** Obtiene exclusivamente los arrays de rankings. Si la variable `ranking_dirty` en la pestaña `Config` está en `true`, ejecuta el recálculo de forma síncrona antes de devolver los resultados.

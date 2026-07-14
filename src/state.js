@@ -12,6 +12,10 @@ class State {
         this.rankingMonthly = [];
         this.rankingGlobal = [];
         this.results = [];
+        this.months = [];
+        this.selectedMonthId = null;
+        this.monthDataById = {};
+        
         this.serverTime = null;
         
         // Progressive Loading
@@ -46,16 +50,55 @@ class State {
 
     initializeLight(data) {
         this.config = data.config;
+        this.months = data.months || [];
         this.activeMonth = data.activeMonth;
+        
+        if (this.activeMonth && !this.selectedMonthId) {
+            this.selectedMonthId = this.activeMonth.month_id;
+        }
+
         this.participants = data.participants || [];
         this.matches = data.matches || [];
         this.predictionsSummary = data.predictionsSummary || {};
         this.results = data.results || [];
         this.serverTime = data.serverTime;
         
+        if (this.selectedMonthId) {
+            this.monthDataById[this.selectedMonthId] = {
+                month: this.activeMonth,
+                matches: this.matches,
+                results: this.results,
+                predictionsSummary: this.predictionsSummary
+            };
+        }
+        
         this.coreLoaded = true;
         this.coreLoading = false;
         this.coreError = null;
+    }
+
+    setMonthData(monthId, data) {
+        this.monthDataById[monthId] = {
+            month: data.month,
+            matches: data.matches || [],
+            results: data.results || [],
+            predictionsSummary: data.predictionsSummary || {}
+        };
+    }
+
+    setSelectedMonth(monthId) {
+        if (!monthId) return;
+        this.selectedMonthId = monthId;
+        const data = this.monthDataById[monthId];
+        if (data) {
+            this.matches = data.matches;
+            this.results = data.results;
+            this.predictionsSummary = data.predictionsSummary;
+        }
+    }
+
+    getSelectedMonthObj() {
+        return this.months.find(m => m.month_id === this.selectedMonthId) || this.activeMonth;
     }
 
     updateRankings(data) {
@@ -100,11 +143,12 @@ class State {
     }
     
     canBet() {
-        if (!this.activeMonth) return false;
-        if (this.activeMonth.status !== 'open') return false;
+        const month = this.getSelectedMonthObj();
+        if (!month) return false;
+        if (month.status !== 'open') return false;
         
         // Verificar lock_at contra serverTime o fecha actual local
-        const lockTime = new Date(this.activeMonth.lock_at).getTime();
+        const lockTime = new Date(month.lock_at).getTime();
         const now = this.serverTime ? new Date(this.serverTime).getTime() : Date.now();
         
         return now < lockTime;

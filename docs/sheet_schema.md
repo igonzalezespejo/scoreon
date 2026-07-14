@@ -90,7 +90,7 @@ Partidos de cada mes.
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|
-| `match_id` | Sí | Sí | No | ID único del partido (ej. `m001`) |
+| `match_id` | Sí | Sí | No | ID único global del partido por temporada (ej. `2026-08-m001`) |
 | `month_id` | Sí | Sí | No | ID del mes al que pertenece |
 | `competition` | Sí | Sí | No | Competición (ej. `LaLiga`) |
 | `home_team` | Sí | Sí | No | Equipo local |
@@ -114,18 +114,19 @@ Apuestas actuales (sobreescritas en cada envío válido).
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|
+| `month_id` | Sí | Sí | Sí | ID del mes |
 | `user_id` | Sí | Sí | Sí | ID del usuario |
-| `match_id` | Sí | Sí | Sí | ID del partido |
+| `match_id` | Sí | Sí | Sí | ID del partido (global) |
 | `home_goals` | Sí | Sí | Sí | Goles locales apostados |
 | `away_goals` | Sí | Sí | Sí | Goles visitantes apostados |
 | `submitted_at` | Sí | Sí | Sí | Fecha de la última apuesta |
 
-*Nota:* `Code.gs` depende exactamente de estos nombres de columna: `user_id`, `match_id`, `home_goals`, `away_goals`, `submitted_at`. Todo en la primera fila.
+*Nota:* `Code.gs` depende exactamente de estos nombres de columna: `month_id`, `user_id`, `match_id`, `home_goals`, `away_goals`, `submitted_at`. Todo en la primera fila.
 
 **Ejemplo de fila:**
-| user_id | match_id | home_goals | away_goals | submitted_at |
-|---|---|---|---|---|
-| juan | m001 | 2 | 1 | 2026-09-02T10:00:00Z |
+| month_id | user_id | match_id | home_goals | away_goals | submitted_at |
+|---|---|---|---|---|---|
+| 2026-09 | juan | 2026-09-m001 | 2 | 1 | 2026-09-02T10:00:00Z |
 
 ---
 
@@ -153,6 +154,7 @@ Resultados reales de los partidos para la puntuación.
 
 | Columna | Obligatorio | Admin Manual | Apps Script | Descripción |
 |---|---|---|---|---|
+| `month_id` | Sí | Sí | No | ID del mes |
 | `match_id` | Sí | Sí | No | ID del partido |
 | `home_goals` | Sí | Sí | No | Goles locales reales |
 | `away_goals` | Sí | Sí | No | Goles visitantes reales |
@@ -162,9 +164,9 @@ Resultados reales de los partidos para la puntuación.
 | `notes` | No | Sí | No | Notas adicionales |
 
 **Ejemplo de fila:**
-| match_id | home_goals | away_goals | status | updated_at | updated_by | notes |
-|---|---|---|---|---|---|---|
-| m001 | 2 | 2 | final | 2026-09-15T23:00:00Z | admin | - |
+| month_id | match_id | home_goals | away_goals | status | updated_at | updated_by | notes |
+|---|---|---|---|---|---|---|---|
+| 2026-09 | 2026-09-m001 | 2 | 2 | final | 2026-09-15T23:00:00Z | admin | - |
 
 ---
 

@@ -70,7 +70,7 @@ Si prefieres o necesitas operar directamente en Google Sheets, a continuación s
 ### 3. Gestión de Partidos
 - **Pestaña:** `Matches`
 - **Acciones:**
-  - Añadir los partidos antes de abrir el mes.
+  - Añadir los partidos antes de abrir el mes. **Regla de oro:** El `match_id` debe ser un identificador global único por temporada, no se puede repetir entre meses. Convención recomendada: `2026-08-m001`, `2026-09-m001`, etc.
   - Asignar la semana del partido en la columna opcional `week_no` (valores: 1, 2, 3 o 4) para el ranking por semanas. Si se deja vacío, el sistema asignará la semana automáticamente según el `display_order` (1-6 a S1, 7-12 a S2, etc.).
   - Modificar un horario si hay cambios antes del cierre (`kickoff_at`).
 
@@ -138,12 +138,19 @@ Si prefieres o necesitas operar directamente en Google Sheets, a continuación s
 - **Revisar trazabilidad:** Consultar `Predictions_Log` para ver los intentos (exitosos o fallidos) ordenados por fecha y hora.
 - **Pruebas y Estados:** Cambiar `status` a `locked` u `open` si es necesario realizar comprobaciones. **Siempre restaurar** el status correcto (`open`) tras realizar pruebas.
 
-### 9. Operación Mensual (Cambio de ciclo)
-Para lanzar una nueva porra cada mes:
+### 9. Operación Mensual (Cambio de ciclo y Temporada)
+La aplicación soporta navegación multi-mes, es decir, el usuario puede seleccionar otros meses para ver su ranking, resultados o hacer apuestas (si están abiertos).
+Para lanzar un nuevo mes sin borrar el historial:
 1. **Crear nuevo mes:** En la pestaña `Months`, añadir fila (ej. `2026-10`) con `status = open` y definir su fecha de cierre (`lock_at`).
-2. **Cargar partidos:** En la pestaña `Matches`, añadir los partidos asignándoles el nuevo `month_id`.
-3. **Activar mes:** En la pestaña `Config`, actualizar `active_month_id` al nuevo mes.
+2. **Cargar partidos:** En la pestaña `Matches`, añadir los partidos asignándoles el nuevo `month_id`. **Recuerda usar un `match_id` único global** (ej. `2026-10-m001`).
+3. **Activar mes por defecto:** En la pestaña `Config`, actualizar `active_month_id` al nuevo mes. Esto solo define el mes que carga por defecto en la web, pero los demás meses configurados (si no son `draft`) seguirán accesibles para los usuarios desde un selector en la interfaz.
 4. **Cierre de ciclo (mes anterior):** Cambiar el status del mes anterior a `locked`, luego `scored` (tras calcular puntos), y finalmente `archived`.
+
+### 10. Migración Manual de Datos (De Legacy a Multi-mes)
+Si tu hoja de cálculo tiene datos antiguos donde `match_id` es solo `m001`, `m002`, y las tablas de apuestas/resultados no tienen `month_id`, debes migrarlas manualmente así para evitar errores en futuros meses:
+1. En `Matches`, cambia los `m001` al formato global, ej. `2026-08-m001`. (Asegúrate de que no se auto-conviertan a fecha, usa `'2026-08-m001`).
+2. En `Predictions_Current`, añade la columna `month_id` en la primera fila, escribe el ID del mes correspondiente (ej. `2026-08`) para todas las apuestas antiguas y cambia los `match_id` para coincidir con el formato global (ej. `2026-08-m001`).
+3. En `Results`, haz exactamente lo mismo: añade la columna `month_id`, rellenala y actualiza los `match_id` al nuevo formato global.
 
 ---
 

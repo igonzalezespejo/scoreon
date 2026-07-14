@@ -58,12 +58,29 @@ export const statusView = {
             `;
         }).join('');
 
+        const selectedMonthObj = state.getSelectedMonthObj();
+        if (!selectedMonthObj) {
+            return `<div class="card"><p>Mes no encontrado.</p></div>`;
+        }
+
+        const monthOptionsHtml = (state.months || []).map(m => {
+            const title = m.title || m.month_id;
+            return `<option value="${m.month_id}" ${m.month_id === state.selectedMonthId ? 'selected' : ''}>${title}</option>`;
+        }).join('');
+
         return `
             <div class="card">
-                <h2 class="card-title">Estado de Apuestas</h2>
-                <p class="text-muted" style="margin-bottom: 1.5rem;">
-                    Resumen de participación para <strong>${getActiveMonthTitle(state.activeMonth)}</strong>
-                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 class="card-title" style="margin-bottom: 0;">Estado de Apuestas</h2>
+                        <p class="text-muted" style="margin-top: 0.5rem; margin-bottom: 0;">
+                            Resumen de participación para <strong>${selectedMonthObj.title || selectedMonthObj.month_id}</strong>
+                        </p>
+                    </div>
+                    <select id="status-month-select" class="form-select" style="width: auto;">
+                        ${monthOptionsHtml}
+                    </select>
+                </div>
 
                 <div class="stat-grid" style="margin-bottom: 2rem;">
                     <div class="stat-box">
@@ -96,5 +113,26 @@ export const statusView = {
                 </div>
             </div>
         `;
+    },
+
+    mount(container) {
+        const monthSelect = container.querySelector('#status-month-select');
+        if (monthSelect) {
+            monthSelect.addEventListener('change', async (e) => {
+                const newMonthId = e.target.value;
+                monthSelect.disabled = true;
+                
+                try {
+                    import('../api.js').then(async (api) => {
+                        await api.loadMonthData(newMonthId);
+                        state.setSelectedMonth(newMonthId);
+                        import('../app.js').then(app => app.navigateTo('status'));
+                    });
+                } catch (err) {
+                    import('../utils/dom.js').then(dom => dom.showToast("Error al cargar datos del mes", "error"));
+                    monthSelect.disabled = false;
+                }
+            });
+        }
     }
 };

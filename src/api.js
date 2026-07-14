@@ -104,6 +104,40 @@ export async function loadBootstrapData() {
     }
 }
 
+export async function loadMonthData(monthId) {
+    try {
+        let data;
+        if (USE_MOCK) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            // Simulate month data using the bootstrap data
+            const response = await fetch('./data/mock-bootstrap.json');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const fullData = await response.json();
+            data = {
+                ok: true,
+                month: fullData.activeMonth,
+                matches: fullData.matches,
+                results: fullData.results,
+                predictionsSummary: fullData.predictionsSummary
+            };
+        } else {
+            const response = await fetch(`${API_URL}?action=monthData&month_id=${encodeURIComponent(monthId)}&_=${Date.now()}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            data = await response.json();
+        }
+        
+        if (data.ok) {
+            state.setMonthData(monthId, data);
+            return data;
+        } else {
+            throw new Error(data.message || "Error cargando datos del mes");
+        }
+    } catch (error) {
+        console.error("Error loading month data:", error);
+        throw error;
+    }
+}
+
 export async function savePrediction(userId, pin, monthId, predictions) {
     if (USE_MOCK) {
         // Simulamos un delay de red

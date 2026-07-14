@@ -30,7 +30,14 @@ export const rankingView = {
             `;
         }
 
-        let monthlyRows = state.rankingMonthly.map((r, i) => `
+        const selectedMonthObj = state.getSelectedMonthObj();
+        
+        let filteredMonthly = state.rankingMonthly;
+        if (state.selectedMonthId) {
+            filteredMonthly = state.rankingMonthly.filter(r => r.month_id === state.selectedMonthId);
+        }
+
+        let monthlyRows = filteredMonthly.map((r, i) => `
             <tr>
                 <td><div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${i === 0 ? 'var(--accent-secondary)' : i===1 ? '#94a3b8' : i===2 ? '#cd7f32' : '#f1f5f9'}; color: ${i < 3 ? '#000' : 'inherit'}; font-weight: bold;">${r.position}</div></td>
                 <td style="font-weight: 600;">${r.display_name}</td>
@@ -51,10 +58,20 @@ export const rankingView = {
             </tr>
         `).join('');
 
+        const monthOptionsHtml = (state.months || []).map(m => {
+            const title = m.title || m.month_id;
+            return `<option value="${m.month_id}" ${m.month_id === state.selectedMonthId ? 'selected' : ''}>${title}</option>`;
+        }).join('');
+
         return `
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
                 <div class="card">
-                    <h2 class="card-title">Ranking Mensual (${getActiveMonthTitle(state.activeMonth)})</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                        <h2 class="card-title" style="margin-bottom: 0;">Ranking Mensual</h2>
+                        <select id="ranking-month-select" class="form-select" style="width: auto;">
+                            ${monthOptionsHtml}
+                        </select>
+                    </div>
                     <div class="table-container">
                         <table>
                             <thead>
@@ -95,5 +112,26 @@ export const rankingView = {
                 </div>
             </div>
         `;
+    },
+
+    mount(container) {
+        const monthSelect = container.querySelector('#ranking-month-select');
+        if (monthSelect) {
+            monthSelect.addEventListener('change', async (e) => {
+                const newMonthId = e.target.value;
+                monthSelect.disabled = true;
+                
+                try {
+                    import('../api.js').then(async (api) => {
+                        await api.loadMonthData(newMonthId);
+                        state.setSelectedMonth(newMonthId);
+                        import('../app.js').then(app => app.navigateTo('ranking'));
+                    });
+                } catch (err) {
+                    import('../utils/dom.js').then(dom => dom.showToast("Error al cargar datos del mes", "error"));
+                    monthSelect.disabled = false;
+                }
+            });
+        }
     }
 };
