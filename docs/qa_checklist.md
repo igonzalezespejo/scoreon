@@ -244,5 +244,17 @@ La arquitectura híbrida (GitHub Pages + Apps Script + Sheets) ha demostrado ser
 | Botón INFO funciona antes de `coreLoaded` | Pendiente | Muestra la descripción estática (si existe) + "Cargando datos del mes..." sin intentar `loadMonthData` todavía. |
 | Botón INFO funciona después de `coreLoaded` | Pendiente | Comportamiento igual al actual: usa caché de `monthDataById`/`state.matches` o hace fetch lazy con `loadMonthData`. |
 | Botón APOSTAR funciona antes y después de `coreLoaded` | Pendiente | Asigna `selectedMonthId` y navega a Apuestas; Apuestas muestra su propio loading si los datos aún no han llegado. |
-| Apuestas/Ranking/Estado siguen funcionando sin cambios | Pendiente | No se ha tocado `bettingView.js`, `rankingView.js`, `statusView.js`, `adminView.js`, `app.js`, `api.js` ni el backend. |
 | `npm test` sigue en verde | Pendiente | Sin relación funcional con este cambio, pero confirma que no se rompió nada compartido. |
+
+## 20. QA Checklist V2.12.2 (Cambio de mes no bloqueante en Apuestas/Ranking/Estado)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Cambiar de mes en Ranking es instantáneo | ✅ OK (verificado en navegador) | No dispara ninguna llamada `action=monthData`; solo filtra `state.rankingMonthly` por `month_id` en cliente. |
+| Cambiar de mes en Apuestas no bloquea el selector de participante | ✅ OK (verificado en navegador) | El `<select>` de mes nunca se deshabilita; título, selector de participante y "Crear participante" se repintan al instante. |
+| Cambiar de mes en Estado no bloquea el `<select>` de mes | ✅ OK (verificado en navegador) | La tabla muestra "Cargando resumen de participación de este mes..." acotado mientras el selector sigue interactivo. |
+| Estado se hidrata con datos reales tras cargar en segundo plano | ✅ OK (verificado en navegador) | Contadores Completas/Parciales/Faltan y tabla de participantes pasan de "Cargando..." a valores reales. |
+| Apuestas no muestra el badge de estado de un mes distinto tras cambiar de mes | ✅ OK (revisado en código) | Si `state.monthDataById[selectedMonthId]` no está cacheado, se muestra "Comprobando estado..." en vez de datos del mes anterior. |
+| Apuestas resuelve los datos del mes al introducir el PIN aunque la precarga en segundo plano no haya terminado | ✅ OK (revisado en código) | El submit del formulario de PIN comprueba `state.monthDataById[monthId]` y llama a `loadMonthData` de forma síncrona si hace falta, antes de pedir las predicciones. |
+| Cambiar de mes en una vista y navegar directamente a otra por el menú superior no dejaba la vista de destino "colgada" | ✅ OK (bug encontrado y corregido en esta misma sesión) | Reproducido cambiando el mes en Ranking y pulsando "Estado": antes se quedaba en "Cargando..." indefinidamente porque el fetch solo se disparaba en el evento `change` del propio selector; ahora `mount()` también dispara la carga si el mes seleccionado no está en caché. |
+| PIN incorrecto en Apuestas tras cambiar de mes no rompe la vista | ✅ OK (verificado en navegador) | Muestra el error y reactiva el botón "Cargar apuesta" con normalidad. |
+| No se ha tocado `apps-script/Code.gs` ni `src/scoring.js` | ✅ OK | Confirmado por `git status`/`git diff`. |

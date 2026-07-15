@@ -92,6 +92,15 @@
 - El botón INFO no dispara `loadMonthData` hasta que `coreLoaded=true`; antes de eso muestra la descripción estática (si existe) + "Cargando datos del mes...".
 - No se ha tocado `apps-script/Code.gs`, `src/scoring.js`, `src/api.js`, `src/app.js`, `src/config.js` ni las reglas de puntuación.
 
+## V2.12.2 — Cambio de mes no bloqueante en Apuestas/Ranking/Estado
+- Corrige la misma clase de regresión que V2.12.1 pero en el selector de mes de `bettingView.js`, `rankingView.js` y `statusView.js`: cambiar de mes deshabilitaba el `<select>` y congelaba toda la vista hasta que resolvía `action=monthData` contra Apps Script.
+- **`rankingView.js`**: se elimina por completo la llamada a `loadMonthData` al cambiar de mes — `rankingMonthly` ya contiene las filas de **todos** los meses en una sola carga (`action=rankings` no filtra por mes), así que cambiar de mes en Ranking es ahora un filtro 100% cliente, instantáneo, sin red.
+- **`statusView.js`**: cambiar de mes re-renderiza la vista al instante (selector siempre interactivo); si el resumen de participación de ese mes no está en caché (`state.monthDataById`), se muestra un estado de carga acotado a la tabla ("Cargando resumen de participación de este mes...") con reintento en caso de error, mientras el resto de la vista permanece usable.
+- **`bettingView.js`**: cambiar de mes ya no espera a `loadMonthData`. El selector de participante y "Crear participante" quedan disponibles de inmediato; los datos del mes se precargan en segundo plano (silencioso) y, si aún no han llegado, se cargan de forma síncrona justo en el momento en que el usuario introduce su PIN — antes de eso solo se muestra un badge neutro "Comprobando estado..." en vez de datos de un mes distinto.
+- Se añade `state.getSelectedMonthData()` y los campos `state.monthDataLoadingId`/`state.monthDataError` en `src/state.js` para que las vistas puedan mostrar un estado de carga/error acotado por mes sin bloquear el resto de la página.
+- Corrige además un bug detectado en pruebas: si el usuario cambiaba de mes en una vista (p. ej. Ranking) y navegaba directamente a otra (p. ej. Estado) por el menú superior, la vista de destino se quedaba en "Cargando..." indefinidamente porque el fetch solo se disparaba en el evento `change` del propio selector. Ahora `mount()` también dispara la carga/precarga si el mes ya seleccionado no está en caché.
+- No se ha tocado `apps-script/Code.gs`, `src/scoring.js`, `src/config.js` ni las reglas de puntuación.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

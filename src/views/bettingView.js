@@ -99,23 +99,25 @@ export const bettingView = {
     mount(container) {
         const monthSelect = container.querySelector('#betting-month-select');
         if (monthSelect) {
-            monthSelect.addEventListener('change', async (e) => {
+            monthSelect.addEventListener('change', (e) => {
                 const newMonthId = e.target.value;
-                monthSelect.disabled = true;
-                
-                try {
-                    import('../api.js').then(async (api) => {
-                        await api.loadMonthData(newMonthId);
-                        state.setSelectedMonth(newMonthId);
-                        
-                        import('../app.js').then(app => app.navigateTo('betting'));
-                    });
-                } catch (err) {
-                    showToast("Error al cargar datos del mes", "error");
-                    monthSelect.disabled = false;
-                }
+                state.selectedMonthId = newMonthId;
+
+                // Re-render immediately: month title, participant selector and
+                // the "Crear participante" flow don't depend on per-month match
+                // data. The actual match data is only fetched for real once the
+                // user picks a participant and submits their PIN (see the
+                // auth-form handler below); this is just a silent warm-up so
+                // that fetch is instant by the time they get there.
+                import('../app.js').then(app => app.navigateTo('betting'));
+                this.prefetchMonthData(newMonthId);
             });
         }
+
+        // Cover navigating here directly (nav bar) with a selectedMonthId that
+        // was already changed from another view and isn't cached yet — warm
+        // it up silently so the badge/PIN flow feels instant when reached.
+        this.prefetchMonthData(state.selectedMonthId);
 
         const select = container.querySelector('#participant-select');
         select.addEventListener('change', (e) => {
@@ -196,6 +198,30 @@ export const bettingView = {
         }
     },
 
+    prefetchMonthData(monthId) {
+        if (!monthId || state.monthDataById[monthId]) return;
+
+        import('../api.js').then(api => {
+            api.loadMonthData(monthId).then(() => {
+                if (state.selectedMonthId !== monthId) return;
+                state.setSelectedMonth(monthId);
+
+                const view = document.getElementById('view-betting');
+                if (!view) return;
+                const participantSelect = view.querySelector('#participant-select');
+                const bettingForm = view.querySelector('#betting-form');
+                // Only refresh the status badge silently if the user hasn't
+                // already progressed past it (typing PIN/scores).
+                if (participantSelect && participantSelect.value && !bettingForm) {
+                    this.handleParticipantChange(participantSelect.value, view);
+                }
+            }).catch(() => {
+                // Silent: the auth-form submit handler will retry
+                // synchronously when the user actually needs the data.
+            });
+        });
+    },
+
     handleParticipantChange(userId, container) {
         const matchesContainer = container.querySelector('#matches-container');
         const statusContainer = container.querySelector('#participant-status');
@@ -205,12 +231,18 @@ export const bettingView = {
 
         if (!userId) return;
 
-        const summary = state.predictionsSummary[userId] || { status: 'pending' };
-        const hasSubmitted = summary.status !== 'pending';
+        const monthData = state.monthDataById[state.selectedMonthId];
+        const summary = monthData ? (monthData.predictionsSummary[userId] || { status: 'pending' }) : null;
         const canBet = state.canBet();
-        
+
         let statusHtml = '';
-        if (summary.status === 'submitted') {
+        if (!summary) {
+            // Month data for the currently selected month hasn't arrived yet
+            // (background prefetch still in flight). Don't show a badge from a
+            // different month — it'll be replaced silently once it lands, or
+            // resolved for real when the user submits their PIN below.
+            statusHtml = `<span class="badge badge-secondary">Comprobando estado...</span>`;
+        } else if (summary.status === 'submitted') {
             statusHtml = `<span class="badge badge-success">Apuesta completa ${summary.submitted_count || 0}/${summary.total_matches || 0}</span>`;
         } else if (summary.status === 'partial') {
             statusHtml = `<span class="badge badge-warning">Apuesta parcial ${summary.submitted_count || 0}/${summary.total_matches || 0}</span>`;
@@ -251,8 +283,19 @@ export const bettingView = {
             const pinInput = document.getElementById('auth-pin-input');
             if (pinInput) pin = pinInput.value;
 
+            const monthId = state.selectedMonthId;
+
             try {
-                const response = await getUserPredictions(userId, pin, state.selectedMonthId);
+                // This is the point where match data for the selected month is
+                // actually required. If the background prefetch on month-change
+                // already finished, this resolves instantly from cache.
+                if (!state.monthDataById[monthId]) {
+                    const api = await import('../api.js');
+                    await api.loadMonthData(monthId);
+                }
+                state.setSelectedMonth(monthId);
+
+                const response = await getUserPredictions(userId, pin, monthId);
                 if (response.ok) {
                     this.renderMatchesForm(userId, container, response.predictions, pin);
                 } else {

@@ -117,20 +117,12 @@ export const rankingView = {
     mount(container) {
         const monthSelect = container.querySelector('#ranking-month-select');
         if (monthSelect) {
-            monthSelect.addEventListener('change', async (e) => {
-                const newMonthId = e.target.value;
-                monthSelect.disabled = true;
-                
-                try {
-                    import('../api.js').then(async (api) => {
-                        await api.loadMonthData(newMonthId);
-                        state.setSelectedMonth(newMonthId);
-                        import('../app.js').then(app => app.navigateTo('ranking'));
-                    });
-                } catch (err) {
-                    import('../utils/dom.js').then(dom => dom.showToast("Error al cargar datos del mes", "error"));
-                    monthSelect.disabled = false;
-                }
+            monthSelect.addEventListener('change', (e) => {
+                // rankingMonthly already contains every month's rows (action=rankings
+                // is not filtered by month), so switching months here is a pure
+                // client-side filter — no network call needed.
+                state.selectedMonthId = e.target.value;
+                import('../app.js').then(app => app.navigateTo('ranking'));
             });
         }
     }

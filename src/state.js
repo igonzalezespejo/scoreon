@@ -26,6 +26,12 @@ class State {
         this.rankingsLoaded = false;
         this.rankingsLoading = false;
         this.rankingsError = null;
+
+        // Tracks a background monthData fetch triggered by switching months
+        // in Apuestas/Estado, so views can show a scoped loading/error state
+        // instead of blocking the whole page.
+        this.monthDataLoadingId = null;
+        this.monthDataError = null;
     }
 
     initialize(data) {
@@ -99,6 +105,10 @@ class State {
 
     getSelectedMonthObj() {
         return this.months.find(m => m.month_id === this.selectedMonthId) || this.activeMonth;
+    }
+
+    getSelectedMonthData() {
+        return this.monthDataById[this.selectedMonthId] || null;
     }
 
     updateRankings(data) {
