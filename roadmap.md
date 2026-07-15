@@ -84,6 +84,14 @@
 - Navegación directa a apuestas por mes.
 - Sin stats globales arriba.
 
+## V2.12.1 — Corrección Home instantánea multi-mes
+- Corrige una regresión introducida por V2.11/V2.12: `homeView.js` había vuelto a bloquear el pintado total de las cards detrás de `state.coreLoaded`, contradiciendo el objetivo ya fijado en V2.6 (ver `docs/startup_performance_audit.md`).
+- Home ya no depende de `coreLoaded` para pintar las cards: usa una fuente local mínima (`src/data/staticSeason.js`) para el esqueleto (título, orden) mientras `bootstrapLight` está en vuelo.
+- Las cards se hidratan con `state.months` en cuanto llega `bootstrapLight`: status real, `lock_at`, contadores de partidos/apuestas/participantes sustituyen a los placeholders ("Cargando...", "···") sin duplicar tarjetas.
+- Un mes presente en el fallback local pero aún no dado de alta en el backend se muestra como "Configuración pendiente" en vez de romper el render.
+- El botón INFO no dispara `loadMonthData` hasta que `coreLoaded=true`; antes de eso muestra la descripción estática (si existe) + "Cargando datos del mes...".
+- No se ha tocado `apps-script/Code.gs`, `src/scoring.js`, `src/api.js`, `src/app.js`, `src/config.js` ni las reglas de puntuación.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

@@ -232,3 +232,17 @@ La arquitectura híbrida (GitHub Pages + Apps Script + Sheets) ha demostrado ser
 | Ranking muestra dropdown de meses | Pendiente | Se puede cambiar el mes evaluado en Ranking Mensual. |
 | Estado muestra dropdown de meses | Pendiente | El resumen de apuestas (Status) filtra por mes elegido. |
 | Compatibilidad legacy | Pendiente | Apuestas legacy mantienen `month_id` implícito; el sistema permite migración manual diagnosticable en Admin. |
+
+## 19. QA Checklist V2.12.1 (Corrección Home instantánea multi-mes)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Home muestra las cards de meses antes de que responda `bootstrapLight` | Pendiente | Usar Network throttling ("Slow 3G") o simular Apps Script lento; las cards deben aparecer inmediatamente con `staticSeason`, sin el texto "Cargando la temporada..." bloqueando toda la vista. |
+| Badges de las cards muestran "Cargando..." mientras `state.coreLoaded=false` | Pendiente | Se sustituyen por el badge real (Abierta/Cerrada/Puntuada/Archivada) al llegar `bootstrapLight`. |
+| Contadores (partidos/apuestas/participantes) muestran "···" antes de `bootstrapLight` | Pendiente | Se rellenan con los valores reales sin parpadeo brusco tras la respuesta. |
+| No se duplica ninguna card al re-renderizar Home tras `bootstrapLight` | Pendiente | Debe seguir habiendo una sola card por `month_id` (mezcla de `staticSeason` + `state.months` sin repetir). |
+| Un mes presente en `staticSeason` pero ausente en `state.months` se muestra como "Configuración pendiente" | Pendiente | No debe romper el render ni bloquear el resto de cards. |
+| Botón INFO funciona antes de `coreLoaded` | Pendiente | Muestra la descripción estática (si existe) + "Cargando datos del mes..." sin intentar `loadMonthData` todavía. |
+| Botón INFO funciona después de `coreLoaded` | Pendiente | Comportamiento igual al actual: usa caché de `monthDataById`/`state.matches` o hace fetch lazy con `loadMonthData`. |
+| Botón APOSTAR funciona antes y después de `coreLoaded` | Pendiente | Asigna `selectedMonthId` y navega a Apuestas; Apuestas muestra su propio loading si los datos aún no han llegado. |
+| Apuestas/Ranking/Estado siguen funcionando sin cambios | Pendiente | No se ha tocado `bettingView.js`, `rankingView.js`, `statusView.js`, `adminView.js`, `app.js`, `api.js` ni el backend. |
+| `npm test` sigue en verde | Pendiente | Sin relación funcional con este cambio, pero confirma que no se rompió nada compartido. |
