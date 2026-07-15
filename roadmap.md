@@ -101,6 +101,13 @@
 - Corrige además un bug detectado en pruebas: si el usuario cambiaba de mes en una vista (p. ej. Ranking) y navegaba directamente a otra (p. ej. Estado) por el menú superior, la vista de destino se quedaba en "Cargando..." indefinidamente porque el fetch solo se disparaba en el evento `change` del propio selector. Ahora `mount()` también dispara la carga/precarga si el mes ya seleccionado no está en caché.
 - No se ha tocado `apps-script/Code.gs`, `src/scoring.js`, `src/config.js` ni las reglas de puntuación.
 
+## V2.12.3 — Revalidación de datos de mes en Apuestas/Estado
+- Corrige un efecto secundario de V2.12.2: al cachear `state.monthDataById` por mes para evitar el bloqueo de red, `statusView.js` y `bettingView.js` dejaban de volver a pedir los datos de un mes **una vez cacheado**, aunque hubieran pasado minutos y un participante hubiera apostado mientras tanto en Google Sheets. Esto hacía que "Estado" mostrase "Pendiente" para alguien que ya había apostado, sin necesidad de recargar la página, porque el mes activo ya estaba en caché desde la carga inicial.
+- **`statusView.js`**: cada vez que se entra en la vista (por el menú superior, al cambiar de mes o al pulsar "Reintentar") se vuelve a pedir `action=monthData` al backend, aunque ese mes ya estuviera cacheado. Si hay una foto previa en caché se muestra al instante y se sustituye en silencio en cuanto llega la respuesta fresca (sin pantalla de carga de por medio); solo se bloquea con el estado de carga si de verdad no hay nada cacheado todavía. La revalidación repinta la vista in-place (sin pasar por `app.navigateTo`) para no reentrar en `mount()` y generar un bucle de peticiones.
+- **`bettingView.js`**: la precarga en segundo plano al entrar/cambiar de mes y la carga en el momento de introducir el PIN ahora también revalidan siempre, no solo cuando faltaba caché.
+- Verificado en navegador contra el backend real que entrar/salir/reentrar en Estado dispara exactamente **una** petición de red por entrada (sin bucles) y que los datos se mantienen al día.
+- No se ha tocado `apps-script/Code.gs`, `src/scoring.js`, `src/config.js` ni las reglas de puntuación.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

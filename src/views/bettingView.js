@@ -199,8 +199,12 @@ export const bettingView = {
     },
 
     prefetchMonthData(monthId) {
-        if (!monthId || state.monthDataById[monthId]) return;
+        if (!monthId) return;
 
+        // Always revalidate, even if this month is already cached: Sheets
+        // can change from another tab/participant at any moment, so a stale
+        // cache hit (e.g. from the initial page load) must not stay stuck
+        // forever just because it's "not missing".
         import('../api.js').then(api => {
             api.loadMonthData(monthId).then(() => {
                 if (state.selectedMonthId !== monthId) return;
@@ -287,12 +291,12 @@ export const bettingView = {
 
             try {
                 // This is the point where match data for the selected month is
-                // actually required. If the background prefetch on month-change
-                // already finished, this resolves instantly from cache.
-                if (!state.monthDataById[monthId]) {
-                    const api = await import('../api.js');
-                    await api.loadMonthData(monthId);
-                }
+                // actually required, and where staleness matters most: refresh
+                // it for real even if a background prefetch already cached it
+                // earlier, since results/predictions in Sheets can have moved
+                // on since then.
+                const api = await import('../api.js');
+                await api.loadMonthData(monthId);
                 state.setSelectedMonth(monthId);
 
                 const response = await getUserPredictions(userId, pin, monthId);

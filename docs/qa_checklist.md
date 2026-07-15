@@ -258,3 +258,13 @@ La arquitectura híbrida (GitHub Pages + Apps Script + Sheets) ha demostrado ser
 | Cambiar de mes en una vista y navegar directamente a otra por el menú superior no dejaba la vista de destino "colgada" | ✅ OK (bug encontrado y corregido en esta misma sesión) | Reproducido cambiando el mes en Ranking y pulsando "Estado": antes se quedaba en "Cargando..." indefinidamente porque el fetch solo se disparaba en el evento `change` del propio selector; ahora `mount()` también dispara la carga si el mes seleccionado no está en caché. |
 | PIN incorrecto en Apuestas tras cambiar de mes no rompe la vista | ✅ OK (verificado en navegador) | Muestra el error y reactiva el botón "Cargar apuesta" con normalidad. |
 | No se ha tocado `apps-script/Code.gs` ni `src/scoring.js` | ✅ OK | Confirmado por `git status`/`git diff`. |
+
+## 21. QA Checklist V2.12.3 (Revalidación de datos de mes)
+| Prueba | Resultado | Notas |
+|--------|-----------|-------|
+| Entrar en Estado sin recargar la página muestra el estado real de participación | ✅ OK (verificado en navegador, con datos reales de producción) | Reproducido el bug reportado por el usuario: un participante había apostado y Estado seguía mostrando "Pendiente" porque el mes ya estaba cacheado desde la carga inicial. Ahora cada entrada a Estado vuelve a pedir `action=monthData`. |
+| Entrar/salir/reentrar repetidamente en Estado no genera peticiones en bucle | ✅ OK (verificado en navegador, instrumentando `window.fetch`) | Exactamente 1 petición de red por cada entrada a la vista; sin crecimiento descontrolado. |
+| Datos previos se muestran al instante mientras se revalida en segundo plano | ✅ OK (revisado en código) | `statusView.render()` pinta la última foto cacheada de inmediato; `repaint()` la sustituye en cuanto llega la respuesta fresca, sin pantalla de carga intermedia si ya había algo que mostrar. |
+| Un fallo de red al revalidar con datos ya cacheados no borra la tabla | ✅ OK (revisado en código) | Si la petición falla pero ya había una foto cacheada, se mantiene visible en vez de sustituirla por el estado de error. |
+| Apuestas revalida el badge de estado y el listado de partidos en cada entrada/cambio de mes | ✅ OK (revisado en código) | `prefetchMonthData` y el submit del PIN ya no comprueban caché antes de pedir `action=monthData`; siempre refrescan. |
+| `npm test` sigue en verde | ✅ OK | 19/19 tests. |

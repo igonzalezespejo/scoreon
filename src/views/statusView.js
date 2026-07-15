@@ -1,9 +1,12 @@
 import { state } from '../state.js';
 import { formatDate, getActiveMonthTitle } from '../utils/dates.js';
 
-function ensureMonthData(monthId) {
-    if (state.monthDataById[monthId]) return Promise.resolve();
-
+function fetchMonthData(monthId) {
+    // Always hits the backend, even if this month is already cached: Sheets
+    // can change from another tab/participant at any moment (someone submits
+    // a bet, an admin edits a result), so a cache hit must not skip
+    // revalidation — it only lets render() paint something instantly while
+    // this call is in flight.
     state.monthDataLoadingId = monthId;
     state.monthDataError = null;
 
@@ -159,15 +162,24 @@ export const statusView = {
     },
 
     mount(container) {
+        this.bindEvents(container);
+
+        // Every time the view is entered (nav bar, month switch, or the
+        // initial navigation to Home->Estado) we revalidate against the
+        // backend — see fetchMonthData() above for why a cache hit isn't
+        // enough on its own.
+        this.loadAndRefresh(state.selectedMonthId);
+    },
+
+    bindEvents(container) {
         const monthSelect = container.querySelector('#status-month-select');
         if (monthSelect) {
             monthSelect.addEventListener('change', (e) => {
-                const newMonthId = e.target.value;
-                state.selectedMonthId = newMonthId;
-                // Paint immediately (scoped loading state if not cached yet);
-                // never freeze the whole view or the select while fetching.
+                state.selectedMonthId = e.target.value;
+                // Re-render immediately (scoped loading state if this month
+                // was never cached; cached data otherwise) and let mount()
+                // (triggered by navigateTo) kick off the revalidation fetch.
                 import('../app.js').then(app => app.navigateTo('status'));
-                this.loadAndRefresh(newMonthId);
             });
         }
 
@@ -177,27 +189,34 @@ export const statusView = {
                 this.loadAndRefresh(state.selectedMonthId);
             });
         }
-
-        // Cover navigating here directly (nav bar) with a selectedMonthId that
-        // was already changed from another view (e.g. Ranking) and isn't
-        // cached yet — otherwise the "Cargando..." placeholder above would
-        // never resolve because nothing would have kicked off the fetch.
-        this.loadAndRefresh(state.selectedMonthId);
     },
 
     loadAndRefresh(monthId) {
-        if (state.monthDataById[monthId]) return;
-        ensureMonthData(monthId)
+        fetchMonthData(monthId)
             .then(() => {
-                if (state.selectedMonthId === monthId) {
-                    state.setSelectedMonth(monthId);
-                    import('../app.js').then(app => app.navigateTo('status'));
-                }
+                if (state.selectedMonthId !== monthId) return;
+                state.setSelectedMonth(monthId);
+                // Repaint in place instead of going through app.navigateTo():
+                // navigateTo() re-runs mount(), which would call
+                // loadAndRefresh() again and fetch forever in a loop.
+                this.repaint();
             })
             .catch(() => {
-                if (state.selectedMonthId === monthId) {
-                    import('../app.js').then(app => app.navigateTo('status'));
+                if (state.selectedMonthId !== monthId) return;
+                // Only force a repaint if we still have nothing cached (to
+                // show the error/retry state). If a previous snapshot is
+                // already on screen, leave it visible rather than replacing
+                // real data with an error banner over a background hiccup.
+                if (!state.monthDataById[monthId]) {
+                    this.repaint();
                 }
             });
+    },
+
+    repaint() {
+        const view = document.getElementById('view-status');
+        if (!view) return;
+        view.innerHTML = this.render();
+        this.bindEvents(view);
     }
 };
