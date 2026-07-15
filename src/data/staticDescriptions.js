@@ -92,5 +92,52 @@ export const staticDescriptions = {
                 <li><strong>AC Milan vs. AS Roma:</strong> (Serie A). Para cerrar la plantilla con un toque de elegancia y tensión táctica italiana.</li>
             </ul>
         </div>
+    `,
+    '2026-10': `
+        <div class="static-description" style="text-align: left; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem; padding: 1rem;">
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0;">Semana 1: Europa de Alta Tensión y Trampas Ligeras</h4>
+            <p style="margin-bottom: 0.5rem;">Arrancamos combinando las noches europeas con salidas muy físicas en la liga.</p>
+            <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
+                <li><strong>Villarreal CF vs. FC Barcelona:</strong> (LaLiga). La Cerámica siempre exige un despliegue físico brutal. Un partido de ida y vuelta constante. (1º partido del Barça)</li>
+                <li><strong>Sevilla FC vs. Real Sociedad:</strong> (LaLiga). Choque de estilos y de aspiraciones europeas en el Sánchez-Pizjuán. Partidazo táctico. (1º partido del Sevilla)</li>
+                <li><strong>Real Betis vs. AS Roma:</strong> (Europa League). Una noche grande europea en el Villamarín ante un gigante italiano. Tensión máxima. (1º partido del Betis)</li>
+                <li><strong>Liverpool vs. Arsenal:</strong> (Premier League). El primer gran duelo de titanes del mes en Inglaterra. Anfield dictará sentencia.</li>
+                <li><strong>Aston Villa vs. Bayern Múnich:</strong> (Champions League). Villa Park se viste de gala para recibir al gigante bávaro. Ojo a la sorpresa local.</li>
+                <li><strong>Napoli vs. AC Milan:</strong> (Serie A). Clásico italiano del sur contra el norte, con un ambiente espectacular asegurado.</li>
+            </ul>
+
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 2: El Segundo "Virus FIFA" (Parón de Selecciones)</h4>
+            <p style="margin-bottom: 0.5rem;">Vuelven las convocatorias internacionales. Como los equipos nacionales cambian tanto de un mes a otro, apostar aquí al resultado exacto es pura intuición.</p>
+            <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
+                <li><strong>España vs. Francia:</strong> (UEFA Nations League). Duelo por la hegemonía europea contemporánea.</li>
+                <li><strong>Inglaterra vs. Países Bajos:</strong> (UEFA Nations League). Fútbol rapidísimo, de transiciones, con muchísimas opciones de acabar en un empate con varios goles.</li>
+                <li><strong>Uruguay vs. Argentina:</strong> (Eliminatorias Sudamericanas). El Clásico del Río de la Plata. Fricción, faltas y marcadores cortísimos.</li>
+                <li><strong>Colombia vs. Brasil:</strong> (Eliminatorias Sudamericanas). Barranquilla es una plaza dificilísima para cualquiera, incluido Brasil.</li>
+                <li><strong>Alemania vs. Italia:</strong> (UEFA Nations League). El gran clásico histórico europeo por excelencia.</li>
+                <li><strong>Portugal vs. Croacia:</strong> (UEFA Nations League). Dos selecciones a las que les gusta masticar mucho la posesión del balón.</li>
+            </ul>
+
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 3: La Resaca y los Derbis Locales</h4>
+            <p style="margin-bottom: 0.5rem;">Los jugadores vuelven de sus vuelos transoceánicos. Momento ideal para que los equipos más modestos le rasquen puntos a los gigantes, y fin de semana de derbis puros.</p>
+            <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
+                <li><strong>Real Madrid vs. Athletic Club:</strong> (LaLiga). Un clásico inmemorial en el Bernabéu. Los leones siempre muerden tras los parones. (1º partido del Madrid)</li>
+                <li><strong>RCD Espanyol vs. Sevilla FC:</strong> (LaLiga). Salida históricamente espinosa para el Sevilla, perfecta para buscar un pronóstico ajustado. (2º partido del Sevilla)</li>
+                <li><strong>Real Betis vs. Girona FC:</strong> (LaLiga). Dos equipos diseñados para mirar la portería contraria. Promesa de lluvia de goles. (2º partido del Betis)</li>
+                <li><strong>Manchester United vs. Manchester City:</strong> (Premier League). El Derbi de Mánchester. Old Trafford decide quién manda en la ciudad.</li>
+                <li><strong>PSG vs. Arsenal:</strong> (Champions League). Duelo de plantillas ultramodernas en el Parque de los Príncipes.</li>
+                <li><strong>Boca Juniors vs. River Plate:</strong> (Liga Argentina). El Superclásico. Tradicionalmente cae por estas fechas y es el partido más impredecible y pasional del mundo.</li>
+            </ul>
+
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 4: La Semana del Clásico y el Terror de Halloween</h4>
+            <p style="margin-bottom: 0.5rem;">Cerramos el mes con la joya de la corona del fútbol español y derbis de altísimo voltaje en el resto de Europa.</p>
+            <ul style="padding-left: 1.2rem; margin-bottom: 0;">
+                <li><strong>Real Madrid vs. FC Barcelona:</strong> (LaLiga). El partido de los partidos. La casilla donde todo el grupo de la porra va a sudar para poner el pronóstico. (2º partido del Madrid y 2º del Barça)</li>
+                <li><strong>Chelsea vs. Newcastle United:</strong> (Premier League). Stamford Bridge mide la resistencia de dos plantillas hechas a golpe de talonario.</li>
+                <li><strong>Aston Villa vs. Tottenham Hotspur:</strong> (Premier League). Fútbol de rock and roll, muy directo y sin frenos.</li>
+                <li><strong>AS Roma vs. Lazio:</strong> (Serie A). El Derby della Capitale. En Roma la ciudad se paraliza; un empate a cero o un partido loco lleno de tarjetas son igual de probables.</li>
+                <li><strong>Galatasaray vs. Fenerbahçe:</strong> (Superliga Turca). El Derbi Intercontinental. Caos absoluto y ambiente infernal, perfecto para una quiniela.</li>
+                <li><strong>Olympique de Marsella vs. PSG:</strong> (Ligue 1). Le Classique francés. El Velodrome es una caldera que suele igualar las diferencias de presupuesto.</li>
+            </ul>
+        </div>
     `
 };

@@ -10,12 +10,35 @@
     "registration_code": "PORRA2026"
   },
   "activeMonth": {
-    "month_id": "2026-09",
-    "title": "Porra Septiembre 2026",
+    "month_id": "2026-10",
+    "title": "Octubre 2026",
     "status": "open",
-    "open_at": "2026-09-01T00:00:00+02:00",
-    "lock_at": "2026-09-14T20:00:00+02:00"
+    "open_at": "2026-10-01T00:00:00+02:00",
+    "lock_at": "2026-10-03T18:00:00+02:00"
   },
+  "months": [
+    {
+      "month_id": "2026-08",
+      "title": "Agosto 2026",
+      "status": "open",
+      "matches_count": 24,
+      "submitted_count": 7
+    },
+    {
+      "month_id": "2026-09",
+      "title": "Septiembre 2026",
+      "status": "open",
+      "matches_count": 24,
+      "submitted_count": 7
+    },
+    {
+      "month_id": "2026-10",
+      "title": "Octubre 2026",
+      "status": "open",
+      "matches_count": 24,
+      "submitted_count": 0
+    }
+  ],
   "participants": [
     { "user_id": "juan", "display_name": "Juan", "active": true },
     { "user_id": "maria", "display_name": "María", "active": true },
@@ -24,46 +47,30 @@
     { "user_id": "pedro", "display_name": "Pedro", "active": true }
   ],
   "matches": [
-    {
-      "match_id": "m001",
-      "month_id": "2026-09",
-      "competition": "Liga",
-      "home_team": "Real Madrid",
-      "away_team": "Barcelona",
-      "kickoff_at": "2026-09-15T21:00:00+02:00",
-      "status": "scheduled",
-      "display_order": 1
-    },
-    {
-      "match_id": "m002",
-      "month_id": "2026-09",
-      "competition": "Liga",
-      "home_team": "Atlético de Madrid",
-      "away_team": "Sevilla",
-      "kickoff_at": "2026-09-16T21:00:00+02:00",
-      "status": "scheduled",
-      "display_order": 2
-    },
-    {
-      "match_id": "m003",
-      "month_id": "2026-09",
-      "competition": "Champions",
-      "home_team": "Bayern",
-      "away_team": "Arsenal",
-      "kickoff_at": "2026-09-20T21:00:00+02:00",
-      "status": "scheduled",
-      "display_order": 3
-    },
-    {
-      "match_id": "m004",
-      "month_id": "2026-09",
-      "competition": "Champions",
-      "home_team": "Juventus",
-      "away_team": "PSG",
-      "kickoff_at": "2026-09-21T21:00:00+02:00",
-      "status": "scheduled",
-      "display_order": 4
-    }
+    { "match_id": "2026-10-m001", "month_id": "2026-10", "competition": "LaLiga", "home_team": "Villarreal CF", "away_team": "FC Barcelona", "kickoff_at": "2026-10-03T18:00:00Z", "status": "scheduled", "display_order": 1 },
+    { "match_id": "2026-10-m002", "month_id": "2026-10", "competition": "LaLiga", "home_team": "Sevilla FC", "away_team": "Real Sociedad", "kickoff_at": "2026-10-03T21:00:00Z", "status": "scheduled", "display_order": 2 },
+    { "match_id": "2026-10-m003", "month_id": "2026-10", "competition": "Europa League", "home_team": "Real Betis", "away_team": "AS Roma", "kickoff_at": "2026-10-01T21:00:00Z", "status": "scheduled", "display_order": 3 },
+    { "match_id": "2026-10-m004", "month_id": "2026-10", "competition": "Premier League", "home_team": "Liverpool", "away_team": "Arsenal", "kickoff_at": "2026-10-04T17:30:00Z", "status": "scheduled", "display_order": 4 },
+    { "match_id": "2026-10-m005", "month_id": "2026-10", "competition": "Champions League", "home_team": "Aston Villa", "away_team": "Bayern Múnich", "kickoff_at": "2026-10-06T21:00:00Z", "status": "scheduled", "display_order": 5 },
+    { "match_id": "2026-10-m006", "month_id": "2026-10", "competition": "Serie A", "home_team": "Napoli", "away_team": "AC Milan", "kickoff_at": "2026-10-04T20:45:00Z", "status": "scheduled", "display_order": 6 },
+    { "match_id": "2026-10-m007", "month_id": "2026-10", "competition": "UEFA Nations League", "home_team": "España", "away_team": "Francia", "kickoff_at": "2026-10-10T20:45:00Z", "status": "scheduled", "display_order": 7 },
+    { "match_id": "2026-10-m008", "month_id": "2026-10", "competition": "UEFA Nations League", "home_team": "Inglaterra", "away_team": "Países Bajos", "kickoff_at": "2026-10-11T20:45:00Z", "status": "scheduled", "display_order": 8 },
+    { "match_id": "2026-10-m009", "month_id": "2026-10", "competition": "Eliminatorias Sudamericanas", "home_team": "Uruguay", "away_team": "Argentina", "kickoff_at": "2026-10-09T01:00:00Z", "status": "scheduled", "display_order": 9 },
+    { "match_id": "2026-10-m010", "month_id": "2026-10", "competition": "Eliminatorias Sudamericanas", "home_team": "Colombia", "away_team": "Brasil", "kickoff_at": "2026-10-09T22:30:00Z", "status": "scheduled", "display_order": 10 },
+    { "match_id": "2026-10-m011", "month_id": "2026-10", "competition": "UEFA Nations League", "home_team": "Alemania", "away_team": "Italia", "kickoff_at": "2026-10-12T20:45:00Z", "status": "scheduled", "display_order": 11 },
+    { "match_id": "2026-10-m012", "month_id": "2026-10", "competition": "UEFA Nations League", "home_team": "Portugal", "away_team": "Croacia", "kickoff_at": "2026-10-10T20:45:00Z", "status": "scheduled", "display_order": 12 },
+    { "match_id": "2026-10-m013", "month_id": "2026-10", "competition": "LaLiga", "home_team": "Real Madrid", "away_team": "Athletic Club", "kickoff_at": "2026-10-17T21:00:00Z", "status": "scheduled", "display_order": 13 },
+    { "match_id": "2026-10-m014", "month_id": "2026-10", "competition": "LaLiga", "home_team": "RCD Espanyol", "away_team": "Sevilla FC", "kickoff_at": "2026-10-18T18:30:00Z", "status": "scheduled", "display_order": 14 },
+    { "match_id": "2026-10-m015", "month_id": "2026-10", "competition": "LaLiga", "home_team": "Real Betis", "away_team": "Girona FC", "kickoff_at": "2026-10-18T21:00:00Z", "status": "scheduled", "display_order": 15 },
+    { "match_id": "2026-10-m016", "month_id": "2026-10", "competition": "Premier League", "home_team": "Manchester United", "away_team": "Manchester City", "kickoff_at": "2026-10-17T13:30:00Z", "status": "scheduled", "display_order": 16 },
+    { "match_id": "2026-10-m017", "month_id": "2026-10", "competition": "Champions League", "home_team": "PSG", "away_team": "Arsenal", "kickoff_at": "2026-10-20T21:00:00Z", "status": "scheduled", "display_order": 17 },
+    { "match_id": "2026-10-m018", "month_id": "2026-10", "competition": "Liga Argentina", "home_team": "Boca Juniors", "away_team": "River Plate", "kickoff_at": "2026-10-18T22:00:00Z", "status": "scheduled", "display_order": 18 },
+    { "match_id": "2026-10-m019", "month_id": "2026-10", "competition": "LaLiga", "home_team": "Real Madrid", "away_team": "FC Barcelona", "kickoff_at": "2026-10-24T21:00:00Z", "status": "scheduled", "display_order": 19 },
+    { "match_id": "2026-10-m020", "month_id": "2026-10", "competition": "Premier League", "home_team": "Chelsea", "away_team": "Newcastle United", "kickoff_at": "2026-10-25T15:00:00Z", "status": "scheduled", "display_order": 20 },
+    { "match_id": "2026-10-m021", "month_id": "2026-10", "competition": "Premier League", "home_team": "Aston Villa", "away_team": "Tottenham Hotspur", "kickoff_at": "2026-10-24T16:00:00Z", "status": "scheduled", "display_order": 21 },
+    { "match_id": "2026-10-m022", "month_id": "2026-10", "competition": "Serie A", "home_team": "AS Roma", "away_team": "Lazio", "kickoff_at": "2026-10-25T18:00:00Z", "status": "scheduled", "display_order": 22 },
+    { "match_id": "2026-10-m023", "month_id": "2026-10", "competition": "Superliga Turca", "home_team": "Galatasaray", "away_team": "Fenerbahçe", "kickoff_at": "2026-10-25T18:00:00Z", "status": "scheduled", "display_order": 23 },
+    { "match_id": "2026-10-m024", "month_id": "2026-10", "competition": "Ligue 1", "home_team": "Olympique de Marsella", "away_team": "PSG", "kickoff_at": "2026-10-25T20:45:00Z", "status": "scheduled", "display_order": 24 }
   ],
   "predictionsSummary": {
     "juan": { "status": "submitted", "submitted_at": "2026-09-02T10:00:00+02:00" },
