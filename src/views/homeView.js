@@ -40,8 +40,8 @@ export const homeView = {
                 const limitHtml = m.lock_at ? `<p class="text-muted" style="margin-top:0.5rem; font-size:0.9rem;">Límite: ${formatDate(m.lock_at)}</p>` : '';
                 
                 // Get month specific data if available
-                let matchesCount = '-';
-                let submittedCount = '-';
+                let matchesCount = m.matches_count !== undefined ? m.matches_count : '-';
+                let submittedCount = m.submitted_count !== undefined ? m.submitted_count : '-';
                 
                 const monthData = state.monthDataById[m.month_id];
                 if (monthData) {
@@ -49,7 +49,7 @@ export const homeView = {
                     if (monthData.predictionsSummary) {
                         submittedCount = Object.values(monthData.predictionsSummary).filter(p => p.status === 'submitted').length;
                     }
-                } else if (m.month_id === state.activeMonth?.month_id) {
+                } else if (m.month_id === state.activeMonth?.month_id && matchesCount === '-') {
                     matchesCount = state.matches ? state.matches.length : 0;
                     if (state.predictionsSummary) {
                         submittedCount = Object.values(state.predictionsSummary).filter(p => p.status === 'submitted').length;

@@ -818,8 +818,45 @@ function actionBootstrapLight() {
     m.month_id = normalizeMonthId(m.month_id);
     return m;
   });
-  const activeMatches = matches.filter(m => m.month_id === activeMonthId);
   const currentPredictions = getSheetData("Predictions_Current");
+
+  const matchMonthMap = {};
+  const matchesByMonth = {};
+  matches.forEach(m => {
+    const normMatchId = normalizeId(m.match_id);
+    matchMonthMap[normMatchId] = m.month_id;
+    if (!matchesByMonth[m.month_id]) matchesByMonth[m.month_id] = 0;
+    matchesByMonth[m.month_id]++;
+  });
+
+  const userBetCountsByMonth = {};
+  currentPredictions.forEach(p => {
+    const normMatchId = normalizeId(p.match_id);
+    const mId = matchMonthMap[normMatchId];
+    if (mId) {
+      const uId = normalizeId(p.user_id);
+      if (!userBetCountsByMonth[mId]) userBetCountsByMonth[mId] = {};
+      if (!userBetCountsByMonth[mId][uId]) userBetCountsByMonth[mId][uId] = 0;
+      userBetCountsByMonth[mId][uId]++;
+    }
+  });
+
+  months.forEach(m => {
+    m.matches_count = matchesByMonth[m.month_id] || 0;
+    let submittedCount = 0;
+    const betsInMonth = userBetCountsByMonth[m.month_id] || {};
+    if (m.matches_count > 0) {
+      participants.forEach(p => {
+        if (p.active) {
+           const count = betsInMonth[p.user_id] || 0;
+           if (count >= m.matches_count) submittedCount++;
+        }
+      });
+    }
+    m.submitted_count = submittedCount;
+  });
+
+  const activeMatches = matches.filter(m => m.month_id === activeMonthId);
 
   const monthMatchesCount = activeMatches.length;
   const activeMonthMatchIds = activeMatches.map(m => normalizeId(m.match_id));
