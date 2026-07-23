@@ -133,10 +133,64 @@ export const homeView = {
             monthsHtml = '<p class="text-muted" style="text-align: center;">No hay meses configurados.</p>';
         }
 
+        const rulesHtml = `
+            <div class="rules-section" style="margin-bottom: 3rem;">
+                <h3 class="preview-title" style="margin-bottom: 1.5rem; color: var(--text-primary); border-bottom: 2px solid var(--accent-primary); display: inline-block; padding-bottom: 0.2rem;">¿Cómo se puntúa?</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">¡Cada detalle cuenta! En nuestra porra puedes sumar hasta <strong>10 puntos por partido</strong>. Los puntos se acumulan por cada bloque que aciertes:</p>
+                
+                <div class="rules-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="card" style="padding: 1.5rem; border-left: 5px solid var(--accent-primary); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; line-height: 1.3;">🎯 Ganador/Empate</h4>
+                            <span style="margin-left: auto; color: #fff; background-color: var(--accent-primary); font-weight: 900; font-size: 1.4rem; padding: 0.4rem 1rem; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); letter-spacing: 1px; line-height: 1;">+4</span>
+                        </div>
+                        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">Si aciertas qué equipo gana (o si es empate). ¡Incluso si fallas los goles!</p>
+                    </div>
+
+                    <div class="card" style="padding: 1.5rem; border-left: 5px solid var(--accent-secondary); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; line-height: 1.3;">⚽ Goles Local</h4>
+                            <span style="margin-left: auto; color: #fff; background-color: var(--accent-secondary); font-weight: 900; font-size: 1.4rem; padding: 0.4rem 1rem; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); letter-spacing: 1px; line-height: 1;">+2</span>
+                        </div>
+                        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">Si adivinas exactamente los goles que marca el equipo de casa.</p>
+                    </div>
+
+                    <div class="card" style="padding: 1.5rem; border-left: 5px solid var(--accent-secondary); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; line-height: 1.3;">⚽ Goles Visitante</h4>
+                            <span style="margin-left: auto; color: #fff; background-color: var(--accent-secondary); font-weight: 900; font-size: 1.4rem; padding: 0.4rem 1rem; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); letter-spacing: 1px; line-height: 1;">+2</span>
+                        </div>
+                        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">Si adivinas exactamente los goles que marca el equipo de fuera.</p>
+                    </div>
+
+                    <div class="card" style="padding: 1.5rem; border-left: 5px solid #10b981; background: linear-gradient(145deg, rgba(16,185,129,0.05) 0%, transparent 100%); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; line-height: 1.3;">🔥 Pleno (Bonus)</h4>
+                            <span style="margin-left: auto; color: #fff; background-color: #10b981; font-weight: 900; font-size: 1.4rem; padding: 0.4rem 1rem; border-radius: 30px; box-shadow: 0 4px 10px rgba(16,185,129,0.3); letter-spacing: 1px; line-height: 1;">+2</span>
+                        </div>
+                        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">Si aciertas el resultado exacto, te llevas el bonus para lograr el pleno de 10 puntos.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 1.5rem; background-color: rgba(0,0,0,0.1);">
+                    <h4 style="margin-bottom: 1rem; color: var(--text-primary);">💡 Ejemplos (Si el resultado real es 2-1)</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem; color: var(--text-secondary); display: grid; gap: 1rem;">
+                        <li style="display: flex; gap: 0.8rem; align-items: flex-start;"><span style="color: #10b981; font-size: 1.1rem; line-height: 1.2;">✅</span> <div><strong>Predices 2-1:</strong> Aciertas ganador <strong style="color: var(--accent-primary);">+4</strong>, goles local <strong style="color: var(--accent-secondary);">+2</strong>, goles visitante <strong style="color: var(--accent-secondary);">+2</strong> y pleno <strong style="color: #10b981;">+2</strong> = <strong style="color: var(--text-primary); font-size: 1.1rem;">10 puntos</strong></div></li>
+                        <li style="display: flex; gap: 0.8rem; align-items: flex-start;"><span style="color: #10b981; font-size: 1.1rem; line-height: 1.2;">✅</span> <div><strong>Predices 2-0:</strong> Aciertas ganador <strong style="color: var(--accent-primary);">+4</strong> y goles local <strong style="color: var(--accent-secondary);">+2</strong> = <strong style="color: var(--text-primary); font-size: 1.1rem;">6 puntos</strong></div></li>
+                        <li style="display: flex; gap: 0.8rem; align-items: flex-start;"><span style="color: #10b981; font-size: 1.1rem; line-height: 1.2;">✅</span> <div><strong>Predices 3-0:</strong> Aciertas ganador <strong style="color: var(--accent-primary);">+4</strong> pero fallas todos los goles = <strong style="color: var(--text-primary); font-size: 1.1rem;">4 puntos</strong></div></li>
+                        <li style="display: flex; gap: 0.8rem; align-items: flex-start;"><span style="color: #10b981; font-size: 1.1rem; line-height: 1.2;">✅</span> <div><strong>Predices 1-1:</strong> Fallas ganador y local, pero acertaste que visitante metía 1 gol <strong style="color: var(--accent-secondary);">+2</strong> = <strong style="color: var(--text-primary); font-size: 1.1rem;">2 puntos</strong></div></li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
         return `
-            <div class="months-section">
-                <h3 class="preview-title" style="margin-bottom: 1.5rem; color: var(--text-primary); border-bottom: 2px solid var(--accent-primary); display: inline-block; padding-bottom: 0.2rem;">Temporada Global</h3>
-                ${monthsHtml}
+            <div class="home-layout">
+                ${rulesHtml}
+                <div class="months-section">
+                    <h3 class="preview-title" style="margin-bottom: 1.5rem; color: var(--text-primary); border-bottom: 2px solid var(--accent-primary); display: inline-block; padding-bottom: 0.2rem;">Temporada Global</h3>
+                    ${monthsHtml}
+                </div>
             </div>
         `;
     },
