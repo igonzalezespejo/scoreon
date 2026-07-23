@@ -1,6 +1,5 @@
 rule_id,description,points,active
-exact_draw,Resultado exacto con empate,20,TRUE
-exact_non_draw,Resultado exacto sin empate,15,TRUE
-draw_not_exact,Empate acertado no exacto,10,TRUE
-winner_not_exact,Ganador acertado no exacto,5,TRUE
-wrong,Fallo,0,TRUE
+sign,Acierto de ganador o empate,4,TRUE
+home_goals,Acierto de goles del equipo local,2,TRUE
+away_goals,Acierto de goles del equipo visitante,2,TRUE
+exact_bonus,Bonus por resultado exacto (pleno),2,TRUE

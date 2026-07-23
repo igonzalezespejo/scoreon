@@ -619,16 +619,15 @@ function actionBootstrap() {
   let scoringRules = getSheetData("Scoring_Rules");
 
   const requiredRules = {
-    exact_draw: { description: "Resultado exacto con empate", points: 20 },
-    exact_non_draw: { description: "Resultado exacto sin empate", points: 15 },
-    draw_not_exact: { description: "Empate acertado no exacto", points: 10 },
-    winner_not_exact: { description: "Ganador acertado no exacto", points: 5 },
-    wrong: { description: "Fallo", points: 0 }
+    sign: { description: "Acierto de ganador o empate", points: 4 },
+    home_goals: { description: "Acierto de goles del equipo local", points: 2 },
+    away_goals: { description: "Acierto de goles del equipo visitante", points: 2 },
+    exact_bonus: { description: "Bonus por resultado exacto (pleno)", points: 2 }
   };
 
   const rulesMap = {};
   scoringRules.forEach(r => rulesMap[r.rule_id] = r);
-  
+
   for (let key in requiredRules) {
     if (!rulesMap[key] || rulesMap[key].active === false || rulesMap[key].active === "false") {
       let existingIndex = scoringRules.findIndex(r => r.rule_id === key);
@@ -1637,11 +1636,10 @@ function updateRankingsInSheetsUnsafe() {
   let scoringRules = getSheetData("Scoring_Rules");
 
   const requiredRules = {
-    exact_draw: { description: "Resultado exacto con empate", points: 20 },
-    exact_non_draw: { description: "Resultado exacto sin empate", points: 15 },
-    draw_not_exact: { description: "Empate acertado no exacto", points: 10 },
-    winner_not_exact: { description: "Ganador acertado no exacto", points: 5 },
-    wrong: { description: "Fallo", points: 0 }
+    sign: { description: "Acierto de ganador o empate", points: 4 },
+    home_goals: { description: "Acierto de goles del equipo local", points: 2 },
+    away_goals: { description: "Acierto de goles del equipo visitante", points: 2 },
+    exact_bonus: { description: "Bonus por resultado exacto (pleno)", points: 2 }
   };
   const rulesMap = {};
   scoringRules.forEach(r => rulesMap[normalizeId(r.rule_id)] = r);
@@ -1799,11 +1797,10 @@ function actionDebugLiveRanking(params) {
   const currentPredictions = getSheetData("Predictions_Current");
   
   const requiredRules = {
-    exact_draw: { description: "Resultado exacto con empate", points: 20 },
-    exact_non_draw: { description: "Resultado exacto sin empate", points: 15 },
-    draw_not_exact: { description: "Empate acertado no exacto", points: 10 },
-    winner_not_exact: { description: "Ganador acertado no exacto", points: 5 },
-    wrong: { description: "Fallo", points: 0 }
+    sign: { description: "Acierto de ganador o empate", points: 4 },
+    home_goals: { description: "Acierto de goles del equipo local", points: 2 },
+    away_goals: { description: "Acierto de goles del equipo visitante", points: 2 },
+    exact_bonus: { description: "Bonus por resultado exacto (pleno)", points: 2 }
   };
   const rulesMap = {};
   scoringRules.forEach(r => rulesMap[normalizeId(r.rule_id)] = r);
