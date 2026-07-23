@@ -2,44 +2,43 @@ import { scorePrediction, scoreMatchPrediction, calculateMonthlyRanking } from '
 
 describe('scorePrediction', () => {
     const rules = {
-        exact_draw: 20,
-        exact_non_draw: 15,
-        draw_not_exact: 10,
-        winner_not_exact: 5,
-        wrong: 0
+        sign: 4,
+        home_goals: 2,
+        away_goals: 2,
+        exact_bonus: 2
     };
     
     it('should return exact_draw for exact match with draw', () => {
         const pred = { home_goals: 1, away_goals: 1 };
         const res = { home_goals: 1, away_goals: 1, status: 'finished' };
-        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'exact_draw', points: 20, computable: true });
+        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'exact_draw', points: 10, computable: true });
     });
 
     it('should return exact_non_draw for exact match without draw', () => {
         const pred = { home_goals: 2, away_goals: 1 };
         const res = { home_goals: 2, away_goals: 1, status: 'finished' };
-        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'exact_non_draw', points: 15, computable: true });
+        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'exact_non_draw', points: 10, computable: true });
     });
 
     it('should return draw_not_exact for correct draw but not exact', () => {
         const pred = { home_goals: 1, away_goals: 1 };
         const res = { home_goals: 0, away_goals: 0, status: 'finished' };
-        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'draw_not_exact', points: 10, computable: true });
+        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'draw_not_exact', points: 4, computable: true });
     });
 
     it('should return winner_not_exact for correct winner but not exact', () => {
         const pred = { home_goals: 2, away_goals: 1 };
         const res = { home_goals: 3, away_goals: 0, status: 'finished' };
-        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'winner_not_exact', points: 5, computable: true });
+        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'winner_not_exact', points: 4, computable: true });
     });
 
-    it('should return winner_not_exact for correct away winner but not exact', () => {
-        const pred = { home_goals: 1, away_goals: 2 };
-        const res = { home_goals: 0, away_goals: 3, status: 'finished' };
-        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'winner_not_exact', points: 5, computable: true });
+    it('should return partial_goals for wrong sign but correct home goals', () => {
+        const pred = { home_goals: 1, away_goals: 1 };
+        const res = { home_goals: 1, away_goals: 2, status: 'finished' };
+        expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'partial_goals', points: 2, computable: true });
     });
 
-    it('should return wrong for wrong outcome', () => {
+    it('should return wrong for wrong outcome and no goals', () => {
         const pred = { home_goals: 2, away_goals: 1 };
         const res = { home_goals: 1, away_goals: 2, status: 'finished' };
         expect(scorePrediction(pred, res, rules)).toEqual({ rule_id: 'wrong', points: 0, computable: true });
@@ -59,12 +58,12 @@ describe('scorePrediction', () => {
 });
 
 describe('scoreMatchPrediction', () => {
-    const rules = { exact_non_draw: 15 };
+    const rules = { sign: 4, home_goals: 2, away_goals: 2, exact_bonus: 2 };
 
     it('should score correctly using full match object', () => {
         const pred = { home_goals: 2, away_goals: 1 };
         const match = { home_goals: 2, away_goals: 1, status: 'finished' };
-        expect(scoreMatchPrediction(pred, match, rules)).toEqual({ rule_id: 'exact_non_draw', points: 15, computable: true });
+        expect(scoreMatchPrediction(pred, match, rules)).toEqual({ rule_id: 'exact_non_draw', points: 10, computable: true });
     });
 });
 
@@ -94,18 +93,21 @@ describe('calculateMonthlyRanking', () => {
         
         expect(ranking.length).toBe(3);
         
+        // p1: m1 (exact = 10 pts), m2 (draw_not_exact = 4 pts) -> Total 14 pts
         expect(ranking[0].user_id).toBe('p1');
-        expect(ranking[0].points).toBe(25);
+        expect(ranking[0].points).toBe(14);
         expect(ranking[0].exact_scores).toBe(1);
         expect(ranking[0].correct_signs).toBe(1);
         expect(ranking[0].failed).toBe(0);
 
+        // p2: m1 (winner_not_exact = 4 pts), m2 (wrong sign but away goals correct = partial_goals = 2 pts) -> Total 6 pts
         expect(ranking[1].user_id).toBe('p2');
-        expect(ranking[1].points).toBe(5);
+        expect(ranking[1].points).toBe(6);
         expect(ranking[1].exact_scores).toBe(0);
         expect(ranking[1].correct_signs).toBe(1);
-        expect(ranking[1].failed).toBe(1);
+        expect(ranking[1].failed).toBe(0);
         
+        // p3: no predictions
         expect(ranking[2].user_id).toBe('p3');
         expect(ranking[2].points).toBe(0);
         expect(ranking[2].exact_scores).toBe(0);

@@ -292,7 +292,8 @@ function getSign(home, away) {
 }
 
 function scorePrediction(prediction, result, scoringRules) {
-    const defaultPoints = { exact_draw: 20, exact_non_draw: 15, draw_not_exact: 10, winner_not_exact: 5, wrong: 0 };
+    // Nuevas reglas modulares
+    const defaultPoints = { sign: 4, home_goals: 2, away_goals: 2, exact_bonus: 2 };
     
     const rules = {};
     if (Array.isArray(scoringRules)) {
@@ -326,15 +327,26 @@ function scorePrediction(prediction, result, scoringRules) {
     const isDraw = (rH === rA);
     const isExact = (pH === rH && pA === rA);
     const correctSign = getSign(pH, pA) === getSign(rH, rA);
+    const correctHome = (pH === rH);
+    const correctAway = (pA === rA);
 
+    let points = 0;
+    if (correctSign) points += getPoint('sign');
+    if (correctHome) points += getPoint('home_goals');
+    if (correctAway) points += getPoint('away_goals');
+    if (isExact) points += getPoint('exact_bonus');
+
+    // Mantenemos rule_id compatible con los desempates del ranking (exact_scores, correct_signs)
     let rule_id = 'wrong';
     if (isExact) {
         rule_id = isDraw ? 'exact_draw' : 'exact_non_draw';
     } else if (correctSign) {
         rule_id = isDraw ? 'draw_not_exact' : 'winner_not_exact';
+    } else if (correctHome || correctAway) {
+        rule_id = 'partial_goals'; 
     }
 
-    return { rule_id, points: getPoint(rule_id), computable: true };
+    return { rule_id, points, computable: true };
 }
 
 function buildMonthlyRanking(participants, matches, predictionsCurrent, results, scoringRules, config = {}) {

@@ -1,11 +1,10 @@
 import { validateGoals } from './utils/validation.js';
 
 const DEFAULT_RULES = {
-    exact_draw: 20,
-    exact_non_draw: 15,
-    draw_not_exact: 10,
-    winner_not_exact: 5,
-    wrong: 0
+    sign: 4,
+    home_goals: 2,
+    away_goals: 2,
+    exact_bonus: 2
 };
 
 /**
@@ -51,6 +50,16 @@ export function scorePrediction(prediction, result, rules = DEFAULT_RULES) {
     const isDraw = (rH === rA);
     const isExact = (pH === rH && pA === rA);
     const correctSign = getSign(pH, pA) === getSign(rH, rA);
+    const correctHome = (pH === rH);
+    const correctAway = (pA === rA);
+
+    const getPoint = (id) => rules[id] !== undefined ? Number(rules[id]) : DEFAULT_RULES[id];
+
+    let points = 0;
+    if (correctSign) points += getPoint('sign');
+    if (correctHome) points += getPoint('home_goals');
+    if (correctAway) points += getPoint('away_goals');
+    if (isExact) points += getPoint('exact_bonus');
 
     let rule_id = 'wrong';
 
@@ -58,9 +67,9 @@ export function scorePrediction(prediction, result, rules = DEFAULT_RULES) {
         rule_id = isDraw ? 'exact_draw' : 'exact_non_draw';
     } else if (correctSign) {
         rule_id = isDraw ? 'draw_not_exact' : 'winner_not_exact';
+    } else if (correctHome || correctAway) {
+        rule_id = 'partial_goals';
     }
-
-    const points = rules[rule_id] !== undefined ? Number(rules[rule_id]) : DEFAULT_RULES[rule_id];
 
     return { rule_id, points, computable: true };
 }
