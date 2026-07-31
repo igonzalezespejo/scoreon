@@ -1,48 +1,48 @@
 export const staticDescriptions = {
     '2026-08': `
         <div class="static-description" style="text-align: left; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem; padding: 1rem;">
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0;">Semana 1 (1 al 12 de agosto): Supercopas y Clásicos de Verano</h4>
-            <p style="margin-bottom: 0.5rem;">Como aún no hay liga regular en España e Inglaterra, abrimos con títulos en juego y los derbis más calientes de las ligas que no paran en verano.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0;">Semana 1 (4 al 8 de agosto): Europa y fútbol de madrugada</h4>
+            <p style="margin-bottom: 0.5rem;">El mes comienza con una eliminatoria europea y continúa con partidos americanos de carácter imprevisible. Una semana corta, pero con estilos y horarios muy distintos.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>Paris Saint-Germain vs. Aston Villa:</strong> (Supercopa de la UEFA, 12 de agosto). Un duelo interesantísimo entre el gigante francés y los ingleses, que vienen de arrasar en la Europa League y colarse cuartos en la Premier.</li>
-                <li><strong>Arsenal vs. Manchester United:</strong> (Community Shield). El primer gran clásico inglés del año en Wembley con un título en juego.</li>
-                <li><strong>Sporting CP vs. FC Porto:</strong> (Supercopa de Portugal). Uno de los derbis más tensos de Europa para arrancar la temporada lusa.</li>
-                <li><strong>PSV Eindhoven vs. Feyenoord:</strong> (Supercopa de Países Bajos). Duelo a vida o muerte entre los dos grandes del fútbol holandés.</li>
-                <li><strong>Los Angeles Galaxy vs. LAFC:</strong> (MLS). El famoso "Tráfico", el derbi de Los Ángeles, perfecto para rascar empates locos de madrugada.</li>
-                <li><strong>Flamengo vs. Palmeiras:</strong> (Brasileirão). Choque de trenes entre las dos plantillas más potentes de Sudamérica, siempre igualado.</li>
+                <li><strong>Union Saint-Gilloise vs. Bodø/Glimt:</strong> (Clasificatorio de Champions League, 4 de agosto). Una eliminatoria europea entre dos equipos poco habituales en el gran escaparate. La presión por acercarse a la Champions convierte cada error en decisivo.</li>
+                <li><strong>Inter Miami vs. Atlético de San Luis:</strong> (Leagues Cup, 5 de agosto). Inter Miami concentra buena parte de los focos, pero los cruces entre clubes mexicanos y estadounidenses suelen producir partidos abiertos y difíciles de pronosticar.</li>
+                <li><strong>Club América vs. San Diego FC:</strong> (Leagues Cup, 7 de agosto). Uno de los gigantes de México frente a un proyecto estadounidense ambicioso. El peso de la camiseta del América añade presión y atractivo al encuentro.</li>
+                <li><strong>Grêmio vs. São Paulo:</strong> (Brasileirão, 8 de agosto). Dos históricos brasileños en un partido con mucho prestigio. Un duelo tradicionalmente intenso, táctico y con ambiente de gran cita.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 2 (14 al 16 de agosto): Emboscadas en LaLiga</h4>
-            <p style="margin-bottom: 0.5rem;">Arranca el fútbol español. En lugar de poner estrenos cómodos, buscamos los estadios donde los equipos grandes suelen dejarse puntos.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 2 (12 al 16 de agosto): Títulos y noches sudamericanas</h4>
+            <p style="margin-bottom: 0.5rem;">Es la semana de las finales y las eliminatorias continentales. Hay títulos en juego en Europa y cruces brasileños de máxima exigencia.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>Valencia CF vs. FC Barcelona:</strong> (LaLiga). Mestalla es históricamente una pesadilla para el Barça en la primera jornada; un partido donde apostar por el visitante no es nada seguro.</li>
-                <li><strong>RCD Mallorca vs. Real Madrid:</strong> (LaLiga). Son Moix de noche a mediados de agosto es un campo trampa de manual, muy rocoso.</li>
-                <li><strong>Villarreal CF vs. Sevilla FC:</strong> (LaLiga). Un duelo puro de clase media-alta por entrar en Europa. Fuerzas igualadísimas.</li>
-                <li><strong>Real Betis vs. Athletic Club:</strong> (LaLiga). Choque de estilos en el Villamarín entre dos aspirantes a todo en la zona europea. Huele a empate con goles.</li>
-                <li><strong>SL Benfica vs. SC Braga:</strong> (Primeira Liga). Uno de los cruces más duros de la liga portuguesa.</li>
-                <li><strong>Ajax vs. AZ Alkmaar:</strong> (Eredivisie). Duelo de alta tensión en la liga holandesa.</li>
+                <li><strong>Paris Saint-Germain vs. Aston Villa:</strong> (Supercopa de Europa, 12 de agosto). Un título continental en juego entre el poderío del PSG y un Aston Villa capaz de competir de tú a tú con cualquiera. El primer gran escaparate europeo del mes.</li>
+                <li><strong>Palmeiras vs. Cerro Porteño:</strong> (Copa Libertadores, 13 de agosto). Palmeiras parte con el peso de favorito, pero la Libertadores castiga cualquier exceso de confianza. Cerro Porteño tratará de convertir el partido en una batalla cerrada.</li>
+                <li><strong>Cruzeiro vs. Flamengo:</strong> (Copa Libertadores, 13 de agosto). Eliminatoria brasileña de enorme tensión. Dos grandes aficiones, mucha calidad individual y muy poco margen para regalar ocasiones.</li>
+                <li><strong>Fluminense vs. Palmeiras:</strong> (Brasileirão, 15 de agosto). Dos equipos acostumbrados a competir por objetivos importantes. Un partido técnico, igualado y con suficientes argumentos para cambiar de rumbo en cualquier momento.</li>
+                <li><strong>Lens vs. Paris Saint-Germain:</strong> (Trophée des Champions, 16 de agosto). Lens intentará desafiar al gran dominador francés en una final a partido único. El ambiente y la intensidad del conjunto norteño pueden equilibrar la diferencia de talento.</li>
+                <li><strong>Arsenal vs. Manchester City:</strong> (Community Shield, 16 de agosto). Uno de los grandes duelos del fútbol inglés reciente, esta vez con un título en juego. Calidad, rivalidad y una excelente primera prueba para ambos.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 3 (21 al 24 de agosto): El Choque de Trenes</h4>
-            <p style="margin-bottom: 0.5rem;">Arranca la Premier League. Cruzamos la segunda jornada española con los mejores duelos de la primera inglesa, manteniendo a tus cuatro equipos fijos en situaciones comprometidas.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 3 (21 al 23 de agosto): Arrancan las grandes ligas</h4>
+            <p style="margin-bottom: 0.5rem;">LaLiga y la Premier toman el protagonismo con salidas complicadas, aspirantes europeos y un clásico argentino para cerrar el domingo.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>Chelsea vs. Manchester City:</strong> (Premier League). Un debut durísimo para el City en Stamford Bridge, impredecible desde el minuto uno.</li>
-                <li><strong>Real Sociedad vs. Real Madrid:</strong> (LaLiga). El Reale Arena es probablemente la salida más difícil del año junto con el Metropolitano o San Mamés.</li>
-                <li><strong>Athletic Club vs. FC Barcelona:</strong> (LaLiga). Un clásico espectacular donde la localía del Athletic equilibra completamente la balanza.</li>
-                <li><strong>Sevilla FC vs. Real Betis:</strong> (LaLiga). El Gran Derbi. Cero estadísticas, pura tensión. El partido perfecto para buscar los 20 puntos del empate exacto.</li>
-                <li><strong>Arsenal vs. Aston Villa:</strong> (Premier League). El campeón de liga contra el equipo revelación del año pasado.</li>
-                <li><strong>West Ham United vs. Tottenham Hotspur:</strong> (Premier League). Derbi de Londres muy físico y tradicionalmente bronco.</li>
+                <li><strong>Real Betis vs. Real Sociedad:</strong> (LaLiga, 21 de agosto). Duelo directo entre dos equipos con aspiraciones europeas. El Villamarín, la calidad de ambos centros del campo y la igualdad lo convierten en uno de los partidos más atractivos de la jornada.</li>
+                <li><strong>Borussia Dortmund vs. Bayern Múnich:</strong> (Supercopa alemana, 22 de agosto). El gran clásico moderno de Alemania con el primer título nacional en juego. El Dortmund buscará aprovechar la ocasión para golpear al principal gigante del país.</li>
+                <li><strong>Athletic Club vs. Sevilla FC:</strong> (LaLiga, 22 de agosto). San Mamés siempre eleva la intensidad del partido. El Athletic presiona y empuja, mientras que el Sevilla deberá resistir en uno de los campos más exigentes de España.</li>
+                <li><strong>Manchester City vs. Bournemouth:</strong> (Premier League, 23 de agosto). El City es claro favorito, pero estos partidos ponen a prueba la paciencia del apostante: dominar no siempre significa resolver pronto.</li>
+                <li><strong>Atlético de Madrid vs. Villarreal:</strong> (LaLiga, 23 de agosto). Choque entre dos equipos con calidad y aspiraciones altas. El control defensivo del Atlético se enfrenta al fútbol ofensivo y técnico del Villarreal.</li>
+                <li><strong>Newcastle United vs. Liverpool:</strong> (Premier League, 23 de agosto). St James' Park, ritmo alto y dos equipos preparados para atacar. Uno de esos encuentros donde el marcador puede moverse desde los primeros minutos.</li>
+                <li><strong>Racing Club vs. Boca Juniors:</strong> (Liga Argentina Clausura, 23 de agosto). Un clásico del fútbol argentino cargado de historia, presión y ambiente. Partido ideal para olvidar favoritismos y esperar máxima tensión.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 4 (28 al 31 de agosto): El Menú Completo Europeo</h4>
-            <p style="margin-bottom: 0.5rem;">Cerramos el mes con las ligas a pleno rendimiento y la incorporación de Italia y Alemania al calendario con partidazos.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 4 (24 al 31 de agosto): Europa a pleno rendimiento</h4>
+            <p style="margin-bottom: 0.5rem;">El mes termina con todas las grandes ligas en marcha. Hay clásicos nacionales, duelos entre aspirantes al título y varios enfrentamientos directos por la zona europea.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 0;">
-                <li><strong>Manchester United vs. Liverpool:</strong> (Premier League). El Clásico del Noroeste de Inglaterra. La máxima rivalidad histórica del país.</li>
-                <li><strong>Atlético de Madrid vs. Sevilla FC:</strong> (LaLiga). Duelo físico y táctico en el Metropolitano, siempre de marcadores ajustados.</li>
-                <li><strong>Rayo Vallecano vs. Real Betis:</strong> (LaLiga). Vallecas es un estadio de dimensiones engañosas donde la calidad individual se anula, propiciando muchos empates.</li>
-                <li><strong>Newcastle United vs. Tottenham Hotspur:</strong> (Premier League). Dos equipos diseñados para atacar; un partido ideal para predecir marcadores abultados.</li>
-                <li><strong>Juventus vs. AC Milan:</strong> (Serie A). Clásico absoluto en Italia para celebrar la vuelta del Calcio.</li>
-                <li><strong>Bayer Leverkusen vs. Bayern Múnich:</strong> (Bundesliga). El partido de la jornada en Alemania entre el campeón invicto reciente y el gigante herido.</li>
+                <li><strong>Roma vs. Fiorentina:</strong> (Serie A, 24 de agosto). Dos históricos italianos que suelen competir por posiciones europeas. Un partido táctico, intenso y con dos aficiones especialmente exigentes.</li>
+                <li><strong>Real Madrid vs. Real Sociedad:</strong> (LaLiga, 26 de agosto). La Real es uno de los rivales que mejor puede discutirle la posesión y el ritmo al Madrid. Una prueba seria para el conjunto blanco ante un equipo siempre incómodo.</li>
+                <li><strong>FC Barcelona vs. Athletic Club:</strong> (LaLiga, 27 de agosto). Un clásico del fútbol español entre dos clubes históricos. El Athletic aporta intensidad y personalidad suficiente para convertir la visita en un partido peligroso para el Barça.</li>
+                <li><strong>Sevilla FC vs. Atlético de Madrid:</strong> (LaLiga, 29 de agosto). Partido de mucha exigencia física y táctica. El ambiente del Sánchez-Pizjuán y la solidez del Atlético anticipan un duelo cerrado y de pequeños detalles.</li>
+                <li><strong>Tottenham Hotspur vs. Newcastle United:</strong> (Premier League, 29 de agosto). Dos equipos construidos para jugar hacia delante. Velocidad, transiciones y muchas opciones de que aparezcan goles en ambas porterías.</li>
+                <li><strong>Napoli vs. Como:</strong> (Serie A, 30 de agosto). El peso ofensivo y la presión del estadio colocan al Napoli como favorito, pero el Como afronta el encuentro con mucho que ganar y poco que perder.</li>
+                <li><strong>Aston Villa vs. Arsenal:</strong> (Premier League, 31 de agosto). Un cierre de mes de máxima dificultad para el Arsenal. Villa Park y la intensidad del Aston Villa convierten el partido en una prueba importante entre aspirantes a la zona alta.</li>
             </ul>
         </div>
     `,
