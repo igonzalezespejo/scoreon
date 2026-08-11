@@ -363,6 +363,21 @@ h1, h2, h3, h4, h5, h6 {
   color: #ffffff;
 }
 
+.betting-match-points-badge {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  background: var(--accent-primary);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  border-radius: var(--border-radius-sm);
+  padding: 0.15rem 0.5rem;
+  z-index: 1;
+}
+
 .betting-match-comp-line {
   text-align: center;
   font-weight: 600;

@@ -22,6 +22,7 @@ class State {
         this.months = [];
         this.selectedMonthId = null;
         this.monthDataById = {};
+        this.scoringRules = {};
         
         this.serverTime = null;
         
@@ -114,6 +115,7 @@ class State {
         this.predictionsSummary = data.predictionsSummary || {};
         this.results = data.results || [];
         this.serverTime = data.serverTime;
+        this.scoringRules = data.scoringRules || {};
 
         // monthsData trae el detalle completo (partidos, resultados, resumen)
         // de TODOS los meses de una sola vez: se cachean todos aquí para que

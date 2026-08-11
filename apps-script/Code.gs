@@ -948,6 +948,15 @@ function actionBootstrapLight() {
   const currentPredictions = getSheetData("Predictions_Current");
   const allResults = getSheetData("Results");
 
+  // Mapa { rule_id: points } de las reglas activas, para que el frontend
+  // pueda calcular los puntos de un partido ya finalizado (tarjeta de
+  // apuesta) sin duplicar la lectura de la hoja Scoring_Rules.
+  const scoringRules = {};
+  getSheetData("Scoring_Rules").forEach(r => {
+    const isActive = (r.active === true || r.active === "true" || r.active === "TRUE");
+    if (isActive) scoringRules[r.rule_id] = Number(r.points);
+  });
+
   // Detalle completo (partidos, resultados, resumen de participación) de
   // TODOS los meses en una sola pasada: el coste de leer las hojas ya se paga
   // una vez por llamada independientemente de cuántos meses se filtren
@@ -993,6 +1002,7 @@ function actionBootstrapLight() {
     predictionsSummary: activeMonthDetail.predictionsSummary,
     results: activeMonthDetail.results,
     monthsData: monthsData,
+    scoringRules: scoringRules,
     debug: debugInfo
   });
 }

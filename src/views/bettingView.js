@@ -2,6 +2,7 @@ import { state } from '../state.js';
 import { savePrediction, loadBootstrapLight, loadRankingsData } from '../api.js';
 import { showToast } from '../utils/dom.js';
 import { formatDate } from '../utils/dates.js';
+import { scorePrediction } from '../scoring.js';
 
 export const bettingView = {
     render() {
@@ -151,8 +152,17 @@ export const bettingView = {
                 ? `<span class="betting-match-real-chip is-cancelled">Cancelado</span>`
                 : `<span class="betting-match-real-chip tab-num">${realAway}</span>`;
 
+            // Solo hay puntos que mostrar si el partido ya tiene resultado
+            // final: scorePrediction ya devuelve computable=false para
+            // partidos pendientes/cancelados o sin apuesta guardada.
+            const scoreResult = scorePrediction(pred, realResult, state.scoringRules);
+            const pointsBadge = scoreResult.computable
+                ? `<div class="betting-match-points-badge" title="Puntos conseguidos en este partido">${scoreResult.points} pts</div>`
+                : '';
+
             formHtml += `
                 <div class="betting-match-card ${cardStateClass}">
+                    ${pointsBadge}
                     <div class="betting-match-ribbon">${ribbonText}</div>
                     <div class="betting-match-comp-line"><span class="betting-match-comp">${match.competition}</span> · <span class="betting-match-horario">${formatDate(match.kickoff_at)}</span></div>
                     <div class="betting-match-split">
