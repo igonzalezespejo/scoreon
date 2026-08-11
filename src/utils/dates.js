@@ -5,7 +5,7 @@
 export function formatDate(isoString) {
     if (!isoString) return '';
     const date = new Date(isoString);
-    const options = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+    const options = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' };
     return date.toLocaleDateString('es-ES', options);
 }
 
@@ -40,7 +40,7 @@ export function getActiveMonthTitle(activeMonth) {
     if (!activeMonth) return 'Mes activo';
     
     if (activeMonth.title) {
-        const isIsoDate = /^\\d{4}-\\d{2}-\\d{2}T/.test(String(activeMonth.title));
+        const isIsoDate = /^\d{4}-\d{2}-\d{2}T/.test(String(activeMonth.title));
         if (!isIsoDate) {
             return activeMonth.title;
         }

@@ -18,8 +18,8 @@ Para iniciar un proyecto nuevo o un nuevo mes de porra, sigue estos pasos riguro
     - `registration_code`: Código de invitación opcional (ej. `PORRA2026`).
     - `pin_length`: Longitud del PIN generado (por defecto `4`).
 5. [ ] **Cargar Participantes (`Participants`):** Añadir a todos los participantes con su `user_id` único, nombre para mostrar, `email`, `pin` y marcar `active` como `true`. Si el autoregistro web está activado, los usuarios aparecerán aquí automáticamente. **Importante:** Asegúrate de que las columnas `user_id`, `email` y `pin` tengan formato de **Texto Plano** (`@`) para evitar que se pierdan los ceros iniciales de los PINs.
-6. [ ] **Crear Mes (`Months`):** Definir el mes inicial con estado `open` y su `lock_at` (fecha límite de apuestas en formato ISO 8601, ej. `2026-09-14T20:00:00Z`).
-7. [ ] **Cargar Partidos (`Matches`):** Añadir los partidos del mes, asegurándose de que la columna `month_id` coincida con el mes creado.
+6. [ ] **Crear Mes (`Months`):** Definir el mes inicial con estado `open` y su `lock_at` (fecha límite de apuestas). Formato: texto plano ISO 8601 en **UTC** (con `Z`), ej. `2026-09-14T20:00:00Z` — no es la hora española directamente, hay que restarle 2h en horario de verano (CEST) o 1h en horario de invierno (CET). Ej. cierre a las 22:00 hora española en septiembre (CEST) → escribir `2026-09-14T20:00:00Z`. Si Sheets convierte la celda en fecha en vez de dejarla como texto, bórrala y vuelve a escribirla con una comilla simple delante (`'2026-09-14T20:00:00Z`).
+7. [ ] **Cargar Partidos (`Matches`):** Añadir los partidos del mes, asegurándose de que la columna `month_id` coincida con el mes creado. `kickoff_at`/`lock_at` siguen la misma regla: texto plano ISO 8601 en UTC, con la misma conversión de hora española (ver punto 6).
 8. [ ] **Desplegar Apps Script:** Ir a Extensiones > Apps Script, pegar `Code.gs`, realizar una "Nueva Implementación" como "Aplicación web" ejecutada como "Tú" y accesible para "Cualquiera".
 9. [ ] **Conectar Frontend:** Copiar la URL del Web App de Apps Script y pegarla en la configuración de la web (`src/config.js` o similar).
 10. [ ] **Prueba End-to-End:** Intentar hacer una predicción desde la web y verificar que se inscribe correctamente en `Predictions_Current` y genera log en `Predictions_Log`.
@@ -64,7 +64,7 @@ Si prefieres o necesitas operar directamente en Google Sheets, a continuación s
 - **Pestaña:** `Months`
 - **Acciones:**
   - Para iniciar el mes: Poner `status` = `open` y revisar la fecha `lock_at`. Asegurarse de que en `Config` el valor de `active_month_id` apunte a este mes.
-  - Para cerrar el mes manual: Cambiar `status` a `locked`. (Aunque el backend rechaza apuestas automáticamente si la hora actual es superior a `lock_at`, cambiar el status bloquea el mes permanentemente).
+  - Para cerrar el mes manual: Cambiar `status` a `locked`. (El backend también cierra el mes solo, de un solo disparo, en cuanto pasa su `lock_at` — marca `auto_closed_at` para no volver a tocarlo; si lo reabres a mano después de esa fecha, se queda abierto de verdad hasta que tú lo cierres otra vez).
   - Para archivar: Cambiar `status` a `archived`.
 
 ### 3. Gestión de Partidos
@@ -141,7 +141,7 @@ Si prefieres o necesitas operar directamente en Google Sheets, a continuación s
 ### 9. Operación Mensual (Cambio de ciclo y Temporada)
 La aplicación soporta navegación multi-mes, es decir, el usuario puede seleccionar otros meses para ver su ranking, resultados o hacer apuestas (si están abiertos).
 Para lanzar un nuevo mes sin borrar el historial:
-1. **Crear nuevo mes:** En la pestaña `Months`, añadir fila (ej. `2026-10`) con `status = open` y definir su fecha de cierre (`lock_at`).
+1. **Crear nuevo mes:** En la pestaña `Months`, añadir fila (ej. `2026-10`) con `status = open` y definir su fecha de cierre (`lock_at`, texto plano ISO 8601 UTC — ver punto 6 de la sección de configuración inicial para la conversión de hora española).
 2. **Cargar partidos:** En la pestaña `Matches`, añadir los partidos asignándoles el nuevo `month_id`. **Recuerda usar un `match_id` único global** (ej. `2026-10-m001`).
 3. **Activar mes por defecto:** En la pestaña `Config`, actualizar `active_month_id` al nuevo mes. Esto solo define el mes que carga por defecto en la web, pero los demás meses configurados (si no son `draft`) seguirán accesibles para los usuarios desde un selector en la interfaz.
 4. **Cierre de ciclo (mes anterior):** Cambiar el status del mes anterior a `locked`, luego `scored` (tras calcular puntos), y finalmente `archived`.

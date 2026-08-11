@@ -13,10 +13,14 @@ Para que `Code.gs` funcione sin ambigüedad, los nombres de las pestañas y las 
    - `Results.match_id`
    - `Predictions_Current.match_id`
    - `Participants.user_id`
+   - `Months.open_at`, `Months.lock_at`
+   - `Matches.kickoff_at`, `Matches.lock_at`
 
-   Si Google Sheets convierte `2026-08` en fecha (provocando que el sistema muestre fechas ISO como "2026-07-31T22:00:00.000Z"), debes escribirlo obligatoriamente con una comilla simple delante: `'2026-08`
+   Si Google Sheets convierte `2026-08` en fecha (provocando que el sistema muestre fechas ISO como "2026-07-31T22:00:00.000Z"), debes escribirlo obligatoriamente con una comilla simple delante: `'2026-08`. Lo mismo aplica a cualquier fecha/hora: si al escribirla Sheets la convierte en una celda de tipo Fecha (se alinea a la derecha y cambia de aspecto), bórrala y vuelve a escribirla con una comilla simple delante para forzar texto plano.
 3. **No Mover Columnas:** El backend lee por nombre de cabecera en la fila 1, el orden de las columnas no importa siempre y cuando los nombres sean exactos.
-4. **Fechas ISO 8601:** Se recomienda escribir las fechas en formato ISO (ej. `2026-09-14T20:00:00Z`).
+4. **Fechas ISO 8601 en UTC:** Todas las fechas se escriben en formato ISO con sufijo `Z` (ej. `2026-09-14T20:00:00Z`), que representa siempre **UTC**, no la hora española. La web ya se encarga de mostrarle a cada usuario la hora convertida a horario de España (`Europe/Madrid`) — el admin solo tiene que convertir la hora española a UTC al escribir una fecha nueva:
+   - **Horario de verano en España (CEST, aprox. finales de marzo a finales de octubre):** resta 2 horas. Ej. partido a las 21:00 hora española en agosto → escribir `...T19:00:00Z`.
+   - **Horario de invierno en España (CET, aprox. finales de octubre a finales de marzo):** resta 1 hora. Ej. partido a las 21:00 hora española en diciembre → escribir `...T20:00:00Z`.
 
 ## Leyenda
 - **Obligatorio:** Si la columna debe tener un valor válido para que el sistema no falle.
@@ -72,8 +76,8 @@ Definición de los meses de competición.
 | `month_id` | Sí | Sí | No | ID del mes (ej. `2026-09`) |
 | `title` | Sí | Sí | No | Título visible (ej. `Septiembre 2026`) |
 | `status` | Sí | Sí | No | `open`, `locked`, `scored`, `archived` |
-| `open_at` | No | Sí | No | Fecha de apertura (informativa) |
-| `lock_at` | Sí | Sí | No | Fecha de cierre estricto (ISO 8601) |
+| `open_at` | No | Sí | No | Fecha de apertura (informativa). Texto plano, ISO 8601 UTC — ver Reglas Generales #2 y #4 |
+| `lock_at` | Sí | Sí | No | Fecha de cierre estricto. Texto plano, ISO 8601 UTC (no la hora española directamente) — ver Reglas Generales #2 y #4 |
 | `scored_at` | No | Sí | No | Fecha de última puntuación |
 | `archived_at` | No | Sí | No | Fecha de archivado |
 | `notes` | No | Sí | No | Notas internas |
@@ -95,8 +99,8 @@ Partidos de cada mes.
 | `competition` | Sí | Sí | No | Competición (ej. `LaLiga`) |
 | `home_team` | Sí | Sí | No | Equipo local |
 | `away_team` | Sí | Sí | No | Equipo visitante |
-| `kickoff_at` | No | Sí | No | Hora de inicio (ISO 8601) |
-| `lock_at` | No | Sí | No | Cierre específico de este partido |
+| `kickoff_at` | No | Sí | No | Hora de inicio. Texto plano, ISO 8601 UTC (no la hora española directamente) — ver Reglas Generales #2 y #4 |
+| `lock_at` | No | Sí | No | Cierre específico de este partido (si se deja vacío, se usa `kickoff_at`). Texto plano, ISO 8601 UTC |
 | `status` | Sí | Sí | No | `scheduled`, `locked`, `played`, `cancelled` |
 | `display_order` | No | Sí | No | Orden numérico para la vista |
 | `week_no` | No | Sí | No | Semana del mes a la que pertenece (1, 2, 3 o 4) |

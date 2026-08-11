@@ -1654,6 +1654,7 @@ function menuCleanExpiredSessions() {
 // ==========================================
 
 const SPREADSHEET_ID = "";
+const MADRID_TZ = 'Europe/Madrid';
 
 function getSpreadsheet() {
   if (SPREADSHEET_ID) {
@@ -1670,17 +1671,13 @@ function normalizeId(value) {
 function normalizeMonthId(value) {
   if (value === null || value === undefined || value === "") return "";
   if (value instanceof Date) {
-    let tz = Session.getScriptTimeZone();
-    try { tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone() || tz; } catch(e) {}
-    return Utilities.formatDate(value, tz, "yyyy-MM");
+    return Utilities.formatDate(value, MADRID_TZ, "yyyy-MM");
   }
   let str = String(value).trim();
-  if (/^\\d{4}-\\d{2}-\\d{2}T/.test(str)) {
+  if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
-      let tz = Session.getScriptTimeZone();
-      try { tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone() || tz; } catch(e) {}
-      return Utilities.formatDate(d, tz, "yyyy-MM");
+      return Utilities.formatDate(d, MADRID_TZ, "yyyy-MM");
     }
   }
   return str;
@@ -1703,7 +1700,7 @@ function sanitizeMonthTitle(title, monthId) {
   if (!title) return buildMonthTitleFromMonthId(monthId);
   if (title instanceof Date) return buildMonthTitleFromMonthId(monthId);
   let str = String(title).trim();
-  if (/^\\d{4}-\\d{2}-\\d{2}T/.test(str) || /^\\d{4}-\\d{2}$/.test(str)) {
+  if (/^\d{4}-\d{2}-\d{2}T/.test(str) || /^\d{4}-\d{2}$/.test(str)) {
       return buildMonthTitleFromMonthId(monthId);
   }
   return str;
@@ -1725,7 +1722,14 @@ function getSheetData(sheetName) {
   if (data.length < 2) return [];
   const headers = data[0];
   const stringColumns = ['user_id', 'match_id', 'month_id', 'active_month_id', 'rule_id', 'status'];
-  
+  // Columnas de fecha/hora que el admin escribe a mano. El estándar es texto
+  // ISO-8601 UTC ("...Z"), pero mientras queden celdas sin migrar a texto,
+  // Sheets puede seguir devolviéndolas como objeto Date nativo (interpretado
+  // con la timezone del proyecto Apps Script, ver MADRID_TZ/appsscript.json).
+  // Normalizamos aquí para que el resto del código siempre reciba un string
+  // ISO-UTC, sin importar si esa fila concreta ya fue migrada o no.
+  const dateColumns = ['kickoff_at', 'lock_at', 'open_at'];
+
   const rows = [];
   for (let i = 1; i < data.length; i++) {
     let obj = {};
@@ -1733,6 +1737,8 @@ function getSheetData(sheetName) {
       const header = headers[j];
       if (stringColumns.includes(header)) {
         obj[header] = displayData[i][j];
+      } else if (dateColumns.includes(header) && data[i][j] instanceof Date) {
+        obj[header] = data[i][j].toISOString();
       } else {
         obj[header] = data[i][j];
       }

@@ -38,7 +38,7 @@ async function init() {
     // resuelva la sesión.
     loadBootstrapLight()
         .then(data => {
-            statusMsg.textContent = `Actualizado: ${new Date().toLocaleTimeString('es-ES')}`;
+            statusMsg.textContent = `Actualizado: ${new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' })}`;
 
             const viewName = Object.keys(VIEWS).find(k => VIEWS[k] === currentView);
             if (viewName && CORE_DATA_VIEWS.includes(viewName)) {

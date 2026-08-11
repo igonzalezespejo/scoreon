@@ -9,7 +9,7 @@ El parámetro `action` determina la operación. Todas las respuestas incluyen:
 - `ok` (boolean)
 - `code` (string)
 - `message` (string)
-- `serverTime` (ISO string)
+- `serverTime` (ISO string, siempre UTC con sufijo `Z` — es `new Date().toISOString()` del lado servidor. El frontend es responsable de convertirlo a hora española (`Europe/Madrid`) para mostrarlo; ver `src/utils/dates.js`)
 
 ---
 
@@ -25,7 +25,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
   "ok": true,
   "code": "SUCCESS",
   "message": "Data loaded",
-  "serverTime": "2026-07-09T18:00:00+02:00",
+  "serverTime": "2026-07-09T16:00:00.000Z",
   "config": {
     "active_month_id": "2026-09",
     "pin_enabled": true,
@@ -94,13 +94,12 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
 **Validaciones Realizadas (Backend / Code.gs):**
 1. **Usuario:** `user_id` debe existir y tener `active=true`.
 2. **PIN:** Si `config.pin_enabled` es true, el PIN enviado debe coincidir exactamente con el del archivo de Google Sheets.
-3. **Mes:** `month_id` debe existir y su `status` ser "open".
-4. **Cierre de mes:** El `serverTime` de Google debe ser anterior a `month.lock_at`.
-5. **Partidos:**
+3. **Mes:** `month_id` debe existir y su `status` ser "open". `status` es la única autoridad sobre si se puede apostar en un mes (la controla el admin con los botones Abrir/Cerrar Porra); `lock_at` ya no se compara en vivo aquí — en su lugar, `autoCloseExpiredMonths()` cierra automáticamente (`status` → `locked`) cualquier mes `open` cuyo `lock_at` ya haya pasado, de un solo disparo (marca `auto_closed_at` para no repetir el cierre si el admin lo reabre a mano después). Ver `apps-script/README_APPS_SCRIPT.md`.
+4. **Partidos:**
    - Cada `match_id` proporcionado en el payload debe existir y corresponder al `month_id`.
-   - El partido no puede haber comenzado (`serverTime < match.lock_at` y `serverTime < kickoff_at`).
+   - El partido no puede haber comenzado: esta sí es una comparación en vivo, `serverTime >= match.lock_at` (si está definido) o si no `serverTime >= kickoff_at`.
    - Se debe realizar el upsert usando la clave compuesta `month_id + user_id + match_id` en `Predictions_Current`.
-6. **Estructura de Goles:** `home_goals` y `away_goals` deben ser números enteros y >= 0.
+5. **Estructura de Goles:** `home_goals` y `away_goals` deben ser números enteros y >= 0.
 
 **Respuesta Exitosa:**
 ```json
@@ -108,7 +107,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
   "ok": true,
   "code": "SAVED",
   "message": "Predicciones guardadas correctamente",
-  "serverTime": "2026-07-09T18:05:00+02:00"
+  "serverTime": "2026-07-09T16:05:00.000Z"
 }
 ```
 
@@ -118,7 +117,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
   "ok": false,
   "code": "VALIDATION_ERROR",
   "message": "PIN incorrecto",
-  "serverTime": "2026-07-09T18:05:00+02:00"
+  "serverTime": "2026-07-09T16:05:00.000Z"
 }
 ```
 *(Otros errores comunes pueden retornar `code: "LOCK_TIMEOUT"` o `"SERVER_ERROR"`).*
@@ -152,7 +151,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
   "ok": true,
   "code": "REGISTERED",
   "message": "Participante creado correctamente",
-  "serverTime": "2026-07-13T10:00:00+02:00",
+  "serverTime": "2026-07-13T08:00:00.000Z",
   "participant": {
     "user_id": "juan-perez",
     "display_name": "Juan Pérez",
