@@ -157,13 +157,13 @@ export const bettingView = {
             // partidos pendientes/cancelados o sin apuesta guardada.
             const scoreResult = scorePrediction(pred, realResult, state.scoringRules);
             const pointsBadge = scoreResult.computable
-                ? `<div class="betting-match-points-badge" title="Puntos conseguidos en este partido">${scoreResult.points} pts</div>`
+                ? `<div class="betting-match-points-badge" title="Puntos conseguidos en este partido">+${scoreResult.points}</div>`
                 : '';
 
             formHtml += `
                 <div class="betting-match-card ${cardStateClass}">
                     ${pointsBadge}
-                    <div class="betting-match-ribbon">${ribbonText}</div>
+                    <div class="betting-match-ribbon" title="${ribbonText === 'Guardado' ? 'Apuesta guardada' : 'Apuesta pendiente'}">${ribbonText}</div>
                     <div class="betting-match-comp-line"><span class="betting-match-comp">${match.competition}</span> · <span class="betting-match-horario">${formatDate(match.kickoff_at)}</span></div>
                     <div class="betting-match-split">
                         <div class="betting-match-team-name">${match.home_team}</div>

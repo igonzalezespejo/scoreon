@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prueba — fondo suave + tarjetas con sombra ligera</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    /* ==== Variables ACTUALES de la app (styles/main.css) ==== */
+    --bg-dark: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --text-main: #020F2A;
+    --text-muted: #64748b;
+    --accent-primary: #E50046;
+    --accent-secondary: #FFB800;
+    --success-color: #00A651;
+    --border-light: #e2e8f0;
+    --border-radius: 12px;
+    --border-radius-sm: 8px;
+    --font-main: 'Noto Sans', sans-serif;
+    --font-heading: 'Poppins', sans-serif;
+
+    /* Estado "propuesta" — se activan con .proposed en <body> */
+    --p-bg-page: #F5F7FA;
+    --p-card-border: #E5E7EB;
+    --p-card-radius: 15px;
+    --p-card-shadow: 0 3px 12px rgba(0, 0, 0, .05);
+    --p-card-shadow-hover: 0 8px 20px rgba(0, 0, 0, .08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--font-main);
+    color: var(--text-main);
+    background-color: var(--bg-dark);
+    transition: background-color 0.25s ease;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 { font-family: var(--font-heading); font-weight: 700; line-height: 1.2; }
+
+  /* ---------- Barra de control de la prueba (no es parte de la app) ---------- */
+  .test-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #020F2A;
+    color: #fff;
+    padding: 0.9rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-bottom: 4px solid var(--accent-primary);
+  }
+
+  .test-toolbar .label {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .test-toolbar .label small {
+    display: block;
+    font-family: var(--font-main);
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: #93a0b8;
+    margin-top: 0.15rem;
+  }
+
+  .toggle-group {
+    display: flex;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 30px;
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .toggle-group button {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: none;
+    background: transparent;
+    color: #cbd5e1;
+    padding: 0.5rem 1.1rem;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .toggle-group button.active {
+    background: var(--accent-primary);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(229, 0, 70, 0.35);
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  .intro {
+    margin-bottom: 1.75rem;
+  }
+
+  .intro h1 {
+    font-size: 1.4rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .intro p {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    max-width: 62ch;
+  }
+
+  .swatches {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.9rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .swatch {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 0.3rem 0.7rem 0.3rem 0.4rem;
+  }
+
+  .swatch i {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  /* ============================================================
+     Tarjetas de apuesta — MISMAS clases que styles/main.css
+     (.betting-matches-grid / .betting-match-card / ...)
+     ============================================================ */
+  .betting-matches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.1rem;
+  }
+
+  .betting-match-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    padding-top: 0.9rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(2, 15, 42, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-radius 0.18s ease;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .betting-match-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 14px -4px rgba(2, 15, 42, 0.1);
+  }
+
+  .betting-match-ribbon {
+    position: absolute;
+    top: 0.75rem;
+    right: -1.95rem;
+    transform: rotate(40deg);
+    width: 7.8rem;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.22rem 0;
+  }
+
+  .betting-match-card.is-pending .betting-match-ribbon {
+    background: var(--accent-secondary);
+    color: #4a3300;
+  }
+
+  .betting-match-card.is-saved .betting-match-ribbon {
+    background: var(--success-color);
+    color: #ffffff;
+  }
+
+  .betting-match-points-badge {
+    position: absolute;
+    top: 0.65rem;
+    left: 0.65rem;
+    background: var(--accent-primary);
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+    border-radius: var(--border-radius-sm);
+    padding: 0.15rem 0.5rem;
+    z-index: 1;
+  }
+
+  .betting-match-comp-line {
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    margin-bottom: 0.85rem;
+    padding: 0 2.1rem;
+  }
+
+  .betting-match-comp {
+    color: var(--accent-primary);
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .betting-match-horario { font-size: 9px; }
+
+  .betting-match-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    position: relative;
+    flex: 1;
+  }
+
+  .betting-match-split::before {
+    content: "";
+    position: absolute;
+    top: 0.2rem;
+    bottom: 0.9rem;
+    left: 50%;
+    width: 1px;
+    background: var(--border-light);
+  }
+
+  .betting-match-team-name {
+    grid-row: 1;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-main);
+    text-align: center;
+    padding: 0 0.8rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  .betting-match-results {
+    grid-row: 2;
+    align-self: end;
+    text-align: center;
+    padding: 0 0.8rem 1rem;
+  }
+
+  .betting-match-real-chip {
+    display: inline-block;
+    margin-top: 0.6rem;
+    background: var(--bg-dark);
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12px;
+    border-radius: var(--border-radius-sm);
+    padding: 0.15rem 0.7rem;
+    min-width: 2.4rem;
+  }
+
+  .betting-match-real-chip.is-cancelled {
+    font-size: 0.68rem;
+    color: var(--accent-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .betting-match-bet-input {
+    display: block;
+    margin: 0.55rem auto 0;
+    width: 2.7rem;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--text-main);
+    background: var(--bg-card);
+    border: 1.5px solid var(--accent-primary);
+    border-radius: var(--border-radius-sm);
+    padding: 0.3rem 0;
+    -moz-appearance: textfield;
+  }
+
+  .betting-match-bet-input::-webkit-outer-spin-button,
+  .betting-match-bet-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .betting-match-bet-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(229, 0, 70, 0.14);
+  }
+
+  .betting-match-bet-input:disabled {
+    border-color: var(--border-light);
+    color: var(--text-muted);
+    background: var(--bg-dark);
+    cursor: not-allowed;
+  }
+
+  /* ============================================================
+     Estado PROPUESTA — solo se aplica cuando <body> tiene .proposed
+     Cambia exactamente lo que se pidió: fondo de pagina, borde,
+     radio, sombra y padding vertical de la tarjeta, y el hover.
+     ============================================================ */
+  body.proposed {
+    background-color: var(--p-bg-page);
+  }
+
+  body.proposed .betting-match-card {
+    border-color: var(--p-card-border);
+    border-radius: var(--p-card-radius);
+    box-shadow: var(--p-card-shadow);
+    padding-top: 1.2rem;
+  }
+
+  body.proposed .betting-match-results {
+    padding-bottom: 1.3rem;
+  }
+
+  body.proposed .betting-match-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--p-card-shadow-hover);
+  }
+
+  /* Estado (guardado/pendiente): en vez de la cintilla diagonal con texto,
+     un triangulo de color solo en la esquina superior derecha, sin letras. */
+  body.proposed .betting-match-ribbon {
+    top: 0;
+    right: 0;
+    left: auto;
+    width: 0;
+    height: 0;
+    padding: 0;
+    transform: none;
+    border-style: solid;
+    border-width: 0 34px 34px 0;
+    border-color: transparent transparent transparent transparent;
+    font-size: 0;
+    line-height: 0;
+    color: transparent;
+    overflow: hidden;
+  }
+
+  body.proposed .betting-match-card.is-saved .betting-match-ribbon {
+    background: transparent;
+    border-color: transparent var(--success-color) transparent transparent;
+  }
+
+  body.proposed .betting-match-card.is-pending .betting-match-ribbon {
+    background: transparent;
+    border-color: transparent var(--accent-secondary) transparent transparent;
+  }
+
+  body.proposed .betting-match-comp-line {
+    padding: 0 1rem;
+  }
+
+  /* Insignia de puntos: mismo lenguaje visual que las píldoras "+4"/"+2"
+     de la sección "¿Como se puntua?" del inicio (homeView.js) — pastilla
+     redondeada, texto blanco en negrita y sombra suave. */
+  .badge-text-proposed { display: none; }
+  body.proposed .badge-text-actual { display: none; }
+  body.proposed .badge-text-proposed { display: inline; }
+
+  body.proposed .betting-match-points-badge {
+    top: 0.6rem;
+    left: 0.6rem;
+    border-radius: 20px;
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    padding: 0.22rem 0.65rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+  }
+</style>
+</head>
+<body>
+
+  <div class="test-toolbar">
+    <div class="label">
+      Prueba visual — no conectada a la app
+      <small>Compara el fondo/tarjetas actuales contra la propuesta (gris muy claro + sombra ligera)</small>
+    </div>
+    <div class="toggle-group" role="group" aria-label="Cambiar estado visual">
+      <button type="button" id="btn-actual" class="active">Actual</button>
+      <button type="button" id="btn-proposed">Propuesta</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="intro">
+      <h1>Tarjetas de apuesta — comparación de fondo y sombra</h1>
+      <p>Mismo marcado y clases que <code>bettingView.js</code> / <code>main.css</code>. En el estado "Propuesta" cambian: el fondo de página, el borde/radio/sombra y padding vertical de la tarjeta, la cintilla de estado — pasa de una banda diagonal con texto a un triángulo diagonal de color en la esquina superior derecha, sin letras — y la insignia de puntos, que pasa de "X pts" a un "+X" (o "+0") en píldora, igual que las etiquetas de la sección "¿Cómo se puntúa?" del inicio.</p>
+      <div class="swatches" id="swatch-legend">
+        <span class="swatch"><i style="background:#f8fafc"></i>Fondo actual #F8FAFC</span>
+        <span class="swatch"><i style="background:#F5F7FA"></i>Fondo propuesto #F5F7FA</span>
+        <span class="swatch"><i style="background:#e2e8f0"></i>Borde actual #E2E8F0</span>
+        <span class="swatch"><i style="background:#E5E7EB"></i>Borde propuesto #E5E7EB</span>
+        <span class="swatch"><i style="background:#00A651"></i>Guardado → triángulo verde</span>
+        <span class="swatch"><i style="background:#FFB800"></i>Pendiente → triángulo naranja</span>
+        <span class="swatch"><i style="background:#E50046"></i>Puntos: "X pts" → "+X" / "+0"</span>
+      </div>
+    </div>
+
+    <div class="betting-matches-grid">
+
+      <div class="betting-match-card is-saved">
+        <div class="betting-match-points-badge" title="Puntos conseguidos en este partido"><span class="badge-text-actual">3 pts</span><span class="badge-text-proposed">+3</span></div>
+        <div class="betting-match-ribbon">Guardado</div>
+        <div class="betting-match-comp-line"><span class="betting-match-comp">LaLiga</span> · <span class="betting-match-horario">3 oct, 20:00</span></div>
+        <div class="betting-match-split">
+          <div class="betting-match-team-name">Real Madrid</div>
+          <div class="betting-match-team-name">FC Barcelona</div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">3</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="2" aria-label="Tu apuesta, goles de Real Madrid">
+          </div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">1</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="1" aria-label="Tu apuesta, goles de FC Barcelona">
+          </div>
+        </div>
+      </div>
+
+      <div class="betting-match-card is-pending">
+        <div class="betting-match-ribbon">Pendiente</div>
+        <div class="betting-match-comp-line"><span class="betting-match-comp">LaLiga</span> · <span class="betting-match-horario">3 oct, 21:00</span></div>
+        <div class="betting-match-split">
+          <div class="betting-match-team-name">Villarreal CF</div>
+          <div class="betting-match-team-name">Sevilla FC</div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">–</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" placeholder="–" aria-label="Tu apuesta, goles de Villarreal">
+          </div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">–</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" placeholder="–" aria-label="Tu apuesta, goles de Sevilla">
+          </div>
+        </div>
+      </div>
+
+      <div class="betting-match-card is-saved">
+        <div class="betting-match-points-badge" title="Puntos conseguidos en este partido"><span class="badge-text-actual">1 pts</span><span class="badge-text-proposed">+1</span></div>
+        <div class="betting-match-ribbon">Guardado</div>
+        <div class="betting-match-comp-line"><span class="betting-match-comp">Champions</span> · <span class="betting-match-horario">6 oct, 21:00</span></div>
+        <div class="betting-match-split">
+          <div class="betting-match-team-name">Bayern Múnich</div>
+          <div class="betting-match-team-name">Paris Saint-Germain</div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">2</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="2" aria-label="Tu apuesta, goles de Bayern">
+          </div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">2</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="0" aria-label="Tu apuesta, goles de PSG">
+          </div>
+        </div>
+      </div>
+
+      <div class="betting-match-card is-pending">
+        <div class="betting-match-ribbon">Pendiente</div>
+        <div class="betting-match-comp-line"><span class="betting-match-comp">Premier</span> · <span class="betting-match-horario">4 oct, 17:30</span></div>
+        <div class="betting-match-split">
+          <div class="betting-match-team-name">Manchester City</div>
+          <div class="betting-match-team-name">Liverpool</div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">–</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="1" aria-label="Tu apuesta, goles de Man City">
+          </div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">–</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="1" aria-label="Tu apuesta, goles de Liverpool">
+          </div>
+        </div>
+      </div>
+
+      <div class="betting-match-card is-saved">
+        <div class="betting-match-ribbon">Guardado</div>
+        <div class="betting-match-comp-line"><span class="betting-match-comp">Serie A</span> · <span class="betting-match-horario">4 oct, 20:45</span></div>
+        <div class="betting-match-split">
+          <div class="betting-match-team-name">Inter</div>
+          <div class="betting-match-team-name">AC Milan</div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip is-cancelled">Cancelado</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="1" disabled aria-label="Tu apuesta, goles de Inter">
+          </div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip is-cancelled">Cancelado</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="0" disabled aria-label="Tu apuesta, goles de Milan">
+          </div>
+        </div>
+      </div>
+
+      <div class="betting-match-card is-pending">
+        <div class="betting-match-ribbon">Pendiente</div>
+        <div class="betting-match-comp-line"><span class="betting-match-comp">Nations League</span> · <span class="betting-match-horario">10 oct, 20:45</span></div>
+        <div class="betting-match-split">
+          <div class="betting-match-team-name">España</div>
+          <div class="betting-match-team-name">Francia</div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">–</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" placeholder="–" aria-label="Tu apuesta, goles de España">
+          </div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">–</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" placeholder="–" aria-label="Tu apuesta, goles de Francia">
+          </div>
+        </div>
+      </div>
+
+      <div class="betting-match-card is-saved">
+        <div class="betting-match-points-badge" title="Puntos conseguidos en este partido"><span class="badge-text-actual">0 pts</span><span class="badge-text-proposed">+0</span></div>
+        <div class="betting-match-ribbon">Guardado</div>
+        <div class="betting-match-comp-line"><span class="betting-match-comp">LaLiga</span> · <span class="betting-match-horario">5 oct, 16:15</span></div>
+        <div class="betting-match-split">
+          <div class="betting-match-team-name">Real Sociedad</div>
+          <div class="betting-match-team-name">Real Betis</div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">2</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="0" aria-label="Tu apuesta, goles de Real Sociedad">
+          </div>
+          <div class="betting-match-results">
+            <span class="betting-match-real-chip tab-num">2</span>
+            <input type="number" min="0" max="20" class="betting-match-bet-input" value="1" aria-label="Tu apuesta, goles de Real Betis">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const body = document.body;
+    const btnActual = document.getElementById('btn-actual');
+    const btnProposed = document.getElementById('btn-proposed');
+
+    function setState(proposed) {
+      body.classList.toggle('proposed', proposed);
+      btnActual.classList.toggle('active', !proposed);
+      btnProposed.classList.toggle('active', proposed);
+    }
+
+    btnActual.addEventListener('click', () => setState(false));
+    btnProposed.addEventListener('click', () => setState(true));
+  </script>
+
+</body>
+</html>
