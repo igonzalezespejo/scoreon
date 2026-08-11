@@ -310,7 +310,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Betting Match Cards (Apuestas) — tarjetas en cuadricula, una por partido */
 .betting-matches-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1.1rem;
 }
 
@@ -389,7 +389,7 @@ h1, h2, h3, h4, h5, h6 {
      resultado/apuesta arranca en la MISMA altura en ambas columnas sin
      importar cuántas líneas ocupe cada nombre. */
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   position: relative;
   flex: 1;
@@ -413,6 +413,9 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-main);
   text-align: center;
   padding: 0 0.8rem;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .betting-match-results {
