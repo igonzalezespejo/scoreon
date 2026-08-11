@@ -17,7 +17,8 @@ Este directorio contiene el código necesario para desplegar el backend de la Po
      - `is_admin` (`true`/`false`): marca qué usuario ve el menú Admin tras iniciar sesión. Solo debe haber `true` en la fila del administrador; el resto `false` o vacío.
    - **Sessions** (nueva, necesaria para el login persistente): `token`, `user_id`, `created_at`, `expires_at`, `last_seen_at`
      - El backend la rellena solo al iniciar sesión; no hace falta escribir nada a mano aquí.
-   - **Months**: `month_id`, `title`, `status`, `open_at`, `lock_at`
+   - **Months**: `month_id`, `title`, `status`, `open_at`, `lock_at`, `auto_closed_at`
+     - `auto_closed_at`: la rellena el backend solo, la primera vez que cierra automáticamente un mes cuyo `lock_at` ya pasó. No se toca a mano — ver sección "Cierre automático de meses" más abajo.
    - **Matches**: `match_id`, `month_id`, `competition`, `home_team`, `away_team`, `kickoff_at`, `status`, `display_order`
    - **Predictions_Current**: `user_id`, `match_id`, `home_goals`, `away_goals`, `submitted_at`
    - **Predictions_Log**: `timestamp`, `user_id`, `action`, `details`
@@ -54,3 +55,14 @@ Desde que se añadió el login obligatorio, el flujo es:
 El menú **Porra Admin > Limpiar sesiones caducadas** (en el propio Google Sheet) borra las filas de Sessions ya caducadas, para que la hoja no crezca indefinidamente. Es opcional (las sesiones caducadas se ignoran igualmente al validarlas), pero es buena higiene ejecutarlo de tanto en tanto.
 
 **El panel de Admin sigue protegido por el `admin_token` de la hoja Config, sin cambios.** El flag `is_admin` de Participants solo controla si el botón "Admin" aparece en el menú tras el login del usuario — no sustituye al código de administración, que se sigue pidiendo al entrar al panel (doble capa, a propósito).
+
+## Cierre automático de meses
+
+`status` (columna de Months) es la única autoridad sobre si se puede apostar en un mes: lo controlan los botones "Abrir Porra"/"Cerrar Porra" del panel Admin, y tanto el frontend (`canBet()`) como el backend (`savePrediction`) solo miran ese campo.
+
+`lock_at` ya no se compara en vivo contra la hora actual — en su lugar, `autoCloseExpiredMonths()` cierra automáticamente (`status` → `locked`) cualquier mes que esté `open` con su `lock_at` ya pasado, y marca `auto_closed_at` para no volver a tocarlo nunca más. Así, si el admin reabre ese mes a mano después de la fecha límite, se queda abierto de verdad hasta que el propio admin lo cierre otra vez.
+
+Esta función se ejecuta:
+- Automáticamente al cargar la web (`bootstrapLight`) y al intentar guardar una apuesta (`savePrediction`), así que en la práctica un mes se cierra casi al instante de pasar su `lock_at`, sin esperar al trigger.
+- Cada 15 minutos mediante un trigger, como red de seguridad para que el badge de Inicio no quede desactualizado aunque nadie visite la web justo en ese momento. Hay que instalarlo una vez desde el propio Google Sheet: menú **Porra Admin > Instalar trigger de cierre automático de meses**.
+- A demanda desde **Porra Admin > Cerrar meses caducados ahora**, si quieres forzarlo sin esperar.

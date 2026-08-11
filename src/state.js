@@ -216,13 +216,14 @@ class State {
     canBet() {
         const month = this.getSelectedMonthObj();
         if (!month) return false;
-        if (month.status !== 'open') return false;
-        
-        // Verificar lock_at contra serverTime o fecha actual local
-        const lockTime = new Date(month.lock_at).getTime();
-        const now = this.serverTime ? new Date(this.serverTime).getTime() : Date.now();
-        
-        return now < lockTime;
+
+        // status es la única autoridad (la controla el admin con
+        // Abrir/Cerrar Porra). El backend cierra automáticamente un mes
+        // "open" cuyo lock_at ya pasó (ver autoCloseExpiredMonths en
+        // Code.gs), pero es de un solo disparo: si el admin lo reabre a
+        // mano después de esa fecha, se queda abierto — por eso aquí no
+        // se vuelve a comprobar lock_at, solo status.
+        return month.status === 'open';
     }
 }
 

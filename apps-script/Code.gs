@@ -12,7 +12,77 @@ function onOpen() {
       .addItem('Diagnóstico scoring partido activo', 'menuDebugScoring')
       .addItem('Diagnóstico Migración Multi-mes', 'menuMigrateDryRun')
       .addItem('Limpiar sesiones caducadas', 'menuCleanExpiredSessions')
+      .addItem('Instalar trigger de cierre automático de meses', 'installAutoCloseMonthsTrigger')
+      .addItem('Cerrar meses caducados ahora', 'menuAutoCloseExpiredMonths')
       .addToUi();
+}
+
+// Revisa la hoja Months y bloquea (status -> 'locked') cualquier mes que
+// esté 'open' con su lock_at ya pasado. Es "de un solo disparo": una vez que
+// cierra un mes, marca auto_closed_at para no volver a tocarlo nunca más —
+// así, si el admin lo reabre a mano después de esa fecha, se queda abierto
+// (este chequeo ya no vuelve a cerrarlo) hasta que el admin decida cerrarlo
+// otra vez él mismo. Devuelve cuántos meses cerró.
+function autoCloseExpiredMonths() {
+  const sheet = getSpreadsheet().getSheetByName("Months");
+  if (!sheet) return 0;
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return 0;
+
+  const headers = data[0].map(h => String(h).trim().toLowerCase());
+  const idxStatus = headers.indexOf("status");
+  const idxLockAt = headers.indexOf("lock_at");
+  const idxAutoClosedAt = headers.indexOf("auto_closed_at");
+  if (idxStatus < 0 || idxLockAt < 0) return 0;
+
+  const now = new Date();
+  let closedCount = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const status = String(data[i][idxStatus] || "").toLowerCase().trim();
+    if (status !== "open") continue;
+
+    const lockAt = new Date(data[i][idxLockAt]);
+    if (isNaN(lockAt.getTime()) || now < lockAt) continue;
+
+    const alreadyAutoClosed = idxAutoClosedAt >= 0 && data[i][idxAutoClosedAt];
+    if (alreadyAutoClosed) continue;
+
+    sheet.getRange(i + 1, idxStatus + 1).setValue("locked");
+    if (idxAutoClosedAt >= 0) {
+      sheet.getRange(i + 1, idxAutoClosedAt + 1).setValue(now.toISOString());
+    }
+    closedCount++;
+  }
+
+  return closedCount;
+}
+
+function menuAutoCloseExpiredMonths() {
+  try {
+    const closed = autoCloseExpiredMonths();
+    SpreadsheetApp.getUi().alert('Éxito', `Se cerraron ${closed} mes(es) caducado(s).`, SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch(e) {
+    SpreadsheetApp.getUi().alert('Error', e.message, SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
+function installAutoCloseMonthsTrigger() {
+  const ss = SpreadsheetApp.getActive();
+  const triggers = ScriptApp.getUserTriggers(ss);
+  let removed = 0;
+  triggers.forEach(t => {
+    if (t.getHandlerFunction() === 'autoCloseExpiredMonths') {
+      ScriptApp.deleteTrigger(t);
+      removed++;
+    }
+  });
+  ScriptApp.newTrigger('autoCloseExpiredMonths')
+    .timeBased()
+    .everyMinutes(15)
+    .create();
+  SpreadsheetApp.getUi().alert('Éxito', `Trigger de cierre automático creado (cada 15 min). Se eliminaron ${removed} triggers antiguos.`, SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 function installRankingTriggers() {
@@ -827,6 +897,14 @@ function computeMonthDetail(monthId, allMatches, allResults, currentPredictions,
 
 function actionBootstrapLight() {
   const startTotal = Date.now();
+
+  // Al cargar la web (no solo cuando alguien intenta apostar), aprovechamos
+  // para cerrar cualquier mes cuyo lock_at ya haya pasado, así el badge de
+  // Inicio y el estado de Apuestas nunca se desincronizan esperando al
+  // trigger periódico. Es de un solo disparo (ver autoCloseExpiredMonths),
+  // así que no interfiere si el admin ya reabrió el mes a mano.
+  autoCloseExpiredMonths();
+
   let startReadConfig = Date.now();
   const configRows = getSheetData("Config");
   let config = {};
@@ -1086,6 +1164,12 @@ function actionSavePrediction(params) {
     }
     const user_id = sessionUser.user_id;
 
+    // Cierra en el momento cualquier mes cuyo lock_at ya haya pasado, en vez
+    // de esperar al trigger periódico (ver autoCloseExpiredMonths). Es
+    // "de un solo disparo", así que si el admin ya reabrió este mes a mano
+    // tras su cierre automático, esto no lo vuelve a tocar.
+    autoCloseExpiredMonths();
+
     const months = getSheetData("Months").map(m => {
       m.month_id = normalizeMonthId(m.month_id);
       m.title = sanitizeMonthTitle(m.title, m.month_id);
@@ -1094,9 +1178,6 @@ function actionSavePrediction(params) {
     const month = months.find(m => m.month_id === month_id);
     if (!month) return buildErrorResponse("VALIDATION_ERROR", "Mes no encontrado");
     if (month.status !== "open") return buildErrorResponse("VALIDATION_ERROR", "El mes no está abierto para predicciones");
-    
-    const lockAt = new Date(month.lock_at);
-    if (serverTime >= lockAt) return buildErrorResponse("VALIDATION_ERROR", "El plazo del mes ha cerrado");
 
     const matches = getSheetData("Matches").filter(m => m.month_id === month_id);
     const matchMap = {};
