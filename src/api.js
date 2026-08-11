@@ -138,7 +138,7 @@ export async function loadMonthData(monthId) {
     }
 }
 
-export async function savePrediction(userId, pin, monthId, predictions) {
+export async function savePrediction(userId, token, monthId, predictions) {
     if (USE_MOCK) {
         // Simulamos un delay de red
         return new Promise((resolve, reject) => {
@@ -148,7 +148,7 @@ export async function savePrediction(userId, pin, monthId, predictions) {
                     if (!userId || !predictions || predictions.length === 0) {
                         throw new Error("Datos inválidos");
                     }
-                    
+
                     // Si llegamos aquí, simulamos éxito actualizando el estado local
                     state.updatePredictionStatus(userId, 'submitted');
                     resolve({ ok: true, message: "Apuesta guardada con éxito (Mock)" });
@@ -160,8 +160,7 @@ export async function savePrediction(userId, pin, monthId, predictions) {
     } else {
         const payload = {
             action: 'savePrediction',
-            user_id: userId,
-            pin: pin,
+            token: token,
             month_id: monthId,
             predictions: predictions
         };
@@ -183,7 +182,7 @@ export async function savePrediction(userId, pin, monthId, predictions) {
     }
 }
 
-export async function getUserPredictions(userId, pin, monthId) {
+export async function getUserPredictions(userId, token, monthId) {
     if (USE_MOCK) {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
@@ -191,11 +190,7 @@ export async function getUserPredictions(userId, pin, monthId) {
                     if (!userId || !monthId) {
                         throw new Error("Datos inválidos");
                     }
-                    if (state.config && state.config.pin_enabled && pin !== "1234") {
-                        resolve({ ok: false, message: "PIN incorrecto" });
-                        return;
-                    }
-                    
+
                     const predictions = [];
                     if (state.predictionsSummary[userId] && state.predictionsSummary[userId].status !== 'pending') {
                         const matches = state.getMatchesSorted();
@@ -225,8 +220,7 @@ export async function getUserPredictions(userId, pin, monthId) {
     } else {
         const payload = {
             action: 'getUserPredictions',
-            user_id: userId,
-            pin: pin,
+            token: token,
             month_id: monthId
         };
         const response = await fetch(API_URL, {
@@ -298,6 +292,12 @@ export async function registerParticipant(displayName, email, registrationCode) 
                             display_name: cleanName,
                             pin: mockPin,
                             active: true
+                        },
+                        token: 'mock-token-' + slug,
+                        user: {
+                            user_id: slug,
+                            display_name: cleanName,
+                            is_admin: false
                         }
                     });
                 } catch (err) {
@@ -324,6 +324,103 @@ export async function registerParticipant(displayName, email, registrationCode) 
         }
         return await response.json();
     }
+}
+
+// ==========================================
+// SESSION / LOGIN
+// ==========================================
+
+export async function login(userId, pin) {
+    if (USE_MOCK) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const participant = state.participants.find(p => p.user_id === userId);
+                if (!participant) {
+                    resolve({ ok: false, message: "Usuario no existe" });
+                    return;
+                }
+                if (state.config && state.config.pin_enabled && pin !== "1234") {
+                    resolve({ ok: false, message: "PIN incorrecto" });
+                    return;
+                }
+                resolve({
+                    ok: true,
+                    code: "LOGIN_OK",
+                    token: 'mock-token-' + userId,
+                    user: {
+                        user_id: participant.user_id,
+                        display_name: participant.display_name,
+                        is_admin: false
+                    },
+                    myPredictions: {}
+                });
+            }, 500);
+        });
+    }
+
+    const payload = { action: 'login', user_id: userId, pin: pin };
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+}
+
+export async function resumeSession(token) {
+    if (USE_MOCK) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (!token || !token.startsWith('mock-token-')) {
+                    resolve({ ok: false, code: "SESSION_INVALID", message: "Sesión inválida" });
+                    return;
+                }
+                const userId = token.replace('mock-token-', '');
+                const participant = state.participants.find(p => p.user_id === userId);
+                resolve({
+                    ok: true,
+                    code: "SESSION_OK",
+                    user: {
+                        user_id: userId,
+                        display_name: participant ? participant.display_name : userId,
+                        is_admin: false
+                    },
+                    myPredictions: {}
+                });
+            }, 300);
+        });
+    }
+
+    const payload = { action: 'resumeSession', token: token };
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+}
+
+export async function logout(token) {
+    if (USE_MOCK) {
+        return Promise.resolve({ ok: true, code: "LOGGED_OUT" });
+    }
+
+    const payload = { action: 'logout', token: token };
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
 }
 
 // ==========================================

@@ -9,60 +9,60 @@ if (!APPS_SCRIPT_URL) {
   process.exit(1);
 }
 
-const payloadBadPin = {
-  action: "savePrediction",
-  user_id: TEST_USER_ID,
-  pin: "9999",
-  month_id: TEST_MONTH_ID,
-  predictions: [
-    { match_id: TEST_MATCH_ID, home_goals: 2, away_goals: 1 }
-  ]
-};
+async function post(payload) {
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
 
-const payloadBadUser = {
-  action: "savePrediction",
-  user_id: "fakeuser",
-  pin: TEST_PIN,
-  month_id: TEST_MONTH_ID,
-  predictions: [
-    { match_id: TEST_MATCH_ID, home_goals: 2, away_goals: 1 }
-  ]
-};
+async function testExpectFailure(name, payload) {
+  console.log(`\nTesting (${name})...`);
+  try {
+    const data = await post(payload);
+    console.log("Response OK:", data.ok, "Expected: false");
+    console.log("Code:", data.code);
+    console.log("Message:", data.message);
 
-const payloadBadGoals = {
-  action: "savePrediction",
-  user_id: TEST_USER_ID,
-  pin: TEST_PIN,
-  month_id: TEST_MONTH_ID,
-  predictions: [
-    { match_id: TEST_MATCH_ID, home_goals: -1, away_goals: "a" }
-  ]
-};
-
-async function testPayload(name, payload) {
-    console.log(`\nTesting POST action=savePrediction (${name})...`);
-    try {
-        const res = await fetch(APPS_SCRIPT_URL, {
-            method: "POST",
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        console.log("Response OK:", data.ok, "Expected: false");
-        console.log("Code:", data.code);
-        console.log("Message:", data.message);
-        
-        if (data.ok) {
-            console.error(`ERROR: ${name} should have failed!`);
-        }
-    } catch (err) {
-        console.error("Fetch error:", err);
+    if (data.ok) {
+      console.error(`ERROR: ${name} should have failed!`);
     }
+  } catch (err) {
+    console.error("Fetch error:", err);
+  }
 }
 
 async function run() {
-    await testPayload("Bad PIN", payloadBadPin);
-    await testPayload("Bad User", payloadBadUser);
-    await testPayload("Bad Goals", payloadBadGoals);
+  // El PIN y el user_id ahora solo se comprueban en el login, no en savePrediction.
+  await testExpectFailure("Login con PIN incorrecto", {
+    action: "login", user_id: TEST_USER_ID, pin: "9999"
+  });
+
+  await testExpectFailure("Login con usuario inexistente", {
+    action: "login", user_id: "fakeuser", pin: TEST_PIN
+  });
+
+  await testExpectFailure("savePrediction con token inválido", {
+    action: "savePrediction",
+    token: "token-que-no-existe",
+    month_id: TEST_MONTH_ID,
+    predictions: [{ match_id: TEST_MATCH_ID, home_goals: 2, away_goals: 1 }]
+  });
+
+  console.log("\nObteniendo token válido para probar goles inválidos...");
+  const loginData = await post({ action: "login", user_id: TEST_USER_ID, pin: TEST_PIN });
+  if (!loginData.ok) {
+    console.error("No se pudo iniciar sesión con credenciales válidas, abortando.", loginData);
+    process.exit(1);
+  }
+
+  await testExpectFailure("savePrediction con goles inválidos", {
+    action: "savePrediction",
+    token: loginData.token,
+    month_id: TEST_MONTH_ID,
+    predictions: [{ match_id: TEST_MATCH_ID, home_goals: -1, away_goals: "a" }]
+  });
 }
 
 run();

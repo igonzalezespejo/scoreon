@@ -11,6 +11,7 @@ function onOpen() {
       .addItem('Diagnóstico ranking', 'menuRankingDiagnostics')
       .addItem('Diagnóstico scoring partido activo', 'menuDebugScoring')
       .addItem('Diagnóstico Migración Multi-mes', 'menuMigrateDryRun')
+      .addItem('Limpiar sesiones caducadas', 'menuCleanExpiredSessions')
       .addToUi();
 }
 
@@ -248,6 +249,12 @@ function handleRequest(params) {
         return actionGetUserPredictions(params);
       case "registerParticipant":
         return actionRegisterParticipant(params);
+      case "login":
+        return actionLogin(params);
+      case "resumeSession":
+        return actionResumeSession(params);
+      case "logout":
+        return actionLogout(params);
       case "debugLiveRanking":
         return actionDebugLiveRanking(params);
       case "recalculateRankings":
@@ -518,34 +525,17 @@ function buildGlobalRanking(participants, matches, predictionsCurrent, results, 
 
 function actionGetUserPredictions(params) {
   const startTotal = Date.now();
-  const { user_id, pin, month_id } = params;
+  const { month_id, token } = params;
 
-  if (!user_id || !month_id) {
+  if (!month_id) {
     return buildErrorResponse("VALIDATION_ERROR", "Faltan parámetros requeridos");
   }
 
-  const configRows = getSheetData("Config");
-  let config = {};
-  configRows.forEach(r => {
-    let val = r.value;
-    if (val === "true" || val === true) val = true;
-    else if (val === "false" || val === false) val = false;
-    config[r.key] = val;
-  });
-
-  const participants = getSheetData("Participants");
-  const user = participants.find(p => p.user_id === user_id);
-
-  if (!user) return buildErrorResponse("VALIDATION_ERROR", "Usuario no existe");
-  
-  let isActive = (user.active === true || user.active === "true" || user.active === "TRUE");
-  if (!isActive) return buildErrorResponse("VALIDATION_ERROR", "Usuario inactivo");
-  
-  if (config.pin_enabled) {
-    if (String(user.pin) !== String(pin)) {
-      return buildErrorResponse("VALIDATION_ERROR", "PIN incorrecto");
-    }
+  const sessionUser = validateSession(token);
+  if (!sessionUser) {
+    return buildErrorResponse("SESSION_INVALID", "Sesión expirada, vuelve a iniciar sesión");
   }
+  const user_id = sessionUser.user_id;
 
   const matches = getSheetData("Matches").filter(m => m.month_id === month_id);
   const matchIds = matches.map(m => String(m.match_id));
@@ -593,6 +583,7 @@ function actionBootstrap() {
   const participants = getSheetData("Participants").map(p => {
     delete p.pin;
     delete p.email;
+    delete p.is_admin;
     p.active = (p.active === true || p.active === "true" || p.active === "TRUE");
     return p;
   });
@@ -788,6 +779,52 @@ function actionBootstrap() {
   return buildSuccessResponse(responsePayload);
 }
 
+// Calcula partidos, resultados y resumen de participación de UN mes a partir
+// de datos ya leídos (matches/results/predictions de TODOS los meses), para
+// poder reutilizarlo tanto en bootstrapLight (todos los meses de una vez)
+// como en monthData (un mes suelto, usado como refresco manual puntual).
+function computeMonthDetail(monthId, allMatches, allResults, currentPredictions, participants) {
+  const monthMatches = allMatches.filter(m => m.month_id === monthId);
+  const monthMatchesCount = monthMatches.length;
+  const monthMatchIds = monthMatches.map(m => normalizeId(m.match_id));
+  const monthResults = allResults.filter(r => monthMatchIds.includes(normalizeId(r.match_id)));
+
+  const userBetCounts = {};
+  participants.forEach(p => userBetCounts[p.user_id] = { count: 0, latest_date: null });
+
+  currentPredictions.forEach(p => {
+    if (!monthMatchIds.includes(normalizeId(p.match_id))) return;
+    const uId = normalizeId(p.user_id);
+    if (!userBetCounts[uId]) return;
+    userBetCounts[uId].count++;
+    const newSub = new Date(p.submitted_at);
+    const currentSub = userBetCounts[uId].latest_date ? new Date(userBetCounts[uId].latest_date) : new Date(0);
+    if (newSub > currentSub) {
+      userBetCounts[uId].latest_date = p.submitted_at;
+    }
+  });
+
+  const predictionsSummary = {};
+  participants.forEach(p => {
+    if (!p.active) return;
+    const data = userBetCounts[p.user_id];
+    let status = "pending";
+    if (data.count > 0 && data.count < monthMatchesCount) status = "partial";
+    else if (data.count >= monthMatchesCount && monthMatchesCount > 0) status = "submitted";
+
+    predictionsSummary[p.user_id] = {
+      user_id: p.user_id,
+      display_name: p.display_name,
+      status: status,
+      submitted_at: data.latest_date,
+      submitted_count: data.count,
+      total_matches: monthMatchesCount
+    };
+  });
+
+  return { matches: monthMatches, results: monthResults, predictionsSummary: predictionsSummary };
+}
+
 function actionBootstrapLight() {
   const startTotal = Date.now();
   let startReadConfig = Date.now();
@@ -805,6 +842,7 @@ function actionBootstrapLight() {
   const participants = getSheetData("Participants").map(p => {
     delete p.pin;
     delete p.email;
+    delete p.is_admin;
     p.active = (p.active === true || p.active === "true" || p.active === "TRUE");
     return p;
   });
@@ -830,84 +868,23 @@ function actionBootstrapLight() {
     return m;
   });
   const currentPredictions = getSheetData("Predictions_Current");
-
-  const matchMonthMap = {};
-  const matchesByMonth = {};
-  matches.forEach(m => {
-    const normMatchId = normalizeId(m.match_id);
-    matchMonthMap[normMatchId] = m.month_id;
-    if (!matchesByMonth[m.month_id]) matchesByMonth[m.month_id] = 0;
-    matchesByMonth[m.month_id]++;
-  });
-
-  const userBetCountsByMonth = {};
-  currentPredictions.forEach(p => {
-    const normMatchId = normalizeId(p.match_id);
-    const mId = matchMonthMap[normMatchId];
-    if (mId) {
-      const uId = normalizeId(p.user_id);
-      if (!userBetCountsByMonth[mId]) userBetCountsByMonth[mId] = {};
-      if (!userBetCountsByMonth[mId][uId]) userBetCountsByMonth[mId][uId] = 0;
-      userBetCountsByMonth[mId][uId]++;
-    }
-  });
-
-  months.forEach(m => {
-    m.matches_count = matchesByMonth[m.month_id] || 0;
-    let submittedCount = 0;
-    const betsInMonth = userBetCountsByMonth[m.month_id] || {};
-    if (m.matches_count > 0) {
-      participants.forEach(p => {
-        if (p.active) {
-           const count = betsInMonth[p.user_id] || 0;
-           if (count >= m.matches_count) submittedCount++;
-        }
-      });
-    }
-    m.submitted_count = submittedCount;
-  });
-
-  const activeMatches = matches.filter(m => m.month_id === activeMonthId);
-
-  const monthMatchesCount = activeMatches.length;
-  const activeMonthMatchIds = activeMatches.map(m => normalizeId(m.match_id));
   const allResults = getSheetData("Results");
-  const activeMonthResults = allResults.filter(r => activeMonthMatchIds.includes(normalizeId(r.match_id)));
 
-  const userBetCounts = {};
-  participants.forEach(p => userBetCounts[p.user_id] = { count: 0, latest_date: null });
-
-  currentPredictions.forEach(p => {
-    if (activeMonthMatchIds.includes(normalizeId(p.match_id))) {
-       if (userBetCounts[normalizeId(p.user_id)]) {
-           userBetCounts[normalizeId(p.user_id)].count++;
-           let newSub = new Date(p.submitted_at);
-           let currentSub = userBetCounts[normalizeId(p.user_id)].latest_date ? new Date(userBetCounts[normalizeId(p.user_id)].latest_date) : new Date(0);
-           if (newSub > currentSub) {
-               userBetCounts[normalizeId(p.user_id)].latest_date = p.submitted_at;
-           }
-       }
-    }
+  // Detalle completo (partidos, resultados, resumen de participación) de
+  // TODOS los meses en una sola pasada: el coste de leer las hojas ya se paga
+  // una vez por llamada independientemente de cuántos meses se filtren
+  // después, así que devolver los 3 meses de golpe no cuesta más que
+  // devolver solo el activo, y evita que el frontend tenga que volver a
+  // pedir cada mes por separado al navegar (ver monthData/getUserPredictions).
+  const monthsData = {};
+  months.forEach(m => {
+    const detail = computeMonthDetail(m.month_id, matches, allResults, currentPredictions, participants);
+    monthsData[m.month_id] = detail;
+    m.matches_count = detail.matches.length;
+    m.submitted_count = Object.values(detail.predictionsSummary).filter(p => p.status === 'submitted').length;
   });
 
-  const predictionsSummary = {};
-  participants.forEach(p => {
-    if (p.active) {
-      const data = userBetCounts[p.user_id];
-      let status = "pending";
-      if (data.count > 0 && data.count < monthMatchesCount) status = "partial";
-      else if (data.count >= monthMatchesCount && monthMatchesCount > 0) status = "submitted";
-
-      predictionsSummary[p.user_id] = {
-        user_id: p.user_id,
-        display_name: p.display_name,
-        status: status,
-        submitted_at: data.latest_date,
-        submitted_count: data.count,
-        total_matches: monthMatchesCount
-      };
-    }
-  });
+  const activeMonthDetail = monthsData[activeMonthId] || { matches: [], results: [], predictionsSummary: {} };
 
   let readCoreMs = Date.now() - startReadCore;
 
@@ -934,9 +911,10 @@ function actionBootstrapLight() {
     months: months,
     activeMonth: activeMonth,
     participants: participants,
-    matches: activeMatches,
-    predictionsSummary: predictionsSummary,
-    results: activeMonthResults,
+    matches: activeMonthDetail.matches,
+    predictionsSummary: activeMonthDetail.predictionsSummary,
+    results: activeMonthDetail.results,
+    monthsData: monthsData,
     debug: debugInfo
   });
 }
@@ -963,6 +941,7 @@ function actionMonthData(params) {
   const participants = getSheetData("Participants").map(p => {
     delete p.pin;
     delete p.email;
+    delete p.is_admin;
     p.active = (p.active === true || p.active === "true" || p.active === "TRUE");
     return p;
   });
@@ -971,57 +950,17 @@ function actionMonthData(params) {
     m.month_id = normalizeMonthId(m.month_id);
     return m;
   });
-  const monthMatches = matches.filter(m => m.month_id === reqMonthId);
-  const monthMatchesCount = monthMatches.length;
-  const monthMatchIds = monthMatches.map(m => normalizeId(m.match_id));
-
   const allResults = getSheetData("Results");
-  const monthResults = allResults.filter(r => monthMatchIds.includes(normalizeId(r.match_id)));
-
   const currentPredictions = getSheetData("Predictions_Current");
-  
-  const userBetCounts = {};
-  participants.forEach(p => userBetCounts[p.user_id] = { count: 0, latest_date: null });
 
-  currentPredictions.forEach(p => {
-    if (monthMatchIds.includes(normalizeId(p.match_id))) {
-       let uId = normalizeId(p.user_id);
-       if (userBetCounts[uId]) {
-           userBetCounts[uId].count++;
-           let newSub = new Date(p.submitted_at);
-           let currentSub = userBetCounts[uId].latest_date ? new Date(userBetCounts[uId].latest_date) : new Date(0);
-           if (newSub > currentSub) {
-               userBetCounts[uId].latest_date = p.submitted_at;
-           }
-       }
-    }
-  });
-
-  const predictionsSummary = {};
-  participants.forEach(p => {
-    if (p.active) {
-      const data = userBetCounts[p.user_id];
-      let status = "pending";
-      if (data.count > 0 && data.count < monthMatchesCount) status = "partial";
-      else if (data.count >= monthMatchesCount && monthMatchesCount > 0) status = "submitted";
-
-      predictionsSummary[p.user_id] = {
-        user_id: p.user_id,
-        display_name: p.display_name,
-        status: status,
-        submitted_at: data.latest_date,
-        submitted_count: data.count,
-        total_matches: monthMatchesCount
-      };
-    }
-  });
+  const detail = computeMonthDetail(reqMonthId, matches, allResults, currentPredictions, participants);
 
   return buildSuccessResponse({
     code: "MONTH_DATA_LOADED",
     month: month,
-    matches: monthMatches,
-    results: monthResults,
-    predictionsSummary: predictionsSummary,
+    matches: detail.matches,
+    results: detail.results,
+    predictionsSummary: detail.predictionsSummary,
     debug: { total_ms: Date.now() - startTotal }
   });
 }
@@ -1138,31 +1077,14 @@ function actionSavePrediction(params) {
   }
 
   try {
-    const { user_id, pin, month_id, predictions } = params;
+    const { month_id, predictions, token } = params;
     const serverTime = new Date();
 
-    const configRows = getSheetData("Config");
-    let config = {};
-    configRows.forEach(r => {
-      let val = r.value;
-      if (val === "true" || val === true) val = true;
-      else if (val === "false" || val === false) val = false;
-      config[r.key] = val;
-    });
-
-    const participants = getSheetData("Participants");
-    const user = participants.find(p => p.user_id === user_id);
-
-    if (!user) return buildErrorResponse("VALIDATION_ERROR", "Usuario no existe");
-    
-    let isActive = (user.active === true || user.active === "true" || user.active === "TRUE");
-    if (!isActive) return buildErrorResponse("VALIDATION_ERROR", "Usuario inactivo");
-    
-    if (config.pin_enabled) {
-      if (String(user.pin) !== String(pin)) {
-        return buildErrorResponse("VALIDATION_ERROR", "PIN incorrecto");
-      }
+    const sessionUser = validateSession(token);
+    if (!sessionUser) {
+      return buildErrorResponse("SESSION_INVALID", "Sesión expirada, vuelve a iniciar sesión");
     }
+    const user_id = sessionUser.user_id;
 
     const months = getSheetData("Months").map(m => {
       m.month_id = normalizeMonthId(m.month_id);
@@ -1408,21 +1330,241 @@ function actionRegisterParticipant(params) {
     sheetPart.getRange(newRowIndex, 1, 1, headers.length).setValues([newRow]);
     
     logAction(slug, "REGISTER_PARTICIPANT", `Registrado desde web con nombre ${cleanName}`, serverTime);
-    
+
     try {
       markRankingsDirty("registerParticipant");
     } catch(e) {
       markRankingsDirty("registerParticipant_error");
     }
-    
+
+    const session = createSession(slug);
+
     return buildSuccessResponse({
       code: "REGISTERED",
       message: "Participante creado correctamente",
-      participant: newParticipantObj
+      participant: newParticipantObj,
+      token: session.token,
+      user: {
+        user_id: slug,
+        display_name: cleanName,
+        is_admin: false
+      },
+      myPredictions: {}
     });
 
   } finally {
     lock.releaseLock();
+  }
+}
+
+// ==========================================
+// SESSIONS (login persistente)
+// ==========================================
+
+function isUserAdmin(user) {
+  return user && (user.is_admin === true || user.is_admin === "true" || user.is_admin === "TRUE");
+}
+
+function generateSessionToken() {
+  return Utilities.getUuid() + Utilities.getUuid().replace(/-/g, "");
+}
+
+function getSessionTtlDays() {
+  const config = getConfigMap();
+  const ttl = Number(config.session_ttl_days);
+  return Number.isFinite(ttl) && ttl > 0 ? ttl : 30;
+}
+
+function createSession(user_id) {
+  const sheet = getSpreadsheet().getSheetByName("Sessions");
+  if (!sheet) throw new Error("No existe la hoja Sessions");
+
+  const token = generateSessionToken();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + getSessionTtlDays() * 24 * 60 * 60 * 1000);
+
+  sheet.appendRow([token, user_id, now.toISOString(), expiresAt.toISOString(), now.toISOString()]);
+
+  return { token: token, expires_at: expiresAt.toISOString() };
+}
+
+// Devuelve el participante (Participants) asociado a un token de sesión válido
+// y no caducado, o null si el token no existe, ha caducado, o el usuario ya
+// no está activo. Como efecto lateral, refresca la caducidad (sliding
+// expiration) para que una sesión activa no expire mientras se sigue usando.
+function validateSession(token) {
+  if (!token) return null;
+
+  const sheet = getSpreadsheet().getSheetByName("Sessions");
+  if (!sheet) return null;
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return null;
+
+  const headers = data[0].map(h => String(h).trim().toLowerCase());
+  const idxToken = headers.indexOf("token");
+  const idxUser = headers.indexOf("user_id");
+  const idxExpires = headers.indexOf("expires_at");
+  const idxLastSeen = headers.indexOf("last_seen_at");
+  if (idxToken < 0 || idxUser < 0 || idxExpires < 0) return null;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idxToken]) !== String(token)) continue;
+
+    const expiresAt = new Date(data[i][idxExpires]);
+    if (isNaN(expiresAt.getTime()) || new Date() >= expiresAt) {
+      return null;
+    }
+
+    const userId = normalizeId(data[i][idxUser]);
+    const participants = getSheetData("Participants");
+    const user = participants.find(p => p.user_id === userId);
+    if (!user) return null;
+
+    const isActive = (user.active === true || user.active === "true" || user.active === "TRUE");
+    if (!isActive) return null;
+
+    const newExpiresAt = new Date(Date.now() + getSessionTtlDays() * 24 * 60 * 60 * 1000);
+    sheet.getRange(i + 1, idxExpires + 1).setValue(newExpiresAt.toISOString());
+    if (idxLastSeen >= 0) sheet.getRange(i + 1, idxLastSeen + 1).setValue(new Date().toISOString());
+
+    return user;
+  }
+
+  return null;
+}
+
+// Predicciones propias del usuario en TODOS los meses, agrupadas por
+// month_id. Se puede exponer entera sin filtrar por mes porque va ligada al
+// propio usuario autenticado (no revela apuestas de nadie más), así que se
+// carga de golpe en login/resumeSession en vez de pedirla mes a mes cada vez
+// que el usuario entra en Apuestas.
+function getUserPredictionsAllMonths(userId) {
+  const months = getSheetData("Months").map(m => normalizeMonthId(m.month_id));
+  const matches = getSheetData("Matches");
+  const currentPredictions = getSheetData("Predictions_Current");
+
+  const matchToMonth = {};
+  matches.forEach(m => matchToMonth[normalizeId(m.match_id)] = normalizeMonthId(m.month_id));
+
+  const result = {};
+  months.forEach(monthId => result[monthId] = []);
+
+  currentPredictions.forEach(p => {
+    if (normalizeId(p.user_id) !== userId) return;
+    const monthId = matchToMonth[normalizeId(p.match_id)];
+    if (!monthId || !result[monthId]) return;
+    result[monthId].push({
+      match_id: p.match_id,
+      home_goals: p.home_goals,
+      away_goals: p.away_goals,
+      submitted_at: p.submitted_at
+    });
+  });
+
+  return result;
+}
+
+function actionLogin(params) {
+  const { user_id, pin } = params;
+  if (!user_id) return buildErrorResponse("VALIDATION_ERROR", "Falta user_id");
+
+  const config = getConfigMap();
+  const participants = getSheetData("Participants");
+  const user = participants.find(p => p.user_id === user_id);
+
+  if (!user) return buildErrorResponse("VALIDATION_ERROR", "Usuario no existe");
+
+  const isActive = (user.active === true || user.active === "true" || user.active === "TRUE");
+  if (!isActive) return buildErrorResponse("VALIDATION_ERROR", "Usuario inactivo");
+
+  if (config.pin_enabled) {
+    if (String(user.pin) !== String(pin)) {
+      return buildErrorResponse("VALIDATION_ERROR", "PIN incorrecto");
+    }
+  }
+
+  const session = createSession(user.user_id);
+
+  return buildSuccessResponse({
+    code: "LOGIN_OK",
+    token: session.token,
+    user: {
+      user_id: user.user_id,
+      display_name: user.display_name,
+      is_admin: isUserAdmin(user)
+    },
+    myPredictions: getUserPredictionsAllMonths(user.user_id)
+  });
+}
+
+function actionResumeSession(params) {
+  const user = validateSession(params.token);
+  if (!user) return buildErrorResponse("SESSION_INVALID", "Sesión expirada o inválida");
+
+  return buildSuccessResponse({
+    code: "SESSION_OK",
+    user: {
+      user_id: user.user_id,
+      display_name: user.display_name,
+      is_admin: isUserAdmin(user)
+    },
+    myPredictions: getUserPredictionsAllMonths(user.user_id)
+  });
+}
+
+function actionLogout(params) {
+  const token = params.token;
+  if (!token) return buildSuccessResponse({ code: "LOGGED_OUT" });
+
+  const sheet = getSpreadsheet().getSheetByName("Sessions");
+  if (sheet) {
+    const data = sheet.getDataRange().getValues();
+    if (data.length >= 2) {
+      const headers = data[0].map(h => String(h).trim().toLowerCase());
+      const idxToken = headers.indexOf("token");
+      if (idxToken >= 0) {
+        for (let i = data.length - 1; i >= 1; i--) {
+          if (String(data[i][idxToken]) === String(token)) {
+            sheet.deleteRow(i + 1);
+          }
+        }
+      }
+    }
+  }
+
+  return buildSuccessResponse({ code: "LOGGED_OUT" });
+}
+
+function cleanExpiredSessions() {
+  const sheet = getSpreadsheet().getSheetByName("Sessions");
+  if (!sheet) return 0;
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return 0;
+
+  const headers = data[0].map(h => String(h).trim().toLowerCase());
+  const idxExpires = headers.indexOf("expires_at");
+  if (idxExpires < 0) return 0;
+
+  const now = new Date();
+  let removed = 0;
+  for (let i = data.length - 1; i >= 1; i--) {
+    const expiresAt = new Date(data[i][idxExpires]);
+    if (isNaN(expiresAt.getTime()) || now >= expiresAt) {
+      sheet.deleteRow(i + 1);
+      removed++;
+    }
+  }
+  return removed;
+}
+
+function menuCleanExpiredSessions() {
+  try {
+    const removed = cleanExpiredSessions();
+    SpreadsheetApp.getUi().alert('Éxito', `Se eliminaron ${removed} sesiones caducadas.`, SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch(e) {
+    SpreadsheetApp.getUi().alert('Error', e.message, SpreadsheetApp.getUi().ButtonSet.OK);
   }
 }
 
@@ -1733,19 +1875,6 @@ function writeSheetRows(sheetName, rows, headers) {
         if (userCol > 0) sheet.getRange(2, userCol, dataToWrite.length, 1).setNumberFormat("@");
     }
     targetRange.setValues(dataToWrite);
-}
-
-function validateAdminToken(params, config) {
-  if (config.debug_endpoints_enabled !== true && config.debug_endpoints_enabled !== "true") {
-    return false;
-  }
-  if (!config.admin_token || String(config.admin_token).trim() === "") {
-    return false;
-  }
-  if (String(params.admin_token) !== String(config.admin_token)) {
-    return false;
-  }
-  return true;
 }
 
 function actionRecalculateRankings(params) {

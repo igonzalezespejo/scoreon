@@ -2,8 +2,15 @@
  * Global State Management
  */
 
+const SESSION_STORAGE_KEY = 'porra_session_token';
+
 class State {
     constructor() {
+        this.currentUser = null; // { user_id, display_name, is_admin }
+        this.sessionToken = null;
+        this.sessionChecking = false;
+        this.myPredictionsById = {}; // { [month_id]: [{ match_id, home_goals, away_goals, submitted_at }] } — solo del usuario logueado
+
         this.config = null;
         this.activeMonth = null;
         this.participants = [];
@@ -26,12 +33,51 @@ class State {
         this.rankingsLoaded = false;
         this.rankingsLoading = false;
         this.rankingsError = null;
+    }
 
-        // Tracks a background monthData fetch triggered by switching months
-        // in Apuestas/Estado, so views can show a scoped loading/error state
-        // instead of blocking the whole page.
-        this.monthDataLoadingId = null;
-        this.monthDataError = null;
+    // Lee el token guardado en el navegador (si existe) a memoria, sin
+    // validarlo contra el backend todavía. app.js decide si lo confirma
+    // con resumeSession antes de dar por buena la sesión.
+    restoreTokenFromStorage() {
+        this.sessionToken = localStorage.getItem(SESSION_STORAGE_KEY);
+        return this.sessionToken;
+    }
+
+    setSession(token, user, myPredictions) {
+        this.sessionToken = token;
+        this.currentUser = user;
+        this.myPredictionsById = myPredictions || {};
+        localStorage.setItem(SESSION_STORAGE_KEY, token);
+    }
+
+    clearSession() {
+        this.sessionToken = null;
+        this.currentUser = null;
+        this.myPredictionsById = {};
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+
+    getMyPredictionsForMonth(monthId) {
+        return this.myPredictionsById[monthId] || [];
+    }
+
+    // Actualiza en memoria las predicciones propias tras un guardado exitoso,
+    // sin necesidad de volver a pedirlas al servidor.
+    setMyPredictionsForMonth(monthId, predictions) {
+        this.myPredictionsById[monthId] = predictions.map(p => ({
+            match_id: p.match_id,
+            home_goals: p.home_goals,
+            away_goals: p.away_goals,
+            submitted_at: new Date().toISOString()
+        }));
+    }
+
+    isAuthenticated() {
+        return !!(this.sessionToken && this.currentUser);
+    }
+
+    isAdmin() {
+        return !!(this.currentUser && this.currentUser.is_admin);
     }
 
     initialize(data) {
@@ -68,8 +114,23 @@ class State {
         this.predictionsSummary = data.predictionsSummary || {};
         this.results = data.results || [];
         this.serverTime = data.serverTime;
-        
-        if (this.selectedMonthId) {
+
+        // monthsData trae el detalle completo (partidos, resultados, resumen)
+        // de TODOS los meses de una sola vez: se cachean todos aquí para que
+        // Apuestas/Estado/Ranking naveguen entre meses sin volver a pedir
+        // nada al servidor. Si el backend todavía no lo manda (versión vieja
+        // desplegada), caemos al menos al mes activo como antes.
+        if (data.monthsData) {
+            Object.keys(data.monthsData).forEach(monthId => {
+                const detail = data.monthsData[monthId];
+                this.monthDataById[monthId] = {
+                    month: (this.months || []).find(m => m.month_id === monthId) || null,
+                    matches: detail.matches || [],
+                    results: detail.results || [],
+                    predictionsSummary: detail.predictionsSummary || {}
+                };
+            });
+        } else if (this.selectedMonthId) {
             this.monthDataById[this.selectedMonthId] = {
                 month: this.activeMonth,
                 matches: this.matches,
@@ -77,7 +138,7 @@ class State {
                 predictionsSummary: this.predictionsSummary
             };
         }
-        
+
         this.coreLoaded = true;
         this.coreLoading = false;
         this.coreError = null;

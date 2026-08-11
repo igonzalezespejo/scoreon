@@ -128,6 +128,17 @@ h1, h2, h3, h4, h5, h6 {
   text-align: right;
 }
 
+#current-user-label {
+  display: inline-block;
+  margin-right: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+#current-user-label:empty {
+  margin-right: 0;
+}
+
 /* Layout */
 .container {
   max-width: 1200px;
