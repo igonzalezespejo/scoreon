@@ -154,15 +154,15 @@ export const bettingView = {
             formHtml += `
                 <div class="betting-match-card ${cardStateClass}">
                     <div class="betting-match-ribbon">${ribbonText}</div>
-                    <div class="betting-match-comp-line"><span class="betting-match-comp">${match.competition}</span> · ${formatDate(match.kickoff_at)}</div>
+                    <div class="betting-match-comp-line"><span class="betting-match-comp">${match.competition}</span> · <span class="betting-match-horario">${formatDate(match.kickoff_at)}</span></div>
                     <div class="betting-match-split">
-                        <div class="betting-match-half">
-                            <div class="betting-match-team-name">${match.home_team}</div>
+                        <div class="betting-match-team-name">${match.home_team}</div>
+                        <div class="betting-match-team-name">${match.away_team}</div>
+                        <div class="betting-match-results">
                             ${homeChip}
                             <input type="number" min="0" max="20" class="betting-match-bet-input" data-match="${match.match_id}" data-team="home" value="${hg}" ${!canBet ? 'disabled' : ''} aria-label="Tu apuesta, goles de ${match.home_team}">
                         </div>
-                        <div class="betting-match-half">
-                            <div class="betting-match-team-name">${match.away_team}</div>
+                        <div class="betting-match-results">
                             ${awayChip}
                             <input type="number" min="0" max="20" class="betting-match-bet-input" data-match="${match.match_id}" data-team="away" value="${ag}" ${!canBet ? 'disabled' : ''} aria-label="Tu apuesta, goles de ${match.away_team}">
                         </div>
