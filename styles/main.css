@@ -303,6 +303,154 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 800;
 }
 
+.tab-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Betting Match Cards (Apuestas) — tarjetas en cuadricula, una por partido */
+.betting-matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.1rem;
+}
+
+.betting-match-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius);
+  padding-top: 0.9rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(2, 15, 42, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .betting-match-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 14px -4px rgba(2, 15, 42, 0.1);
+  }
+}
+
+.betting-match-ribbon {
+  position: absolute;
+  top: 0.75rem;
+  right: -1.95rem;
+  transform: rotate(40deg);
+  width: 7.8rem;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.22rem 0;
+}
+
+.betting-match-card.is-pending .betting-match-ribbon {
+  background: var(--accent-secondary);
+  color: #4a3300;
+}
+
+.betting-match-card.is-saved .betting-match-ribbon {
+  background: var(--success-color);
+  color: #ffffff;
+}
+
+.betting-match-comp-line {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+  padding: 0 2.1rem;
+}
+
+.betting-match-comp {
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+.betting-match-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.betting-match-split::before {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0.9rem;
+  left: 50%;
+  width: 1px;
+  background: var(--border-light);
+}
+
+.betting-match-half {
+  padding: 0 0.8rem 1rem;
+  text-align: center;
+}
+
+.betting-match-team-name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  min-height: 2.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.betting-match-real-chip {
+  display: inline-block;
+  margin-top: 0.6rem;
+  background: var(--bg-dark);
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: var(--border-radius-sm);
+  padding: 0.15rem 0.7rem;
+  min-width: 2.4rem;
+}
+
+.betting-match-real-chip.is-cancelled {
+  font-size: 0.68rem;
+  color: var(--accent-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.betting-match-bet-input {
+  display: block;
+  margin: 0.55rem auto 0;
+  width: 2.7rem;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-main);
+  background: var(--bg-card);
+  border: 1.5px solid var(--accent-primary);
+  border-radius: var(--border-radius-sm);
+  padding: 0.25rem 0;
+}
+
+.betting-match-bet-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(229, 0, 70, 0.14);
+}
+
+.betting-match-bet-input:disabled {
+  border-color: var(--border-light);
+  color: var(--text-muted);
+  background: var(--bg-dark);
+  cursor: not-allowed;
+}
+
 /* Buttons */
 .btn {
   display: inline-block;

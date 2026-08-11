@@ -1,0 +1,1123 @@
+<title>Porra Mensual — Diseños de tarjeta para Apuestas</title>
+<style>
+  :root {
+    --shell-bg: #f8fafc;
+    --shell-surface: #ffffff;
+    --shell-text: #020f2a;
+    --shell-text-muted: #64748b;
+    --shell-border: #e2e8f0;
+    --accent: #e50046;
+    --accent-2: #ffb800;
+    --success: #00a651;
+    --font-head: 'Poppins', 'Segoe UI Semibold', 'Century Gothic', 'Trebuchet MS', sans-serif;
+    --font-body: 'Noto Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --shell-bg: #0a1120;
+      --shell-surface: #111a2e;
+      --shell-text: #eef2f8;
+      --shell-text-muted: #93a0b8;
+      --shell-border: #223049;
+    }
+  }
+  :root[data-theme="dark"] {
+    --shell-bg: #0a1120;
+    --shell-surface: #111a2e;
+    --shell-text: #eef2f8;
+    --shell-text-muted: #93a0b8;
+    --shell-border: #223049;
+  }
+  :root[data-theme="light"] {
+    --shell-bg: #f8fafc;
+    --shell-surface: #ffffff;
+    --shell-text: #020f2a;
+    --shell-text-muted: #64748b;
+    --shell-border: #e2e8f0;
+  }
+
+  * { box-sizing: border-box; }
+
+  .mockup-root {
+    font-family: var(--font-body);
+    color: var(--shell-text);
+    background: var(--shell-bg);
+    line-height: 1.55;
+    padding: 0 0 5rem;
+  }
+
+  .mockup-root h1, .mockup-root h2, .mockup-root h3 {
+    font-family: var(--font-head);
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ---------- Intro ---------- */
+  .intro {
+    padding: 3rem 0 2rem;
+    border-bottom: 1px solid var(--shell-border);
+    margin-bottom: 2.5rem;
+  }
+
+  .eyebrow {
+    font-family: var(--font-head);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+
+  .intro h1 {
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    max-width: 34ch;
+  }
+
+  .intro p {
+    max-width: 62ch;
+    color: var(--shell-text-muted);
+    font-size: 1rem;
+  }
+
+  .intro p + p { margin-top: 0.6rem; }
+
+  .jump-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .jump-nav a {
+    font-family: var(--font-head);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--shell-text);
+    text-decoration: none;
+    background: var(--shell-surface);
+    border: 1px solid var(--shell-border);
+    padding: 0.45rem 0.9rem;
+    border-radius: 30px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .jump-nav a:hover, .jump-nav a:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .jump-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Design section chrome ---------- */
+  .design-section {
+    margin-bottom: 4rem;
+    scroll-margin-top: 1.5rem;
+  }
+
+  .design-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.35rem;
+  }
+
+  .design-number {
+    font-family: var(--font-head);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+
+  .design-head h2 {
+    font-size: 1.35rem;
+    font-weight: 800;
+  }
+
+  .design-note {
+    color: var(--shell-text-muted);
+    font-size: 0.92rem;
+    max-width: 68ch;
+    margin-bottom: 1.4rem;
+  }
+
+  .canvas {
+    border-radius: 16px;
+    padding: 1.75rem;
+    border: 1px solid var(--shell-border);
+  }
+
+  .canvas-label {
+    font-family: var(--font-head);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.1rem;
+    opacity: 0.55;
+  }
+
+  /* ================================================================
+     Shared match-card primitives (status dot / icons)
+     ================================================================ */
+  .status-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .status-dot svg { width: 13px; height: 13px; }
+
+  .status-pending { background: rgba(255, 184, 0, 0.16); color: #b8790a; }
+  .status-saved { background: rgba(0, 166, 81, 0.14); color: var(--success); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .m-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+    .m-card:hover { transform: translateY(-3px); }
+  }
+
+  .tab-num { font-variant-numeric: tabular-nums; }
+
+  /* ================================================================
+     DESIGN 1 — Marcador Editorial (light, generous)
+     ================================================================ */
+  .canvas-1 { background: #f8fafc; }
+
+  .grid-1 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
+    gap: 1rem;
+  }
+
+  .card-1 {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.1rem 1.1rem 1.2rem;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(2, 15, 42, 0.04);
+  }
+
+  .card-1 .meta {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    padding-right: 2rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .card-1 .meta .comp { color: #E50046; }
+
+  .card-1 .status-dot { position: absolute; top: 0.85rem; right: 0.85rem; }
+
+  .card-1 .teams {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    gap: 0.6rem;
+  }
+
+  .card-1 .side { text-align: center; }
+  .card-1 .side.home { text-align: right; }
+  .card-1 .side.away { text-align: left; }
+
+  .card-1 .team-name {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.86rem;
+    color: #020f2a;
+    line-height: 1.25;
+    min-height: 2.2em;
+    display: flex;
+    align-items: center;
+  }
+  .card-1 .side.home .team-name { justify-content: flex-end; }
+  .card-1 .side.away .team-name { justify-content: flex-start; }
+
+  .card-1 .vs-rule {
+    width: 1px;
+    align-self: stretch;
+    background: #e2e8f0;
+    margin-top: 0.3rem;
+  }
+
+  .card-1 .real-label {
+    font-size: 0.62rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.55rem;
+  }
+
+  .card-1 .real-score {
+    font-family: var(--font-head);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #475569;
+    margin-top: 0.1rem;
+  }
+
+  .card-1 .bet-input {
+    margin-top: 0.6rem;
+    width: 100%;
+    text-align: center;
+    font-family: var(--font-head);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #020f2a;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.35rem 0;
+  }
+
+  .card-1 .bet-input:focus-visible {
+    outline: none;
+    border-color: #E50046;
+    box-shadow: 0 0 0 3px rgba(229, 0, 70, 0.12);
+  }
+
+  /* ================================================================
+     DESIGN 2 — Marcador de Estadio (dark, deliberate)
+     ================================================================ */
+  .canvas-2 { background: #050b18; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+    gap: 0.85rem;
+  }
+
+  .card-2 {
+    background: linear-gradient(180deg, #101d38 0%, #0b1626 100%);
+    border: 1px solid #1d3358;
+    border-radius: 12px;
+    padding: 0.9rem 0.85rem 1rem;
+    position: relative;
+  }
+
+  .card-2 .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-2 .comp-tag {
+    font-family: var(--font-head);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7c93c2;
+  }
+
+  .card-2 .status-dot { width: 18px; height: 18px; }
+  .card-2 .status-dot svg { width: 10px; height: 10px; }
+  .card-2 .status-pending { background: rgba(255, 184, 0, 0.22); color: #ffcf4d; }
+  .card-2 .status-saved { background: rgba(0, 214, 120, 0.2); color: #4ce29b; }
+
+  .card-2 .teams-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .card-2 .team-name {
+    font-family: var(--font-head);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #e7edf9;
+    text-align: center;
+    min-height: 2.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.15rem;
+  }
+
+  .card-2 .led {
+    margin-top: 0.5rem;
+    background: #060d1c;
+    border: 1px solid #1d3358;
+    border-radius: 6px;
+    text-align: center;
+    padding: 0.3rem 0;
+  }
+
+  .card-2 .led-real {
+    font-family: var(--font-head);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffb800;
+    letter-spacing: 0.03em;
+  }
+
+  .card-2 .led-label {
+    font-size: 0.55rem;
+    color: #4a6087;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.6rem;
+    margin-bottom: 0.3rem;
+    text-align: center;
+  }
+
+  .card-2 .bet-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    text-align: center;
+    font-family: var(--font-head);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ff5d8f;
+    letter-spacing: 0.03em;
+  }
+
+  .card-2 .bet-led {
+    background: #060d1c;
+    border: 1px solid #3a1c2c;
+    border-radius: 6px;
+    padding: 0.3rem 0;
+  }
+
+  .card-2 .bet-input:focus-visible { outline: none; }
+  .card-2 .bet-led:focus-within { border-color: #ff5d8f; }
+
+  /* ================================================================
+     DESIGN 3 — Columnas Simétricas (light, split card)
+     ================================================================ */
+  .canvas-3 { background: #f8fafc; }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(198px, 1fr));
+    gap: 1.1rem;
+  }
+
+  .card-3 {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding-top: 0.9rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-3 .ribbon {
+    position: absolute;
+    top: 0.7rem;
+    right: -1.85rem;
+    transform: rotate(40deg);
+    width: 7.5rem;
+    text-align: center;
+    font-family: var(--font-head);
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.2rem 0;
+  }
+  .card-3.is-pending .ribbon { background: #ffb800; color: #4a3300; }
+  .card-3.is-saved .ribbon { background: #00a651; color: #ffffff; }
+
+  .card-3 .comp-line {
+    text-align: center;
+    font-size: 0.66rem;
+    color: #94a3b8;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.8rem;
+    padding: 0 2rem;
+  }
+
+  .card-3 .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+  }
+
+  .card-3 .split::before {
+    content: "";
+    position: absolute;
+    top: 0.2rem;
+    bottom: 0.9rem;
+    left: 50%;
+    width: 1px;
+    background: #e2e8f0;
+  }
+
+  .card-3 .half { padding: 0 0.8rem 1rem; text-align: center; }
+
+  .card-3 .team-name {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #020f2a;
+    min-height: 2.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-3 .real-chip {
+    display: inline-block;
+    margin-top: 0.6rem;
+    background: #f1f5f9;
+    color: #475569;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    padding: 0.15rem 0.7rem;
+    min-width: 2.4rem;
+  }
+
+  .card-3 .bet-box {
+    display: block;
+    margin: 0.55rem auto 0;
+    width: 2.6rem;
+    text-align: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1rem;
+    color: #020f2a;
+    background: #ffffff;
+    border: 1.5px solid #E50046;
+    border-radius: 8px;
+    padding: 0.2rem 0;
+  }
+
+  .card-3 .bet-box:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(229, 0, 70, 0.14);
+  }
+
+  /* ================================================================
+     DESIGN 4 — Minimalista Compacto (light, high density)
+     ================================================================ */
+  .canvas-4 { background: #f8fafc; }
+
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.7rem;
+  }
+
+  .card-4 {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem 0.75rem;
+  }
+
+  .card-4 .top-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-4 .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .card-4 .dot.pending { background: #ffb800; }
+  .card-4 .dot.saved { background: #00a651; }
+
+  .card-4 .meta-txt {
+    font-size: 0.63rem;
+    color: #94a3b8;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-4 .names {
+    font-family: var(--font-head);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #020f2a;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.3rem;
+    margin-bottom: 0.45rem;
+  }
+  .card-4 .names span:first-child { text-align: left; }
+  .card-4 .names span:last-child { text-align: right; }
+
+  .card-4 .row2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  .card-4 .real-pair {
+    font-family: var(--font-head);
+    font-size: 0.76rem;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  .card-4 .bet-pair {
+    display: flex;
+    align-items: center;
+    gap: 0.28rem;
+  }
+
+  .card-4 .bet-in {
+    width: 1.7rem;
+    text-align: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #020f2a;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.15rem 0;
+  }
+
+  .card-4 .bet-in:focus-visible {
+    outline: none;
+    border-color: #E50046;
+  }
+
+  .card-4 .dash { color: #cbd5e1; font-weight: 700; font-size: 0.75rem; }
+
+  /* ---------- Footer ---------- */
+  .closing {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--shell-border);
+    color: var(--shell-text-muted);
+    font-size: 0.92rem;
+    max-width: 62ch;
+  }
+</style>
+
+<div class="mockup-root">
+  <div class="wrap">
+    <div class="intro">
+      <div class="eyebrow">Porra Mensual · Exploración de diseño</div>
+      <h1>Tarjetas de apuesta, en vez de la lista vertical</h1>
+      <p>Cuatro formas de agrupar los partidos en cuadrícula (equipo local a la izquierda, visitante a la derecha, resultado real y tu apuesta debajo de cada nombre, estado como icono en la esquina) para que 24 partidos quepan en 3–4 filas escaneables en vez de una lista larga.</p>
+      <p>Ninguna de estas vistas está conectada a la app — es solo para comparar y elegir antes de tocar el código real.</p>
+      <nav class="jump-nav">
+        <a href="#diseno-1">1 · Marcador editorial</a>
+        <a href="#diseno-2">2 · Marcador de estadio</a>
+        <a href="#diseno-3">3 · Columnas simétricas</a>
+        <a href="#diseno-4">4 · Minimalista compacto</a>
+      </nav>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- DESIGN 1 -->
+    <!-- ============================================================ -->
+    <section class="design-section" id="diseno-1">
+      <div class="design-head">
+        <span class="design-number">01</span>
+        <h2>Marcador editorial</h2>
+      </div>
+      <p class="design-note">El más parecido al resto de la web actual: tarjeta blanca, nombres en Poppins, resultado real en gris y tu apuesta en un recuadro que se distingue claramente como el campo editable. ~4 columnas en escritorio.</p>
+      <div class="canvas canvas-1">
+        <div class="grid-1">
+
+          <div class="card-1">
+            <div class="meta"><span class="comp">LaLiga</span> · 3 oct, 20:00</div>
+            <div class="status-dot status-saved" title="Apuesta guardada" aria-label="Apuesta guardada">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="teams">
+              <div class="side home">
+                <div class="team-name">Real Madrid</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" value="2" aria-label="Tu apuesta, goles Real Madrid" />
+              </div>
+              <div class="vs-rule"></div>
+              <div class="side away">
+                <div class="team-name">FC&nbsp;Barcelona</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles FC Barcelona" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-1">
+            <div class="meta"><span class="comp">LaLiga</span> · 3 oct, 21:00</div>
+            <div class="status-dot status-pending" title="Pendiente" aria-label="Apuesta pendiente">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+            <div class="teams">
+              <div class="side home">
+                <div class="team-name">Villarreal&nbsp;CF</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Villarreal" />
+              </div>
+              <div class="vs-rule"></div>
+              <div class="side away">
+                <div class="team-name">Sevilla&nbsp;FC</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Sevilla" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-1">
+            <div class="meta"><span class="comp">LaLiga</span> · 4 oct, 18:30</div>
+            <div class="status-dot status-saved" title="Apuesta guardada" aria-label="Apuesta guardada">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="teams">
+              <div class="side home">
+                <div class="team-name">Atlético&nbsp;de&nbsp;Madrid</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">3</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" value="2" aria-label="Tu apuesta, goles Atlético" />
+              </div>
+              <div class="vs-rule"></div>
+              <div class="side away">
+                <div class="team-name">Real&nbsp;Sociedad</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">1</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Real Sociedad" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-1">
+            <div class="meta"><span class="comp">Champions</span> · 6 oct, 21:00</div>
+            <div class="status-dot status-pending" title="Pendiente" aria-label="Apuesta pendiente">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+            <div class="teams">
+              <div class="side home">
+                <div class="team-name">Bayern&nbsp;Múnich</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Bayern" />
+              </div>
+              <div class="vs-rule"></div>
+              <div class="side away">
+                <div class="team-name">PSG</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles PSG" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-1">
+            <div class="meta"><span class="comp">Premier</span> · 4 oct, 17:30</div>
+            <div class="status-dot status-saved" title="Apuesta guardada" aria-label="Apuesta guardada">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="teams">
+              <div class="side home">
+                <div class="team-name">Manchester&nbsp;City</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Man City" />
+              </div>
+              <div class="vs-rule"></div>
+              <div class="side away">
+                <div class="team-name">Liverpool</div>
+                <div class="real-label">Resultado</div>
+                <div class="real-score tab-num">– –</div>
+                <input class="bet-input tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Liverpool" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- DESIGN 2 -->
+    <!-- ============================================================ -->
+    <section class="design-section" id="diseno-2">
+      <div class="design-head">
+        <span class="design-number">02</span>
+        <h2>Marcador de estadio</h2>
+      </div>
+      <p class="design-note">Tratamiento oscuro tipo videomarcador: el resultado real en ámbar (fijo, informativo) y tu apuesta en rosa (editable), como dos pantallas LED distintas. Más denso, ~6 columnas — pensado para quien quiere ver muchos partidos de un vistazo con personalidad propia.</p>
+      <div class="canvas canvas-2">
+        <div class="grid-2">
+
+          <div class="card-2">
+            <div class="top-row">
+              <span class="comp-tag">LaLiga</span>
+              <div class="status-dot status-saved" title="Apuesta guardada" aria-label="Apuesta guardada">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="teams-row">
+              <div class="team-name">Real Madrid</div>
+              <div class="team-name">Barcelona</div>
+            </div>
+            <div class="led"><div class="led-real tab-num">– : –</div></div>
+            <div class="led-label">Tu apuesta</div>
+            <div class="led bet-led">
+              <div style="display:flex; align-items:center; justify-content:center; gap:0.3rem;">
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" value="2" aria-label="Tu apuesta, goles Real Madrid" />
+                <span style="color:#3a4b6b;">:</span>
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Barcelona" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-2">
+            <div class="top-row">
+              <span class="comp-tag">LaLiga</span>
+              <div class="status-dot status-pending" title="Pendiente" aria-label="Apuesta pendiente">
+                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+            <div class="teams-row">
+              <div class="team-name">Villarreal</div>
+              <div class="team-name">Sevilla</div>
+            </div>
+            <div class="led"><div class="led-real tab-num">– : –</div></div>
+            <div class="led-label">Tu apuesta</div>
+            <div class="led bet-led">
+              <div style="display:flex; align-items:center; justify-content:center; gap:0.3rem;">
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Villarreal" />
+                <span style="color:#3a4b6b;">:</span>
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Sevilla" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-2">
+            <div class="top-row">
+              <span class="comp-tag">LaLiga</span>
+              <div class="status-dot status-saved" title="Apuesta guardada" aria-label="Apuesta guardada">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="teams-row">
+              <div class="team-name">Atlético</div>
+              <div class="team-name">Real&nbsp;Sociedad</div>
+            </div>
+            <div class="led"><div class="led-real tab-num">3 : 1</div></div>
+            <div class="led-label">Tu apuesta</div>
+            <div class="led bet-led">
+              <div style="display:flex; align-items:center; justify-content:center; gap:0.3rem;">
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" value="2" aria-label="Tu apuesta, goles Atlético" />
+                <span style="color:#3a4b6b;">:</span>
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Real Sociedad" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-2">
+            <div class="top-row">
+              <span class="comp-tag">Champions</span>
+              <div class="status-dot status-pending" title="Pendiente" aria-label="Apuesta pendiente">
+                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+            <div class="teams-row">
+              <div class="team-name">Bayern</div>
+              <div class="team-name">PSG</div>
+            </div>
+            <div class="led"><div class="led-real tab-num">– : –</div></div>
+            <div class="led-label">Tu apuesta</div>
+            <div class="led bet-led">
+              <div style="display:flex; align-items:center; justify-content:center; gap:0.3rem;">
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Bayern" />
+                <span style="color:#3a4b6b;">:</span>
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles PSG" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-2">
+            <div class="top-row">
+              <span class="comp-tag">Serie A</span>
+              <div class="status-dot status-saved" title="Apuesta guardada" aria-label="Apuesta guardada">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="teams-row">
+              <div class="team-name">Inter</div>
+              <div class="team-name">AC&nbsp;Milan</div>
+            </div>
+            <div class="led"><div class="led-real tab-num">1 : 1</div></div>
+            <div class="led-label">Tu apuesta</div>
+            <div class="led bet-led">
+              <div style="display:flex; align-items:center; justify-content:center; gap:0.3rem;">
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Inter" />
+                <span style="color:#3a4b6b;">:</span>
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" value="0" aria-label="Tu apuesta, goles Milan" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-2">
+            <div class="top-row">
+              <span class="comp-tag">Nations League</span>
+              <div class="status-dot status-pending" title="Pendiente" aria-label="Apuesta pendiente">
+                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+            <div class="teams-row">
+              <div class="team-name">España</div>
+              <div class="team-name">Francia</div>
+            </div>
+            <div class="led"><div class="led-real tab-num">– : –</div></div>
+            <div class="led-label">Tu apuesta</div>
+            <div class="led bet-led">
+              <div style="display:flex; align-items:center; justify-content:center; gap:0.3rem;">
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles España" />
+                <span style="color:#3a4b6b;">:</span>
+                <input class="bet-input tab-num" style="width:2ch;" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Francia" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- DESIGN 3 -->
+    <!-- ============================================================ -->
+    <section class="design-section" id="diseno-3">
+      <div class="design-head">
+        <span class="design-number">03</span>
+        <h2>Columnas simétricas</h2>
+      </div>
+      <p class="design-note">Cada tarjeta se parte en dos mitades exactamente iguales con una línea al centro, para que la comparación local/visitante sea instantánea. El estado se ve como una cintilla en la esquina en vez de un icono suelto. ~5 columnas.</p>
+      <div class="canvas canvas-3">
+        <div class="grid-3">
+
+          <div class="card-3 is-saved">
+            <div class="ribbon">Guardado</div>
+            <div class="comp-line">LaLiga · 3 oct, 20:00</div>
+            <div class="split">
+              <div class="half">
+                <div class="team-name">Real Madrid</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" value="2" aria-label="Tu apuesta, goles Real Madrid" />
+              </div>
+              <div class="half">
+                <div class="team-name">Barcelona</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Barcelona" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-3 is-pending">
+            <div class="ribbon">Pendiente</div>
+            <div class="comp-line">LaLiga · 3 oct, 21:00</div>
+            <div class="split">
+              <div class="half">
+                <div class="team-name">Villarreal</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Villarreal" />
+              </div>
+              <div class="half">
+                <div class="team-name">Sevilla</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Sevilla" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-3 is-saved">
+            <div class="ribbon">Guardado</div>
+            <div class="comp-line">LaLiga · 4 oct, 18:30</div>
+            <div class="split">
+              <div class="half">
+                <div class="team-name">Atlético</div>
+                <span class="real-chip tab-num">3</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" value="2" aria-label="Tu apuesta, goles Atlético" />
+              </div>
+              <div class="half">
+                <div class="team-name">R. Sociedad</div>
+                <span class="real-chip tab-num">1</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Real Sociedad" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-3 is-pending">
+            <div class="ribbon">Pendiente</div>
+            <div class="comp-line">Champions · 6 oct, 21:00</div>
+            <div class="split">
+              <div class="half">
+                <div class="team-name">Bayern</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles Bayern" />
+              </div>
+              <div class="half">
+                <div class="team-name">PSG</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Tu apuesta, goles PSG" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-3 is-saved">
+            <div class="ribbon">Guardado</div>
+            <div class="comp-line">Premier · 4 oct, 17:30</div>
+            <div class="split">
+              <div class="half">
+                <div class="team-name">Man City</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Man City" />
+              </div>
+              <div class="half">
+                <div class="team-name">Liverpool</div>
+                <span class="real-chip tab-num">–</span>
+                <input class="bet-box tab-num" type="number" min="0" max="20" value="1" aria-label="Tu apuesta, goles Liverpool" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- DESIGN 4 -->
+    <!-- ============================================================ -->
+    <section class="design-section" id="diseno-4">
+      <div class="design-head">
+        <span class="design-number">04</span>
+        <h2>Minimalista compacto</h2>
+      </div>
+      <p class="design-note">La opción de mayor densidad: nombres en una sola línea, resultado real como texto discreto junto a los dos inputs, estado como un simple punto de color. Pensada para escanear los 24 partidos con el mínimo scroll — hasta 6–7 columnas.</p>
+      <div class="canvas canvas-4">
+        <div class="grid-4">
+
+          <div class="card-4">
+            <div class="top-row"><span class="dot saved"></span><span class="meta-txt">LaLiga · 3 oct 20:00</span></div>
+            <div class="names"><span>Real Madrid</span><span>Barcelona</span></div>
+            <div class="row2">
+              <span class="real-pair tab-num">– <span class="dash">–</span> –</span>
+              <span class="bet-pair">
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="2" aria-label="Goles Real Madrid" />
+                <span class="dash">–</span>
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="1" aria-label="Goles Barcelona" />
+              </span>
+            </div>
+          </div>
+
+          <div class="card-4">
+            <div class="top-row"><span class="dot pending"></span><span class="meta-txt">LaLiga · 3 oct 21:00</span></div>
+            <div class="names"><span>Villarreal</span><span>Sevilla</span></div>
+            <div class="row2">
+              <span class="real-pair tab-num">– <span class="dash">–</span> –</span>
+              <span class="bet-pair">
+                <input class="bet-in tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Goles Villarreal" />
+                <span class="dash">–</span>
+                <input class="bet-in tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Goles Sevilla" />
+              </span>
+            </div>
+          </div>
+
+          <div class="card-4">
+            <div class="top-row"><span class="dot saved"></span><span class="meta-txt">LaLiga · 4 oct 18:30</span></div>
+            <div class="names"><span>Atlético</span><span>R. Sociedad</span></div>
+            <div class="row2">
+              <span class="real-pair tab-num">3 <span class="dash">–</span> 1</span>
+              <span class="bet-pair">
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="2" aria-label="Goles Atlético" />
+                <span class="dash">–</span>
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="1" aria-label="Goles Real Sociedad" />
+              </span>
+            </div>
+          </div>
+
+          <div class="card-4">
+            <div class="top-row"><span class="dot pending"></span><span class="meta-txt">Champions · 6 oct 21:00</span></div>
+            <div class="names"><span>Bayern</span><span>PSG</span></div>
+            <div class="row2">
+              <span class="real-pair tab-num">– <span class="dash">–</span> –</span>
+              <span class="bet-pair">
+                <input class="bet-in tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Goles Bayern" />
+                <span class="dash">–</span>
+                <input class="bet-in tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Goles PSG" />
+              </span>
+            </div>
+          </div>
+
+          <div class="card-4">
+            <div class="top-row"><span class="dot saved"></span><span class="meta-txt">Premier · 4 oct 17:30</span></div>
+            <div class="names"><span>Man City</span><span>Liverpool</span></div>
+            <div class="row2">
+              <span class="real-pair tab-num">– <span class="dash">–</span> –</span>
+              <span class="bet-pair">
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="1" aria-label="Goles Man City" />
+                <span class="dash">–</span>
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="1" aria-label="Goles Liverpool" />
+              </span>
+            </div>
+          </div>
+
+          <div class="card-4">
+            <div class="top-row"><span class="dot saved"></span><span class="meta-txt">Serie A · 4 oct 20:45</span></div>
+            <div class="names"><span>Inter</span><span>AC Milan</span></div>
+            <div class="row2">
+              <span class="real-pair tab-num">1 <span class="dash">–</span> 1</span>
+              <span class="bet-pair">
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="1" aria-label="Goles Inter" />
+                <span class="dash">–</span>
+                <input class="bet-in tab-num" type="number" min="0" max="20" value="0" aria-label="Goles Milan" />
+              </span>
+            </div>
+          </div>
+
+          <div class="card-4">
+            <div class="top-row"><span class="dot pending"></span><span class="meta-txt">Nations · 10 oct 20:45</span></div>
+            <div class="names"><span>España</span><span>Francia</span></div>
+            <div class="row2">
+              <span class="real-pair tab-num">– <span class="dash">–</span> –</span>
+              <span class="bet-pair">
+                <input class="bet-in tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Goles España" />
+                <span class="dash">–</span>
+                <input class="bet-in tab-num" type="number" min="0" max="20" placeholder="–" aria-label="Goles Francia" />
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <div class="closing">
+      <strong style="color: var(--shell-text);">Nota:</strong> los inputs de goles son de verdad (puedes escribir en ellos) para que se sienta como quedaría en la app, pero esta página no está conectada a ningún dato real ni a GitHub — es solo para elegir dirección antes de tocar <code>bettingView.js</code>.
+    </div>
+  </div>
+</div>
