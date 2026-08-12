@@ -1,4 +1,4 @@
-# QA Checklist - Porra Mensual MVP
+# QA Checklist - ScoreOn MVP
 
 Este documento detalla las validaciones End-to-End realizadas sobre el frontend conectado al backend de producción (Google Apps Script) para garantizar la solidez de la aplicación antes de su publicación en GitHub Pages.
 
@@ -63,11 +63,11 @@ Este documento detalla las validaciones End-to-End realizadas sobre el frontend 
 - **Bugs pendientes:** Ninguno crítico que bloquee el MVP.
 
 ## 7. Smoke Test de Producción (Validación Final)
-La app ha sido publicada en: `https://igonzalezespejo.github.io/porra-mensual/`
+La app ha sido publicada en: `https://igonzalezespejo.github.io/scoreon/`
 
 | Acción | Resultado | Notas |
 |--------|-----------|-------|
-| Abrir `https://igonzalezespejo.github.io/porra-mensual/` | Carga `index.html` sin errores 404 de scripts/css | ✅ OK |
+| Abrir `https://igonzalezespejo.github.io/scoreon/` | Carga `index.html` sin errores 404 de scripts/css | ✅ OK |
 | Verificar llamadas de red (Network) | La app hace GET a la URL de Apps Script real | ✅ OK |
 | Mostrar datos reales | Aparecen participantes, partidos y estado "open" | ✅ OK |
 | Persistencia tras apuesta con usuario autorizado | ✅ OK | Validado manualmente por el administrador. |

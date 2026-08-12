@@ -1,6 +1,6 @@
 # Manual del Administrador
 
-Este documento explica cómo operar la Porra Mensual utilizando Google Sheets como panel de control. Todo el backend lee de las hojas de Google, por lo que la administración consiste en editar las celdas adecuadas.
+Este documento explica cómo operar ScoreOn utilizando Google Sheets como panel de control. Todo el backend lee de las hojas de Google, por lo que la administración consiste en editar las celdas adecuadas.
 
 ## Checklist de Primera Puesta en Marcha
 
@@ -12,7 +12,7 @@ Para iniciar un proyecto nuevo o un nuevo mes de porra, sigue estos pasos riguro
 4. [ ] **Completar Config Inicial (`Config`):**
     - `active_month_id`: El ID del primer mes (ej. `2026-09`).
     - `pin_enabled`: `true` o `false`.
-    - `site_title`: El título de la app (ej. `Porra Mensual`).
+    - `site_title`: El título de la app (ej. `ScoreOn`).
     - `show_predictions_before_lock`: `false`.
     - `registration_enabled`: `true` si permites alta desde web.
     - `registration_code`: Código de invitación opcional (ej. `PORRA2026`).

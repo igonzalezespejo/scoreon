@@ -1,5 +1,5 @@
 /**
- * Porra Mensual - Backend (Google Apps Script)
+ * ScoreOn - Backend (Google Apps Script)
  */
 
 function onOpen() {

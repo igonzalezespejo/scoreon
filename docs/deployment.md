@@ -31,10 +31,10 @@ El frontend es una Single Page Application (SPA) en Vanilla JS, lo que significa
 
 ### Pasos de despliegue:
 1. **Crear Repositorio Remoto (si no existe):**
-   - Entra en [GitHub](https://github.com/new) y crea un nuevo repositorio llamado `porra-mensual`.
+   - Entra en [GitHub](https://github.com/new) y crea un nuevo repositorio llamado `scoreon`.
    - Enlaza tu carpeta local con el remoto y súbelo (reemplazando `<tu-usuario>`):
      ```bash
-     git remote add origin https://github.com/<tu-usuario>/porra-mensual.git
+     git remote add origin https://github.com/<tu-usuario>/scoreon.git
      git branch -M main
      git push -u origin main
      ```
@@ -46,7 +46,7 @@ El frontend es una Single Page Application (SPA) en Vanilla JS, lo que significa
 7. Selecciona tu rama principal (`main`) y la carpeta `/root`.
 8. Haz clic en **Save**. En unos minutos, GitHub mostrará la URL pública de tu aplicación.
 
-🔗 **URL de Producción:** `https://igonzalezespejo.github.io/porra-mensual/`
+🔗 **URL de Producción:** `https://igonzalezespejo.github.io/scoreon/`
 
 ### Verificación Post-Deploy
 - [x] La URL pública carga el frontend (HTML, JS, CSS).

@@ -1,4 +1,4 @@
-# API Contract - Porra Mensual Backend
+# API Contract - ScoreOn Backend
 
 ## Endpoint
 El backend se expone a través de una URL de Google Apps Script (Web App) publicada para acceso público.
@@ -29,7 +29,7 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
   "config": {
     "active_month_id": "2026-09",
     "pin_enabled": true,
-    "site_title": "Porra Mensual",
+    "site_title": "ScoreOn",
     "show_predictions_before_lock": false
   },
   "activeMonth": {

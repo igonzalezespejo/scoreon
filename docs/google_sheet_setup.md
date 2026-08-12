@@ -1,11 +1,11 @@
-# Configuración de Google Sheets para Porra Mensual
+# Configuración de Google Sheets para ScoreOn
 
 Este documento describe paso a paso cómo montar la base de datos de Google Sheets utilizando las plantillas CSV generadas, y cómo conectarla con el backend en Google Apps Script.
 
 ## 1. Crear el Google Sheet
 
 1. Ve a [Google Sheets](https://sheets.google.com) y crea una nueva hoja de cálculo en blanco.
-2. Nómbrala `Porra Mensual DB` (o el nombre que prefieras, el script accede por ID).
+2. Nómbrala `ScoreOn DB` (o el nombre que prefieras, el script accede por ID).
 3. Copia el **Spreadsheet ID** desde la URL.
    - Ejemplo URL: `https://docs.google.com/spreadsheets/d/1BxiMVs0X_xxxxx_xxxxx/edit`
    - El ID es: `1BxiMVs0X_xxxxx_xxxxx`
@@ -43,7 +43,7 @@ Para cada archivo dentro de la carpeta `docs/sheet_templates/`:
 3. Se abrirá el editor de código. Borra el código por defecto (`function myFunction() {}`).
 4. Copia todo el contenido del archivo `apps-script/Code.gs` de este repositorio.
 5. Pégalo en el editor de Apps Script.
-6. Dale un nombre al proyecto arriba a la izquierda (ej. "Backend Porra Mensual").
+6. Dale un nombre al proyecto arriba a la izquierda (ej. "Backend ScoreOn").
 7. Guarda el archivo (icono de disquete o `Ctrl+S`).
 
 ## 4. Desplegar la Aplicación Web (Backend)
@@ -55,7 +55,7 @@ Para cada archivo dentro de la carpeta `docs/sheet_templates/`:
    - **Ejecutar como**: `Yo` (tu cuenta de Google).
    - **Quién tiene acceso**: `Cualquier persona` (Anyone). *Importante para que el frontend pueda hacer llamadas sin pedir login de Google.*
 4. Haz clic en **Implementar**.
-5. Te pedirá **Autorizar el acceso** (Authorize access) porque el script necesita permiso para leer y escribir en tus hojas de cálculo. Acepta los permisos (puede que tengas que ir a "Avanzado" > "Ir a Backend Porra Mensual (inseguro)").
+5. Te pedirá **Autorizar el acceso** (Authorize access) porque el script necesita permiso para leer y escribir en tus hojas de cálculo. Acepta los permisos (puede que tengas que ir a "Avanzado" > "Ir a Backend ScoreOn (inseguro)").
 6. Se generará una URL de aplicación web.
    - Ejemplo: `https://script.google.com/macros/s/AKfycby.../exec`
 7. Esta URL es tu **API_URL** que tendrás que configurar en el frontend (en `src/config.js` o `src/config.local.js`).

@@ -1,4 +1,4 @@
-# Porra Mensual
+# ScoreOn
 
 Aplicación web para gestionar una porra mensual de resultados de fútbol para un grupo de 40-60 participantes.
 
@@ -15,7 +15,7 @@ Aplicación web para gestionar una porra mensual de resultados de fútbol para u
 - **Base de Datos**: Google Sheets.
 
 ## Enlace Público
-🔗 **[URL de Producción](https://igonzalezespejo.github.io/porra-mensual/)**
+🔗 **[URL de Producción](https://igonzalezespejo.github.io/scoreon/)**
 
 ## Operación Mensual Básica
 Para lanzar una nueva porra cada mes:

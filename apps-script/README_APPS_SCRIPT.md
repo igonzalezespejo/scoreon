@@ -1,6 +1,6 @@
-# Backend de Porra Mensual (Google Apps Script)
+# Backend de ScoreOn (Google Apps Script)
 
-Este directorio contiene el código necesario para desplegar el backend de la Porra Mensual utilizando Google Apps Script.
+Este directorio contiene el código necesario para desplegar el backend de ScoreOn utilizando Google Apps Script.
 
 ## Archivos
 - `Code.gs`: El script principal que maneja las peticiones GET y POST, validaciones y escritura/lectura en Google Sheets.
@@ -33,7 +33,7 @@ Este directorio contiene el código necesario para desplegar el backend de la Po
 6. Haz clic en **Implementar > Nueva implementación**.
 7. Selecciona el tipo de implementación: **Aplicación web**.
 8. Configura:
-   - Descripción: `Backend Porra Mensual`
+   - Descripción: `Backend ScoreOn`
    - Ejecutar como: `Tú (tu email)`
    - Quién tiene acceso: `Cualquier persona`
 9. Haz clic en **Implementar**. Se te pedirán permisos para acceder a tus hojas de cálculo. Acéptalos.
