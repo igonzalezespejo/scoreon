@@ -25,9 +25,15 @@ import { USE_MOCK, API_URL } from './config.js';
 // repetir — ver la nota de idempotencia en cada llamada.
 const MAX_ATTEMPTS = 3;
 const BASE_BACKOFF_MS = 600;
-// Cortamos las peticiones que se quedan colgadas (se han observado esperas de
-// 70s) porque reintentar sale más barato que seguir esperando.
-const REQUEST_TIMEOUT_MS = 20000;
+// OJO con bajar esto. Este backend responde despacio y de forma muy irregular:
+// medido el 2026-08-12, la latencia mediana era ~21s y hubo respuestas BUENAS a
+// los 62s. Un timeout corto (estuvo en 20s) aborta peticiones que iban a
+// funcionar y convierte una espera larga en un error — es peor el remedio.
+//
+// Cortar pronto tampoco acelera la recuperación: los 404 llegan como respuesta
+// HTTP, no como cuelgue, así que el reintento salta al instante sin esperar al
+// timeout. Esto es solo una red de seguridad para conexiones muertas de verdad.
+const REQUEST_TIMEOUT_MS = 90000;
 
 function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

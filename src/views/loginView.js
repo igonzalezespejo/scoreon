@@ -15,6 +15,10 @@ export const loginView = {
         // No se ha podido verificar la sesión por un fallo de red. El token
         // sigue guardado y sigue siendo válido, así que no se pide el PIN otra
         // vez: basta con reintentar la comprobación.
+        //
+        // El segundo botón es imprescindible: sin él, con el backend fallando
+        // de forma persistente el usuario se quedaba encerrado en esta pantalla
+        // sin ninguna forma de llegar al formulario de login.
         if (state.sessionError && state.sessionToken) {
             return `
                 <div class="card" style="text-align: center; padding: 3rem;">
@@ -22,6 +26,9 @@ export const loginView = {
                     <p style="color: var(--text-secondary); margin-top: 1rem;">${state.sessionError}</p>
                     <p style="color: var(--text-secondary);">Tu sesión sigue guardada, no hace falta que vuelvas a meter el PIN.</p>
                     <button class="btn btn-primary" id="btn-retry-session" style="margin-top: 1.5rem;">Reintentar</button>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-secondary" id="btn-discard-session">Identificarme de otra forma</button>
+                    </div>
                 </div>
             `;
         }
@@ -110,6 +117,18 @@ export const loginView = {
                 const app = await import('../app.js');
                 app.verifySession(state.sessionToken);
             });
+
+            // Salida de emergencia: descarta la sesión guardada y lleva al
+            // formulario normal, para no dejar a nadie encerrado aquí.
+            const btnDiscard = container.querySelector('#btn-discard-session');
+            if (btnDiscard) {
+                btnDiscard.addEventListener('click', async () => {
+                    state.clearSession();
+                    const app = await import('../app.js');
+                    app.updateNavVisibility();
+                    app.navigateTo('login');
+                });
+            }
             return;
         }
 

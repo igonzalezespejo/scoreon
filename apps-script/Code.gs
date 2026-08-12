@@ -1853,7 +1853,15 @@ function withIdempotency(requestId, produceResponse) {
 
   const response = produceResponse();
   try {
-    cache.put(key, response.getContent(), IDEMPOTENCY_TTL_SECONDS);
+    // Solo se cachean las respuestas correctas. Cachear un error sería un
+    // tiro en el pie: un fallo pasajero ("Sistema ocupado", por ejemplo)
+    // quedaría congelado 6 horas y todos los reintentos recibirían ese mismo
+    // error en vez de volver a intentarlo de verdad. Y un error no ha escrito
+    // nada, así que no hay nada de lo que proteger.
+    const content = response.getContent();
+    if (content.indexOf('"ok":true') !== -1) {
+      cache.put(key, content, IDEMPOTENCY_TTL_SECONDS);
+    }
   } catch (e) {
     // Si la respuesta no cabe en caché (límite de 100 KB por entrada) se
     // devuelve igual: perder la protección anti-duplicado es menos grave que
