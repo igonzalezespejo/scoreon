@@ -48,48 +48,48 @@ export const staticDescriptions = {
     `,
     '2026-09': `
         <div class="static-description" style="text-align: left; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem; padding: 1rem;">
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0;">Semana 1: El Virus FIFA (Parón de Selecciones)</h4>
-            <p style="margin-bottom: 0.5rem;">A principios de septiembre las ligas se detienen para la UEFA Nations League y las eliminatorias del Mundial. Es una semana genial porque apostar en fútbol internacional es muy distinto al de clubes. Todo está más igualado y un empate se paga carísimo.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0;">Semana 1 (4 al 6 de septiembre): Septiembre empieza con los grandes</h4>
+            <p style="margin-bottom: 0.5rem;">El mes arranca sin calentamiento: seis partidos y prácticamente todos podrían ocupar por sí solos el cartel principal de una jornada. Clásicos nacionales, aspirantes al título y varios enfrentamientos especialmente complicados para la porra.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>España vs. Italia:</strong> (UEFA Nations League). Un clásico europeo moderno, súper táctico y donde el empate es siempre el resultado más probable.</li>
-                <li><strong>Inglaterra vs. Alemania:</strong> (UEFA Nations League). Máxima rivalidad histórica, con Inglaterra estrenando a fondo su nueva generación.</li>
-                <li><strong>Francia vs. Bélgica:</strong> (UEFA Nations League). Duelo vecinal de altísimo voltaje.</li>
-                <li><strong>Argentina vs. Brasil:</strong> (Clásico Sudamericano). Ya sea amistoso o eliminatoria, es el partido con más morbo del mundo a nivel de selecciones.</li>
-                <li><strong>Países Bajos vs. Croacia:</strong> (UEFA Nations League). Dos selecciones a las que les encanta tener el balón.</li>
-                <li><strong>Uruguay vs. Colombia:</strong> (Eliminatorias/Amistoso). Choque de estilos tremendo y muy físico.</li>
+                <li><strong>Paris Saint-Germain vs. AS Monaco:</strong> (Ligue 1, 4 de septiembre). Uno de los duelos más potentes del fútbol francés. El PSG tendrá el peso del favoritismo, pero el Monaco cuenta con suficiente calidad y velocidad para convertirlo en una prueba muy seria.</li>
+                <li><strong>Real Betis vs. Real Madrid:</strong> (LaLiga, 4 de septiembre). El Villamarín recibe al Real Madrid en una de esas noches grandes de la temporada. El ambiente y la capacidad del Betis para competir ante los grandes hacen que la visita blanca tenga bastante más dificultad de la que puede indicar el favoritismo previo.</li>
+                <li><strong>Inter de Milán vs. SSC Napoli:</strong> (Serie A, 5 de septiembre). Enfrentamiento directo entre dos equipos llamados a estar en la zona alta de Italia. Mucha calidad, experiencia y muy poco margen para cometer errores.</li>
+                <li><strong>Ajax vs. PSV Eindhoven:</strong> (Eredivisie, 5 de septiembre). Uno de los grandes clásicos neerlandeses y un partido que siempre tiene repercusión en la lucha por el campeonato. Dos equipos ofensivos y una rivalidad perfecta para complicar cualquier pronóstico.</li>
+                <li><strong>Arsenal vs. Chelsea:</strong> (Premier League, 6 de septiembre). Derbi de Londres entre dos gigantes ingleses. La rivalidad añade presión a un encuentro en el que la calidad individual de ambos equipos puede cambiar el marcador en cualquier momento.</li>
+                <li><strong>Juventus vs. AC Milan:</strong> (Serie A, 6 de septiembre). Dos de las camisetas más importantes de Italia frente a frente. Historia, presión y un duelo que normalmente se decide por detalles más que por grandes diferencias entre los equipos.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 2: La Resaca Internacional (Vuelven las ligas)</h4>
-            <p style="margin-bottom: 0.5rem;">Justo después del parón, los equipos grandes suelen pinchar porque sus estrellas llegan cansadas de viajar. Es la semana perfecta para buscar "emboscadas".</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 2 (13 de septiembre): Derbis, clásicos y partidos de máxima tensión</h4>
+            <p style="margin-bottom: 0.5rem;">La segunda semana mantiene el nivel con varios enfrentamientos de enorme rivalidad. Manchester acapara buena parte de los focos, pero también aparecen grandes duelos en España, Brasil, Portugal, Italia e Inglaterra.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>Getafe CF vs. Real Madrid:</strong> (LaLiga). El Coliseum es una trampa de arena. Partido trabado, de pocos goles, ideal para arriesgar con un empate o victoria local por la mínima.</li>
-                <li><strong>FC Barcelona vs. Girona FC:</strong> (LaLiga). El nuevo derbi catalán de alta tensión. El Girona ya ha demostrado que no le tiene miedo a ir al ataque contra el Barça.</li>
-                <li><strong>Real Betis vs. Atlético de Madrid:</strong> (LaLiga). Un clásico de la zona alta en el Villamarín. Duelo de pizarras muy reñido.</li>
-                <li><strong>CA Osasuna vs. Sevilla FC:</strong> (LaLiga). El Sadar aprieta muchísimo. Una de las salidas más incómodas del año para el Sevilla.</li>
-                <li><strong>Manchester City vs. Arsenal:</strong> (Premier League). El duelo entre los dos últimos titanes de Inglaterra. El que pierda aquí puede empezar a dudar.</li>
-                <li><strong>Inter de Milán vs. Juventus:</strong> (Serie A). El "Derby d'Italia". Tensión máxima para coronar el fin de semana.</li>
+                <li><strong>Torino vs. AS Roma:</strong> (Serie A, 13 de septiembre). Una salida incómoda para la Roma ante un Torino que suele exigir muchísimo en este tipo de encuentros. Partido físico y competitivo en el que el favorito tendrá que trabajar para imponer su mayor calidad.</li>
+                <li><strong>Manchester United vs. Manchester City:</strong> (Premier League, 13 de septiembre). El derbi de Manchester es uno de los grandes partidos del mes. Rivalidad máxima, presión añadida y un enfrentamiento en el que la lógica previa importa bastante menos que en una jornada normal.</li>
+                <li><strong>Tottenham Hotspur vs. Newcastle United:</strong> (Premier League, fecha por confirmar). Dos equipos con capacidad para convertir el encuentro en un intercambio constante de ataques. Ritmo, transiciones y dos aspirantes a la zona alta en uno de los partidos más abiertos de la selección mensual.</li>
+                <li><strong>Flamengo vs. Palmeiras:</strong> (Brasileirão, fecha por confirmar). Probablemente uno de los enfrentamientos de mayor nivel que puede ofrecer actualmente el fútbol brasileño. Dos gigantes, plantillas muy potentes y un duelo con importancia directa entre equipos acostumbrados a luchar por títulos.</li>
+                <li><strong>Sporting CP vs. FC Porto:</strong> (Primeira Liga, fecha por confirmar). Uno de los grandes clásicos portugueses. Sporting y Porto se conocen perfectamente y cada enfrentamiento entre ambos arrastra rivalidad, presión y posibles consecuencias importantes para la lucha por el campeonato.</li>
+                <li><strong>Real Sociedad vs. Atlético de Madrid:</strong> (LaLiga, 13 de septiembre). Una de las visitas más incómodas del calendario para el Atlético. La Real tiene fútbol suficiente para discutir el control del partido y convertir el encuentro en una batalla muy igualada.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 3: ¡Vuelve la Champions League!</h4>
-            <p style="margin-bottom: 0.5rem;">Se estrena la fase de liga de las competiciones europeas entre semana. Mezclamos el debut continental con grandes choques ligueros.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 3 (19 y 20 de septiembre): Europa se llena de enfrentamientos directos</h4>
+            <p style="margin-bottom: 0.5rem;">Una semana construida prácticamente entera con partidos entre equipos de la zona alta. Inglaterra, Italia, Alemania, Portugal y España ofrecen enfrentamientos con sabor europeo, mientras que LaLiga termina la jornada con un derbi madrileño.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>Bayern Múnich vs. Real Madrid:</strong> (Champions League). El clásico de Europa por excelencia. Pronóstico reservadísimo.</li>
-                <li><strong>FC Barcelona vs. Manchester City:</strong> (Champions League). Morbo absoluto por los estilos de juego y el reencuentro de filosofías.</li>
-                <li><strong>Sevilla FC vs. Valencia CF:</strong> (LaLiga). Dos equipos históricos del fútbol español con mucha rivalidad en los últimos años, siempre de pronóstico incierto.</li>
-                <li><strong>Celta de Vigo vs. Real Betis:</strong> (LaLiga). Balaídos es un estadio muy difícil y el Celta suele plantear partidos muy abiertos. Oportunidad de lluvia de goles.</li>
-                <li><strong>Liverpool vs. Chelsea:</strong> (Premier League). Un clásico de la Premier que en los últimos años ha coleccionado empates (ideales para rascar esos 20 puntos).</li>
-                <li><strong>Borussia Dortmund vs. RB Leipzig:</strong> (Bundesliga). Choque de trenes por ser la alternativa real al Bayern en Alemania.</li>
+                <li><strong>FC Porto vs. SL Benfica:</strong> (Primeira Liga, 19 de septiembre). O Clássico, uno de los partidos más importantes del fútbol portugués. Rivalidad histórica, dos candidatos al campeonato y un encuentro en el que el resultado siempre significa bastante más que tres puntos.</li>
+                <li><strong>Tottenham Hotspur vs. Aston Villa:</strong> (Premier League, 19 de septiembre). Dos equipos preparados para atacar y jugar a gran velocidad. Un partido atractivo para el espectador y bastante menos cómodo para quien tenga que acertar el marcador.</li>
+                <li><strong>AS Roma vs. Inter de Milán:</strong> (Serie A, 19 de septiembre). Una de las grandes citas de la jornada italiana. La Roma contará con el empuje de su estadio ante un Inter acostumbrado a competir por los principales objetivos de la temporada.</li>
+                <li><strong>Bayer Leverkusen vs. RB Leipzig:</strong> (Bundesliga, 20 de septiembre). Dos de los principales aspirantes alemanes a las plazas de Champions frente a frente. Intensidad, presión alta y mucho talento ofensivo en un partido con pocos momentos para relajarse.</li>
+                <li><strong>Sevilla FC vs. FC Barcelona:</strong> (LaLiga, 20 de septiembre). El Sánchez-Pizjuán recibe al Barça en una de las grandes noches del calendario sevillista. El Barcelona tendrá el favoritismo, pero el ambiente y la exigencia del encuentro pueden convertir la visita en una prueba complicada.</li>
+                <li><strong>Atlético de Madrid vs. Real Madrid:</strong> (LaLiga, 20 de septiembre). El gran partido de la semana. El derbi madrileño reúne rivalidad, tensión y dos equipos que se conocen perfectamente; uno de esos encuentros donde cualquier detalle puede terminar decidiendo la porra.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 4: Consolidación y Derbis</h4>
-            <p style="margin-bottom: 0.5rem;">Los equipos ya han cogido ritmo de crucero tras jugar en Europa. Cerramos el mes con los derbis urbanos que no entienden de lógicas ni de cansancio.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 4 (24 al 29 de septiembre): La Nations League cierra el mes</h4>
+            <p style="margin-bottom: 0.5rem;">Los clubes dejan paso a las selecciones para un final de septiembre espectacular. Seis enfrentamientos entre algunas de las grandes potencias europeas y prácticamente ningún partido con un pronóstico sencillo.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 0;">
-                <li><strong>Atlético de Madrid vs. Real Madrid:</strong> (LaLiga). El Derbi Madrileño. Tensión, tarjetas y muchísima igualdad. El partido estrella del mes en España.</li>
-                <li><strong>Real Sociedad vs. FC Barcelona:</strong> (LaLiga). El Reale Arena es uno de los pocos campos donde el Barça históricamente sufre muchísimo para sacar los tres puntos.</li>
-                <li><strong>Athletic Club vs. Sevilla FC:</strong> (LaLiga). San Mamés exige el 200% físicamente, un duelo durísimo para el equipo hispalense.</li>
-                <li><strong>Real Betis vs. Villarreal CF:</strong> (LaLiga). Dos plantillas hechas para tocar el balón y meterse en Europa. Huele a partido de ida y vuelta.</li>
-                <li><strong>Tottenham Hotspur vs. Arsenal:</strong> (Premier League). El "North London Derby". Una de las rivalidades más feroces y ruidosas del fútbol inglés.</li>
-                <li><strong>AC Milan vs. AS Roma:</strong> (Serie A). Para cerrar la plantilla con un toque de elegancia y tensión táctica italiana.</li>
+                <li><strong>Países Bajos vs. Alemania:</strong> (UEFA Nations League, 24 de septiembre). Un clásico del fútbol europeo cargado de historia y rivalidad. Dos selecciones que quieren tener el balón y suficiente talento ofensivo para hacer que el partido cambie rápidamente.</li>
+                <li><strong>Italia vs. Bélgica:</strong> (UEFA Nations League, 25 de septiembre). Italia intentará imponer su disciplina y control ante una Bélgica con calidad suficiente para castigar cualquier error. Un duelo muy interesante entre dos formas diferentes de competir.</li>
+                <li><strong>Turquía vs. Francia:</strong> (UEFA Nations League, 25 de septiembre). Francia tendrá el peso del favoritismo, pero jugar como visitante ante Turquía nunca es sencillo. El ambiente puede transformar el encuentro en una prueba mucho más incómoda de lo esperado.</li>
+                <li><strong>Inglaterra vs. España:</strong> (UEFA Nations League, 26 de septiembre). Uno de los partidos estrella de todo el mes. Dos de las grandes selecciones europeas, muchísimo talento individual y un enfrentamiento en el que resulta difícil encontrar un favorito claro.</li>
+                <li><strong>Noruega vs. Portugal:</strong> (UEFA Nations League, 27 de septiembre). Dos selecciones con argumentos ofensivos para hacer daño prácticamente en cualquier momento. Un partido especialmente atractivo si el marcador se abre y ambos equipos encuentran espacios.</li>
+                <li><strong>España vs. Croacia:</strong> (UEFA Nations League, 29 de septiembre). España cierra septiembre ante una Croacia acostumbrada a competir de tú a tú con las grandes selecciones. Técnica, experiencia y un rival que rara vez concede un partido tranquilo.</li>
             </ul>
         </div>
     `,
