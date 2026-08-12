@@ -173,12 +173,17 @@ export const loginView = {
                 const pin = response.participant.pin;
                 alert(`¡Participante creado!\n\nTu PIN de seguridad es: ${pin}\n\nGuárdalo: lo necesitarás si inicias sesión desde otro dispositivo.`);
 
-                await loadBootstrapLight();
-
                 state.setSession(response.token, response.user, response.myPredictions);
                 const app = await import('../app.js');
                 app.updateNavVisibility();
                 app.navigateTo('home');
+
+                // Refresco de la lista de participantes en segundo plano: si esta
+                // llamada falla (p.ej. 404 transitorio de Apps Script) no debe
+                // impedir que el usuario recién registrado entre en la app.
+                loadBootstrapLight().catch(error => {
+                    console.error('Error refrescando datos tras el registro:', error);
+                });
             } else {
                 showToast(response.message || 'Error al registrar', 'error');
                 btn.disabled = false;
