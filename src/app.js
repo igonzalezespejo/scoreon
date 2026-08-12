@@ -35,8 +35,10 @@ async function init() {
 
     // La lista de participantes hace falta tanto para la pantalla de login
     // como para el resto de vistas, así que este fetch no espera a que se
-    // resuelva la sesión.
-    loadBootstrapLight()
+    // resuelva la sesión. Se guarda la promesa para poder esperarla más abajo
+    // antes de lanzar resumeSession: dos peticiones concurrentes contra el
+    // mismo despliegue de Apps Script provocan 404 intermitentes.
+    const lightDataLoaded = loadBootstrapLight()
         .then(data => {
             statusMsg.textContent = `Actualizado: ${new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' })}`;
 
@@ -85,6 +87,11 @@ async function init() {
     // muestra un estado de "verificando sesión" (state.sessionChecking).
     state.sessionChecking = true;
     navigateTo('login');
+
+    // Se espera a que termine la carga de datos ligeros antes de disparar
+    // resumeSession, para no golpear el mismo despliegue de Apps Script con
+    // dos peticiones a la vez.
+    await lightDataLoaded;
 
     try {
         const response = await resumeSession(token);
