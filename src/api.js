@@ -230,20 +230,76 @@ export async function savePrediction(userId, token, monthId, predictions) {
                         throw new Error("Datos inválidos");
                     }
 
-                    // Si llegamos aquí, simulamos éxito actualizando el estado local
+                    // El mock no tiene una hoja real que comparar, pero replica el
+                    // contrato del backend (code/changed_count/changes/
+                    // confirmed_predictions, ver actionSavePrediction en Code.gs)
+                    // a partir del estado local, para poder probar el flujo de la
+                    // UI (incluida la fusión en state.setMyPredictionsForMonth)
+                    // sin backend real.
+                    const existingByMatchId = {};
+                    (state.myPredictionsById[monthId] || []).forEach(p => {
+                        existingByMatchId[p.match_id] = p;
+                    });
+
+                    const submittedAt = new Date().toISOString();
+                    const changes = [];
+                    predictions.forEach(p => {
+                        const existing = existingByMatchId[p.match_id];
+                        const isNew = !existing;
+                        const isDifferent = !isNew
+                            && (Number(existing.home_goals) !== p.home_goals || Number(existing.away_goals) !== p.away_goals);
+                        if (isNew || isDifferent) {
+                            changes.push({
+                                match_id: p.match_id,
+                                previous: isNew ? null : { home_goals: existing.home_goals, away_goals: existing.away_goals },
+                                new: { home_goals: p.home_goals, away_goals: p.away_goals },
+                                submitted_at: submittedAt
+                            });
+                        }
+                    });
+
+                    const changedMatchIds = new Set(changes.map(c => c.match_id));
+                    const confirmedPredictions = predictions.map(p => {
+                        if (changedMatchIds.has(p.match_id)) {
+                            return { match_id: p.match_id, home_goals: p.home_goals, away_goals: p.away_goals, submitted_at: submittedAt };
+                        }
+                        const existing = existingByMatchId[p.match_id];
+                        return { match_id: p.match_id, home_goals: existing.home_goals, away_goals: existing.away_goals, submitted_at: existing.submitted_at };
+                    });
+
+                    if (changes.length === 0) {
+                        resolve({
+                            ok: true,
+                            code: 'NO_CHANGES',
+                            message: 'No hay cambios que guardar (Mock)',
+                            changed_count: 0,
+                            changes: [],
+                            confirmed_predictions: confirmedPredictions
+                        });
+                        return;
+                    }
+
                     state.updatePredictionStatus(userId, 'submitted');
-                    resolve({ ok: true, message: "Apuesta guardada con éxito (Mock)" });
+                    resolve({
+                        ok: true,
+                        code: 'SAVED',
+                        message: "Apuesta guardada con éxito (Mock)",
+                        changed_count: changes.length,
+                        changes: changes,
+                        confirmed_predictions: confirmedPredictions
+                    });
                 } catch (err) {
                     reject(err);
                 }
             }, 800);
         });
     } else {
-        // Escritura idempotente por diseño: el backend reemplaza las filas del
-        // usuario para esos partidos en vez de añadirlas (ver actionSavePrediction
-        // en Code.gs), así que repetirla deja la hoja igual. Aun así se manda
-        // request_id para que el backend devuelva la respuesta original en vez
-        // de reejecutar cuando el 404 nos hizo reintentar de más.
+        // Escritura idempotente por diseño: el backend compara contra
+        // Predictions_Current y solo reemplaza las filas que cambiaron de
+        // verdad (ver actionSavePrediction en Code.gs), así que repetirla deja
+        // la hoja igual. Aun así se manda request_id para que el backend
+        // devuelva la respuesta original en vez de reejecutar cuando el 404
+        // nos hizo reintentar de más.
         const result = await apiPost({
             action: 'savePrediction',
             token: token,
@@ -251,7 +307,9 @@ export async function savePrediction(userId, token, monthId, predictions) {
             predictions: predictions,
             request_id: newRequestId()
         });
-        if (result.ok) {
+        // NO_CHANGES es un ok:true que no escribió nada: no hay que tratarlo
+        // como si acabara de producirse una escritura nueva.
+        if (result.ok && result.code === 'SAVED') {
             state.updatePredictionStatus(userId, 'submitted');
         }
         return result;

@@ -79,28 +79,36 @@ class State {
         return this.myPredictionsById[monthId] || [];
     }
 
-    // Actualiza en memoria las predicciones propias tras un guardado exitoso,
-    // sin necesidad de volver a pedirlas al servidor.
+    // Actualiza en memoria las predicciones propias tras un guardado, sin
+    // esperar a volver a pedirlas al servidor.
     //
-    // Fusiona en vez de reemplazar: bettingView solo envía los partidos que
-    // siguen abiertos, así que las apuestas de los partidos ya empezados no
-    // vienen en `predictions`. El backend las conserva en la hoja (solo borra
-    // las filas de los match_id enviados), y aquí hay que conservarlas igual o
-    // desaparecerían de la pantalla hasta el siguiente bootstrap.
-    setMyPredictionsForMonth(monthId, predictions) {
-        const submittedAt = new Date().toISOString();
+    // Recibe `confirmed_predictions`, no `changes`: el backend devuelve ahí el
+    // estado YA confirmado contra Predictions_Current para cada partido del
+    // envío, haya cambiado o no. Eso importa para el caso "otra pestaña ya
+    // guardó justo el mismo valor que esta pestaña acaba de enviar" — el
+    // backend responde NO_CHANGES (con `changes: []`), pero esta pestaña
+    // seguía teniendo en caché el valor viejo de ANTES de que la otra pestaña
+    // guardara. Si solo fusionáramos `changes` (vacío en ese caso), la caché
+    // local se quedaría mostrando el valor viejo para siempre. Cada entrada
+    // trae el `submitted_at` real de Sheets — nunca uno generado aquí.
+    //
+    // El resto de predicciones (partidos no incluidos en este envío) se
+    // conservan tal cual estaban.
+    setMyPredictionsForMonth(monthId, confirmedPredictions) {
+        if (!confirmedPredictions || confirmedPredictions.length === 0) return;
+
         const byMatchId = {};
 
         (this.myPredictionsById[monthId] || []).forEach(p => {
             byMatchId[p.match_id] = p;
         });
 
-        predictions.forEach(p => {
+        confirmedPredictions.forEach(p => {
             byMatchId[p.match_id] = {
                 match_id: p.match_id,
                 home_goals: p.home_goals,
                 away_goals: p.away_goals,
-                submitted_at: submittedAt
+                submitted_at: p.submitted_at
             };
         });
 

@@ -1172,7 +1172,7 @@ function actionSavePrediction(params) {
     if (!sessionUser) {
       return buildErrorResponse("SESSION_INVALID", "Sesión expirada, vuelve a iniciar sesión");
     }
-    const user_id = sessionUser.user_id;
+    const user_id = normalizeId(sessionUser.user_id);
 
     // Cierra en el momento cualquier mes cuyo lock_at ya haya pasado, en vez
     // de esperar al trigger periódico (ver autoCloseExpiredMonths). Es
@@ -1198,10 +1198,20 @@ function actionSavePrediction(params) {
     }
 
     const validPredictionsToSave = [];
+    const seenMatchIds = new Set();
     for (let p of predictions) {
       const match = matchMap[p.match_id];
       if (!match) return buildErrorResponse("VALIDATION_ERROR", `Partido ${p.match_id} no pertenece al mes`);
-      
+
+      // Un match_id repetido en el mismo envío rompería la escritura más
+      // abajo (se añadirían dos filas para el mismo usuario y partido), así
+      // que se rechaza aquí, antes de comparar nada.
+      const normalizedMatchId = normalizeId(p.match_id);
+      if (seenMatchIds.has(normalizedMatchId)) {
+        return buildErrorResponse("VALIDATION_ERROR", `Partido ${p.match_id} está duplicado en el envío`);
+      }
+      seenMatchIds.add(normalizedMatchId);
+
       const matchLockAt = match.kickoff_at ? new Date(match.kickoff_at) : null;
       if (match.lock_at) {
         if (serverTime >= new Date(match.lock_at)) return buildErrorResponse("VALIDATION_ERROR", `Partido ${p.match_id} ya cerró`);
@@ -1244,27 +1254,96 @@ function actionSavePrediction(params) {
 
     if (userIdx === -1 || matchIdx === -1) return buildErrorResponse("SERVER_ERROR", "Estructura incorrecta en Predictions_Current");
 
-    let newData = [];
-    newData.push(headers);
-    
-    const updatingMatchIds = validPredictionsToSave.map(vp => vp.match_id);
-    
+    // El backend es la autoridad sobre qué cambió de verdad, sin importar lo
+    // que el cliente crea que envía (incluido un cliente antiguo que reenvíe
+    // el lote entero sin diffear): comparamos cada predicción validada contra
+    // lo que ya hay en Predictions_Current para este usuario, normalizando
+    // ids con normalizeId() y goles con parseGoalCell(). Una fila inexistente
+    // (o con goles ilegibles) cuenta como predicción nueva, no como 0-0.
+    const existingByMatchId = {};
     for (let i = 1; i < currentData.length; i++) {
       const row = currentData[i];
-      const rUser = row[userIdx];
-      const rMatch = row[matchIdx];
-      const rMonth = monthIdx >= 0 ? normalizeId(row[monthIdx]) : null;
-      
-      // En legacy no hay month_id, pero el match_id ya lo identificaba si era m001.
-      // Si estamos actualizando, borramos la fila antigua si coincide user y match.
-      // También podríamos comprobar month_id, pero match_id debe ser único.
-      if (rUser === user_id && updatingMatchIds.includes(rMatch)) {
-        continue; 
+      if (normalizeId(row[userIdx]) !== user_id) continue;
+      const mId = normalizeId(row[matchIdx]);
+      existingByMatchId[mId] = {
+        home_goals: parseGoalCell(row[homeIdx]),
+        away_goals: parseGoalCell(row[awayIdx]),
+        submitted_at: row[subIdx]
+      };
+    }
+
+    const changes = [];
+    for (let vp of validPredictionsToSave) {
+      const mId = normalizeId(vp.match_id);
+      const existing = existingByMatchId[mId];
+      const isNew = !existing || existing.home_goals === null || existing.away_goals === null;
+      const isDifferent = !isNew && (existing.home_goals !== vp.home_goals || existing.away_goals !== vp.away_goals);
+      if (isNew || isDifferent) {
+        changes.push({
+          match_id: vp.match_id,
+          previous: isNew ? null : { home_goals: existing.home_goals, away_goals: existing.away_goals },
+          new: { home_goals: vp.home_goals, away_goals: vp.away_goals },
+          submitted_at: vp.submitted_at
+        });
+      }
+    }
+
+    // Estado confirmado en Sheets para CADA partido que llegó en el envío,
+    // haya cambiado o no: si no cambió, usa el valor y submitted_at que ya
+    // había (no lo tocamos); si cambió, usa el que se va a escribir ahora.
+    // Es lo que el frontend debe fusionar en su caché local (no `changes`),
+    // porque una pestaña desactualizada puede enviar un valor que coincide
+    // con lo que YA hay en Sheets (otra pestaña lo guardó primero) — eso da
+    // NO_CHANGES, pero esa pestaña sigue sin saber el submitted_at real ni,
+    // en el caso límite, si su copia local iba desincronizada en otro campo.
+    const changedMatchIdSet = new Set(changes.map(c => normalizeId(c.match_id)));
+    const confirmedPredictions = validPredictionsToSave.map(vp => {
+      const mId = normalizeId(vp.match_id);
+      if (changedMatchIdSet.has(mId)) {
+        return { match_id: vp.match_id, home_goals: vp.home_goals, away_goals: vp.away_goals, submitted_at: vp.submitted_at };
+      }
+      const existing = existingByMatchId[mId];
+      return { match_id: vp.match_id, home_goals: existing.home_goals, away_goals: existing.away_goals, submitted_at: existing.submitted_at };
+    });
+
+    // Nada que escribir: ni se toca la hoja, ni se loguea, ni se recalcula/
+    // marca sucio el ranking. Esto cubre tanto a un cliente que ya filtra
+    // como a uno viejo que reenvía el lote entero sin cambios reales.
+    if (changes.length === 0) {
+      return buildSuccessResponse({
+        code: "NO_CHANGES",
+        message: "No hay cambios que guardar",
+        changed_count: 0,
+        changes: [],
+        confirmed_predictions: confirmedPredictions
+      });
+    }
+
+    const changedMatchIds = Array.from(changedMatchIdSet);
+    const changedByMatchId = {};
+    validPredictionsToSave.forEach(vp => { changedByMatchId[normalizeId(vp.match_id)] = vp; });
+
+    let newData = [];
+    newData.push(headers);
+
+    for (let i = 1; i < currentData.length; i++) {
+      const row = currentData[i];
+      const rUser = normalizeId(row[userIdx]);
+      const rMatch = normalizeId(row[matchIdx]);
+
+      // Solo se sustituyen las filas de este usuario cuyo match_id está en el
+      // conjunto de cambios reales. El resto —aunque viniera en el envío del
+      // cliente sin diferencias, o sean de otros partidos/usuarios— se copian
+      // tal cual, conservando literalmente su home_goals/away_goals/submitted_at
+      // original.
+      if (rUser === user_id && changedMatchIds.includes(rMatch)) {
+        continue;
       }
       newData.push(row);
     }
 
-    for (let vp of validPredictionsToSave) {
+    for (let mId of changedMatchIds) {
+      const vp = changedByMatchId[mId];
       let newRow = new Array(headers.length).fill("");
       if (monthIdx >= 0) newRow[monthIdx] = vp.month_id;
       newRow[userIdx] = vp.user_id;
@@ -1278,9 +1357,14 @@ function actionSavePrediction(params) {
     sheetPreds.clearContents();
     sheetPreds.getRange(1, 1, newData.length, headers.length).setValues(newData);
 
-    logAction(user_id, "SAVE_PREDICTION", `Guardadas ${validPredictionsToSave.length} predicciones.`, serverTime);
+    const changeDetails = changes.map(c => {
+      const prevLabel = c.previous ? `${c.previous.home_goals}-${c.previous.away_goals}` : "nueva";
+      return `${c.match_id}: ${prevLabel} → ${c.new.home_goals}-${c.new.away_goals}`;
+    }).join("; ");
+    logAction(user_id, "SAVE_PREDICTION", `Mes ${month_id}. Cambios (${changes.length}): ${changeDetails}`, serverTime);
 
     try {
+      const config = getConfigMap();
       if (config.recalculate_after_prediction === true || config.recalculate_after_prediction === "true") {
         updateRankingsInSheetsUnsafe();
       } else {
@@ -1305,7 +1389,10 @@ function actionSavePrediction(params) {
 
     return buildSuccessResponse({
       code: "SAVED",
-      message: "Predicciones guardadas correctamente"
+      message: "Predicciones guardadas correctamente",
+      changed_count: changes.length,
+      changes: changes,
+      confirmed_predictions: confirmedPredictions
     });
 
   } finally {
@@ -1718,6 +1805,16 @@ function sanitizeMonthTitle(title, monthId) {
 
 function isFilledGoal(value) {
   return value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
+}
+
+// Normaliza una celda de goles leída de Sheets a Number, o null si la celda
+// está vacía o no es un número válido. Se usa para comparar contra los goles
+// entrantes (ya Number tras el parseInt de validación) sin falsos cambios por
+// diferencias string/number entre celdas migradas y sin migrar.
+function parseGoalCell(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 function getSheetData(sheetName) {

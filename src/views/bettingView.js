@@ -212,66 +212,109 @@ export const bettingView = {
     async handleSubmit(e, userId, matches) {
         e.preventDefault();
 
+        const monthId = state.selectedMonthId;
+
+        // Mapa de lo que ya se sabe guardado localmente, para no reenviar
+        // partidos cuyo valor en pantalla coincide con lo ya guardado. El
+        // backend es quien tiene la última palabra (ver actionSavePrediction
+        // en Code.gs): esto es solo una optimización de envío, no la fuente
+        // de verdad de qué es "un cambio".
+        const existingByMatchId = {};
+        state.getMyPredictionsForMonth(monthId).forEach(p => {
+            existingByMatchId[p.match_id] = p;
+        });
+
+        // El bloqueo se recalcula aquí y no se reutiliza el del render: la
+        // pestaña puede llevar horas abierta y haber vencido el plazo de
+        // algún partido mientras tanto. Un input deshabilitado sigue
+        // teniendo value legible, así que omitirlos es una decisión
+        // explícita, no un efecto secundario del atributo disabled.
+        const toSend = [];
+        const lockedOut = [];
+        matches.forEach(m => {
+            const homeInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="home"]`);
+            const awayInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="away"]`);
+            if (homeInput.value === '' || awayInput.value === '') return;
+
+            const enteredHome = parseInt(homeInput.value, 10);
+            const enteredAway = parseInt(awayInput.value, 10);
+
+            const existing = existingByMatchId[m.match_id];
+            const hasChanged = !existing
+                || Number(existing.home_goals) !== enteredHome
+                || Number(existing.away_goals) !== enteredAway;
+
+            if (!hasChanged) return;
+
+            if (isMatchLocked(m)) {
+                // Había un cambio real en pantalla, pero el partido venció
+                // mientras tanto: se pierde, y hay que avisar de cuál es.
+                lockedOut.push(m);
+                return;
+            }
+
+            toSend.push({
+                match_id: m.match_id,
+                home_goals: enteredHome,
+                away_goals: enteredAway
+            });
+        });
+
+        if (toSend.length === 0 && lockedOut.length === 0) {
+            // Nada distinto de lo ya guardado: ni falta llamar al backend.
+            showToast('No hay cambios que guardar.');
+            const view = document.getElementById('view-betting');
+            if (view) this.showFromCache(view);
+            return;
+        }
+
+        if (toSend.length === 0 && lockedOut.length > 0) {
+            // Todo lo que cambió en pantalla pertenece a partidos que acaban
+            // de vencer: no hay nada abierto que guardar, así que tampoco se
+            // llama al backend (lo rechazaría por lote vacío).
+            const names = lockedOut.map(m => `${m.home_team} - ${m.away_team}`).join(', ');
+            showToast(`No se guardó nada: el plazo de ${names} ya había vencido.`, 'error');
+            const view = document.getElementById('view-betting');
+            if (view) this.showFromCache(view);
+            return;
+        }
+
         const btn = document.getElementById('btn-submit-bets');
         btn.disabled = true;
         btn.textContent = 'Guardando...';
 
         try {
-            // El bloqueo se recalcula aquí y no se reutiliza el del render: la
-            // pestaña puede llevar horas abierta y haber vencido el plazo de
-            // algún partido mientras tanto. Un input deshabilitado sigue
-            // teniendo value legible, así que omitirlos es una decisión
-            // explícita, no un efecto secundario del atributo disabled.
-            const predictions = [];
-            const lockedOut = [];
-            matches.forEach(m => {
-                const homeInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="home"]`);
-                const awayInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="away"]`);
-                if (homeInput.value === '' || awayInput.value === '') return;
-
-                if (isMatchLocked(m)) {
-                    lockedOut.push(m);
-                    return;
-                }
-
-                predictions.push({
-                    match_id: m.match_id,
-                    home_goals: parseInt(homeInput.value),
-                    away_goals: parseInt(awayInput.value)
-                });
-            });
-
-            // Se cerró el último partido abierto con la pantalla puesta. No
-            // tiene sentido llamar al backend (lo rechazaría por lote vacío):
-            // se repinta el formulario, que ya se dibujará con todo
-            // deshabilitado y sin botón de guardar.
-            if (predictions.length === 0) {
-                showToast('El plazo de todos los partidos ha vencido; no se ha guardado nada.', 'error');
-                const view = document.getElementById('view-betting');
-                if (view) this.showFromCache(view);
-                return;
-            }
-
             const token = state.sessionToken;
-            const monthId = state.selectedMonthId;
 
-            const response = await savePrediction(userId, token, monthId, predictions);
+            const response = await savePrediction(userId, token, monthId, toSend);
 
             if (response.ok) {
+                const noRealChanges = response.code === 'NO_CHANGES';
+
                 if (lockedOut.length > 0) {
-                    // Sin este aviso el usuario vería "guardada correctamente"
-                    // y daría por hecho que también se guardó lo que tocó en un
-                    // partido que ya había empezado.
+                    // Sin este aviso el usuario vería "guardado" y daría por
+                    // hecho que también se guardó lo que tocó en un partido
+                    // que ya había empezado.
                     const names = lockedOut.map(m => `${m.home_team} - ${m.away_team}`).join(', ');
-                    showToast(`Apuesta guardada. No se guardó ${names}: el plazo ya había vencido.`, 'error');
+                    const base = noRealChanges
+                        ? 'No había más cambios que guardar.'
+                        : (response.message || '¡Apuesta guardada correctamente!');
+                    showToast(`${base} No se guardó ${names}: el plazo ya había vencido.`, 'error');
+                } else if (noRealChanges) {
+                    // Caso raro pero posible (otra pestaña ya guardó lo mismo
+                    // entre medias): el backend es la autoridad y no encontró
+                    // ningún cambio real, aunque este cliente creyera que sí.
+                    showToast('No había cambios que guardar.');
                 } else {
                     showToast(response.message || '¡Apuesta guardada correctamente!');
                 }
 
-                // Actualiza la caché local al instante con lo que se acaba de
-                // guardar (sabemos que el servidor lo aceptó), sin esperar a
-                // una recarga completa para reflejarlo en pantalla.
-                state.setMyPredictionsForMonth(monthId, predictions);
+                // Fusiona en la caché local lo que el backend confirma contra
+                // Predictions_Current (confirmed_predictions), no `changes`:
+                // aunque la respuesta sea NO_CHANGES, esta pestaña puede haber
+                // enviado un valor que otra pestaña ya había guardado antes,
+                // y su propia caché seguía con el valor previo a eso.
+                state.setMyPredictionsForMonth(monthId, response.confirmed_predictions);
 
                 // Refresca en segundo plano el resto de meses/resumen (por si
                 // algo cambió en Sheets desde otra pestaña o el admin) y las

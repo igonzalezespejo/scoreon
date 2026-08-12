@@ -75,52 +75,97 @@ Como medida de seguridad, si estas pestañas están vacías, falta algún partic
 ### 2. Save Prediction (`action=savePrediction`)
 **Método:** `POST`
 
-**Descripción:** Guarda o actualiza las predicciones de un usuario.
+**Descripción:** Guarda o actualiza las predicciones de un usuario para los partidos abiertos de un mes. **El backend es la autoridad sobre qué cambió de verdad**: compara cada predicción recibida contra lo que ya hay en `Predictions_Current` para ese usuario (normalizando `user_id`/`match_id` con `normalizeId()` y los goles a `Number`) y solo escribe las filas que realmente difieren. Enviar un valor idéntico al ya guardado —incluido un cliente antiguo que reenvíe el lote entero sin filtrar— no genera escritura, ni fila de log, ni recálculo de ranking; ver `code: "NO_CHANGES"` más abajo.
 
 **Payload:**
 ```json
 {
   "action": "savePrediction",
-  "user_id": "juan",
-  "pin": "1234",
+  "token": "SESSION_TOKEN",
   "month_id": "2026-09",
   "predictions": [
     { "match_id": "m001", "home_goals": 2, "away_goals": 1 },
     { "match_id": "m002", "home_goals": 0, "away_goals": 0 }
-  ]
+  ],
+  "request_id": "uuid-o-similar (opcional pero recomendado, ver Idempotencia)"
 }
 ```
 
 **Validaciones Realizadas (Backend / Code.gs):**
-1. **Usuario:** `user_id` debe existir y tener `active=true`.
-2. **PIN:** Si `config.pin_enabled` es true, el PIN enviado debe coincidir exactamente con el del archivo de Google Sheets.
-3. **Mes:** `month_id` debe existir y su `status` ser "open". `status` es la única autoridad sobre si se puede apostar en un mes (la controla el admin con los botones Abrir/Cerrar Porra); `lock_at` ya no se compara en vivo aquí — en su lugar, `autoCloseExpiredMonths()` cierra automáticamente (`status` → `locked`) cualquier mes `open` cuyo `lock_at` ya haya pasado, de un solo disparo (marca `auto_closed_at` para no repetir el cierre si el admin lo reabre a mano después). Ver `apps-script/README_APPS_SCRIPT.md`.
-4. **Partidos:**
+1. **Sesión:** `token` debe corresponder a una sesión válida y no caducada (`validateSession`).
+2. **Mes:** `month_id` debe existir y su `status` ser "open". `status` es la única autoridad sobre si se puede apostar en un mes (la controla el admin con los botones Abrir/Cerrar Porra); `lock_at` ya no se compara en vivo aquí — en su lugar, `autoCloseExpiredMonths()` cierra automáticamente (`status` → `locked`) cualquier mes `open` cuyo `lock_at` ya haya pasado, de un solo disparo (marca `auto_closed_at` para no repetir el cierre si el admin lo reabre a mano después). Ver `apps-script/README_APPS_SCRIPT.md`.
+3. **Partidos:**
    - Cada `match_id` proporcionado en el payload debe existir y corresponder al `month_id`.
+   - **No puede haber `match_id` repetidos dentro del mismo envío** — se rechaza con `VALIDATION_ERROR` antes de comparar o escribir nada.
    - El partido no puede haber comenzado: esta sí es una comparación en vivo, `serverTime >= match.lock_at` (si está definido) o si no `serverTime >= kickoff_at`.
-   - Se debe realizar el upsert usando la clave compuesta `month_id + user_id + match_id` en `Predictions_Current`.
-5. **Estructura de Goles:** `home_goals` y `away_goals` deben ser números enteros y >= 0.
+4. **Estructura de Goles:** `home_goals` y `away_goals` deben ser números enteros y >= 0.
+5. **Comparación contra `Predictions_Current`:** para cada predicción ya validada, se busca la fila existente de ese usuario+partido. Si no existe (o sus goles no son legibles), cuenta como predicción **nueva**; si existe con otro valor, cuenta como **cambio**; si existe con el mismo valor, no cuenta como cambio. Solo las filas realmente nuevas/cambiadas se reescriben — las demás conservan su `home_goals`/`away_goals`/`submitted_at` original, aunque hayan venido incluidas en el payload.
 
-**Respuesta Exitosa:**
+**Respuesta cuando hay cambios reales (`code: "SAVED"`):**
 ```json
 {
   "ok": true,
   "code": "SAVED",
   "message": "Predicciones guardadas correctamente",
-  "serverTime": "2026-07-09T16:05:00.000Z"
+  "serverTime": "2026-07-09T16:05:00.000Z",
+  "changed_count": 2,
+  "changes": [
+    {
+      "match_id": "m001",
+      "previous": { "home_goals": 1, "away_goals": 0 },
+      "new": { "home_goals": 2, "away_goals": 1 },
+      "submitted_at": "2026-07-09T16:05:00.000Z"
+    },
+    {
+      "match_id": "m002",
+      "previous": null,
+      "new": { "home_goals": 0, "away_goals": 0 },
+      "submitted_at": "2026-07-09T16:05:00.000Z"
+    }
+  ],
+  "confirmed_predictions": [
+    { "match_id": "m001", "home_goals": 2, "away_goals": 1, "submitted_at": "2026-07-09T16:05:00.000Z" },
+    { "match_id": "m002", "home_goals": 0, "away_goals": 0, "submitted_at": "2026-07-09T16:05:00.000Z" }
+  ]
 }
 ```
+
+- **`changed_count` / `changes`**: solo las predicciones que realmente cambiaron respecto a `Predictions_Current` — pensado para auditoría (es lo que también se escribe, agregado, en `Predictions_Log`). `previous: null` indica que el partido no tenía predicción previa (nueva), a diferencia de una predicción existente en `0-0` (que sí trae `previous: { home_goals: 0, away_goals: 0 }`).
+- **`confirmed_predictions`**: el estado **ya confirmado en Sheets** para **cada** `match_id` recibido en el payload, haya cambiado o no en esta llamada. **El frontend debe fusionar esto en su caché local, no `changes`**: si una pestaña con datos desactualizados envía un valor que coincide con lo que *otra* pestaña ya había guardado, el backend responde `NO_CHANGES` para ese partido (no hay "cambio" desde su punto de vista), pero la pestaña que llamó seguía sin saber cuál era el valor/`submitted_at` reales — sin `confirmed_predictions` su caché se quedaría mostrando el valor viejo indefinidamente.
+
+**Respuesta cuando NO hay cambios reales (`code: "NO_CHANGES"`):**
+```json
+{
+  "ok": true,
+  "code": "NO_CHANGES",
+  "message": "No hay cambios que guardar",
+  "serverTime": "2026-07-09T16:05:00.000Z",
+  "changed_count": 0,
+  "changes": [],
+  "confirmed_predictions": [
+    { "match_id": "m001", "home_goals": 2, "away_goals": 1, "submitted_at": "2026-07-08T09:00:00.000Z" }
+  ]
+}
+```
+No se toca `Predictions_Current`, no se añade ninguna fila a `Predictions_Log`, y no se recalcula ni se marca sucio (`ranking_dirty`) el ranking. `confirmed_predictions` sigue trayendo, para cada partido del payload, el valor real y el `submitted_at` original tal como estaban en Sheets (nunca uno generado en esta llamada).
 
 **Respuestas de Error Posibles:**
 ```json
 {
   "ok": false,
   "code": "VALIDATION_ERROR",
-  "message": "PIN incorrecto",
+  "message": "Partido m002 está duplicado en el envío",
   "serverTime": "2026-07-09T16:05:00.000Z"
 }
 ```
-*(Otros errores comunes pueden retornar `code: "LOCK_TIMEOUT"` o `"SERVER_ERROR"`).*
+*(Otros errores comunes: `SESSION_INVALID` (token caducado o inexistente), `LOCK_TIMEOUT`, `SERVER_ERROR`.)*
+
+**Log (`Predictions_Log`):** una sola fila por operación, solo cuando `changed_count > 0`, enumerando exclusivamente los cambios reales:
+```
+Mes 2026-09. Cambios (2): m001: 1-0 → 2-1; m002: nueva → 0-0
+```
+
+**Idempotencia:** si se envía `request_id`, una segunda llamada con el mismo id devuelve exactamente la misma respuesta cacheada (`withIdempotency` en Code.gs) sin volver a comparar ni escribir — pensado para los reintentos del cliente ante el 404 intermitente de Apps Script (ver `apps-script/README_APPS_SCRIPT.md`).
 
 ---
 
