@@ -12,6 +12,20 @@ export const loginView = {
             `;
         }
 
+        // No se ha podido verificar la sesión por un fallo de red. El token
+        // sigue guardado y sigue siendo válido, así que no se pide el PIN otra
+        // vez: basta con reintentar la comprobación.
+        if (state.sessionError && state.sessionToken) {
+            return `
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <h2 class="card-title">No hemos podido entrar</h2>
+                    <p style="color: var(--text-secondary); margin-top: 1rem;">${state.sessionError}</p>
+                    <p style="color: var(--text-secondary);">Tu sesión sigue guardada, no hace falta que vuelvas a meter el PIN.</p>
+                    <button class="btn btn-primary" id="btn-retry-session" style="margin-top: 1.5rem;">Reintentar</button>
+                </div>
+            `;
+        }
+
         if (!state.coreLoaded) {
             return `
                 <div class="card" style="text-align: center; padding: 3rem;">
@@ -86,7 +100,20 @@ export const loginView = {
     },
 
     mount(container) {
-        if (state.sessionChecking || !state.coreLoaded || state.coreError) return;
+        if (state.sessionChecking) return;
+
+        const btnRetrySession = container.querySelector('#btn-retry-session');
+        if (btnRetrySession) {
+            btnRetrySession.addEventListener('click', async () => {
+                btnRetrySession.disabled = true;
+                btnRetrySession.textContent = 'Reintentando...';
+                const app = await import('../app.js');
+                app.verifySession(state.sessionToken);
+            });
+            return;
+        }
+
+        if (!state.coreLoaded || state.coreError) return;
 
         const loginForm = container.querySelector('#login-form');
         loginForm.addEventListener('submit', (e) => this.handleLogin(e, container));

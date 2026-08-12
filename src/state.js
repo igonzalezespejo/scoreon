@@ -4,11 +4,24 @@
 
 const SESSION_STORAGE_KEY = 'porra_session_token';
 
+// Copia local de la última respuesta buena de bootstrapLight. Apps Script tarda
+// entre 4 y 25 segundos en responder cuando responde, y falla con 404 ~1 de
+// cada 3 veces, así que esperarlo antes de pintar nada dejaba al usuario
+// mirando "Cargando..." un buen rato — o para siempre si el backend fallaba.
+// Con esta copia la aplicación arranca al instante con los últimos datos
+// conocidos y se refresca sola en cuanto llega la respuesta real.
+const BOOTSTRAP_CACHE_KEY = 'porra_bootstrap_light';
+const BOOTSTRAP_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
 class State {
     constructor() {
         this.currentUser = null; // { user_id, display_name, is_admin }
         this.sessionToken = null;
         this.sessionChecking = false;
+        // Se rellena cuando no se ha podido *verificar* la sesión por un fallo
+        // de red. No significa que la sesión sea inválida: el token se conserva
+        // y la pantalla de login ofrece reintentar (ver verifySession en app.js).
+        this.sessionError = null;
         this.myPredictionsById = {}; // { [month_id]: [{ match_id, home_goals, away_goals, submitted_at }] } — solo del usuario logueado
 
         this.config = null;
@@ -30,6 +43,9 @@ class State {
         this.coreLoaded = false;
         this.coreLoading = false;
         this.coreError = null;
+        // true mientras lo que se está enseñando viene de la copia local y no
+        // de una respuesta fresca del backend.
+        this.showingCachedData = false;
         
         this.rankingsLoaded = false;
         this.rankingsLoading = false;
@@ -54,6 +70,7 @@ class State {
     clearSession() {
         this.sessionToken = null;
         this.currentUser = null;
+        this.sessionError = null;
         this.myPredictionsById = {};
         localStorage.removeItem(SESSION_STORAGE_KEY);
     }
@@ -144,6 +161,38 @@ class State {
         this.coreLoaded = true;
         this.coreLoading = false;
         this.coreError = null;
+        // hydrateFromCache() lo vuelve a poner a true después de llamar aquí.
+        this.showingCachedData = false;
+    }
+
+    // Guarda la última respuesta buena de bootstrapLight para poder arrancar sin
+    // esperar al backend en la siguiente visita.
+    cacheBootstrapLight(data) {
+        try {
+            localStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), data: data }));
+        } catch (e) {
+            // localStorage lleno o deshabilitado. La caché es una mejora, no un
+            // requisito: la aplicación sigue funcionando pidiendo los datos.
+        }
+    }
+
+    // Pinta la aplicación con los últimos datos conocidos. Devuelve true si
+    // había copia utilizable. El refresco real llega después por bootstrapLight.
+    hydrateFromCache() {
+        try {
+            const raw = localStorage.getItem(BOOTSTRAP_CACHE_KEY);
+            if (!raw) return false;
+
+            const cached = JSON.parse(raw);
+            if (!cached || !cached.data) return false;
+            if (Date.now() - cached.cachedAt > BOOTSTRAP_CACHE_TTL_MS) return false;
+
+            this.initializeLight(cached.data);
+            this.showingCachedData = true;
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     setMonthData(monthId, data) {

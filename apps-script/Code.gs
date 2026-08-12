@@ -314,13 +314,13 @@ function handleRequest(params) {
       case "rankings":
         return actionRankings();
       case "savePrediction":
-        return actionSavePrediction(params);
+        return withIdempotency(params.request_id, function() { return actionSavePrediction(params); });
       case "getUserPredictions":
         return actionGetUserPredictions(params);
       case "registerParticipant":
-        return actionRegisterParticipant(params);
+        return withIdempotency(params.request_id, function() { return actionRegisterParticipant(params); });
       case "login":
-        return actionLogin(params);
+        return withIdempotency(params.request_id, function() { return actionLogin(params); });
       case "resumeSession":
         return actionResumeSession(params);
       case "logout":
@@ -334,7 +334,7 @@ function handleRequest(params) {
       case "adminGetMonthMatches":
         return actionAdminGetMonthMatches(params);
       case "adminSaveResults":
-        return actionAdminSaveResults(params);
+        return withIdempotency(params.request_id, function() { return actionAdminSaveResults(params); });
       case "adminSetMonthStatus":
         return actionAdminSetMonthStatus(params);
       default:
@@ -1824,6 +1824,42 @@ function logAction(userId, action, details, serverTime) {
     }
   } catch (e) {
   }
+}
+
+// Apps Script entrega el resultado de /exec mediante un redirect a una URL de
+// un solo uso en script.googleusercontent.com. Esa fase falla con 404 de forma
+// intermitente (medido 2026-08-12: ~31% en peticiones secuenciales, también con
+// acciones que no tocan Sheets), y cuando falla la acción YA se ha ejecutado
+// aquí. El cliente no puede distinguir "no se ejecutó" de "se ejecutó pero no
+// me llegó la respuesta", así que reintenta.
+//
+// Para que ese reintento no duplique la escritura, el cliente manda un
+// request_id único por operación y aquí se cachea la respuesta: si vuelve el
+// mismo id, se devuelve la respuesta original (con su PIN, su token o lo que
+// llevara) en vez de ejecutar la acción otra vez.
+const IDEMPOTENCY_TTL_SECONDS = 21600; // 6h, el máximo que admite CacheService
+
+function withIdempotency(requestId, produceResponse) {
+  if (!requestId) return produceResponse();
+
+  const cache = CacheService.getScriptCache();
+  const key = "idem_" + requestId;
+
+  const cached = cache.get(key);
+  if (cached) {
+    return ContentService.createTextOutput(cached)
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const response = produceResponse();
+  try {
+    cache.put(key, response.getContent(), IDEMPOTENCY_TTL_SECONDS);
+  } catch (e) {
+    // Si la respuesta no cabe en caché (límite de 100 KB por entrada) se
+    // devuelve igual: perder la protección anti-duplicado es menos grave que
+    // perder la respuesta que el usuario está esperando.
+  }
+  return response;
 }
 
 function buildSuccessResponse(data) {

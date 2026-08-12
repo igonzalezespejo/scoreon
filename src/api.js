@@ -5,6 +5,89 @@ import { USE_MOCK, API_URL } from './config.js';
  * API layer
  */
 
+// ==========================================
+// TRANSPORTE
+// ==========================================
+//
+// Apps Script no devuelve el resultado de /exec directamente: responde con un
+// redirect 302 a una URL de un solo uso en script.googleusercontent.com, y el
+// cliente tiene que ir a buscar ahí la respuesta ya calculada.
+//
+// Esa segunda fase falla de forma intermitente con 404 y a veces tarda decenas
+// de segundos. Está medido (2026-08-12): ~31% de fallo en peticiones
+// estrictamente secuenciales, y ocurre igual con una acción que no toca Google
+// Sheets y devuelve 127 bytes que con bootstrapLight (51 KB). O sea: no es
+// culpa del script, ni del tamaño de la respuesta, ni de la concurrencia, ni
+// del navegador (curl lo reproduce igual). Es la infraestructura de Google.
+//
+// Consecuencia importante: cuando llega el 404, el backend YA se ha ejecutado.
+// Reintentar vuelve a ejecutarlo. Por eso solo se reintenta lo que es seguro
+// repetir — ver la nota de idempotencia en cada llamada.
+const MAX_ATTEMPTS = 3;
+const BASE_BACKOFF_MS = 600;
+// Cortamos las peticiones que se quedan colgadas (se han observado esperas de
+// 70s) porque reintentar sale más barato que seguir esperando.
+const REQUEST_TIMEOUT_MS = 20000;
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchOnce(url, options) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+// Reintenta la petición completa (no el redirect suelto: la URL intermedia es
+// de un solo uso y no se puede volver a pedir).
+async function apiRequest(url, options, attempts = MAX_ATTEMPTS) {
+    let lastError;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            return await fetchOnce(url, options);
+        } catch (error) {
+            lastError = error;
+            if (attempt < attempts) {
+                console.warn(`Reintentando petición al backend (intento ${attempt}/${attempts} fallido):`, error.message);
+                await wait(BASE_BACKOFF_MS * attempt + Math.random() * 400);
+            }
+        }
+    }
+    throw lastError;
+}
+
+function apiGet(action, params = {}, attempts = MAX_ATTEMPTS) {
+    const query = new URLSearchParams({ action, ...params, _: String(Date.now()) });
+    return apiRequest(`${API_URL}?${query}`, undefined, attempts);
+}
+
+function apiPost(payload, attempts = MAX_ATTEMPTS) {
+    return apiRequest(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    }, attempts);
+}
+
+// Identificador único por intento de escritura. El backend lo usa para no
+// repetir una operación que ya ejecutó cuando el 404 nos hizo creer que había
+// fallado (ver getCachedIdempotentResponse en Code.gs).
+function newRequestId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 export async function loadBootstrapLight() {
     try {
         let data;
@@ -19,15 +102,13 @@ export async function loadBootstrapLight() {
             delete data.rankingGlobal;
             data.message = "Light data loaded (mock)";
         } else {
-            const response = await fetch(`${API_URL}?action=bootstrapLight&_=${Date.now()}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            data = await response.json();
+            // Solo lectura: reintentar es seguro.
+            data = await apiGet('bootstrapLight');
         }
-        
+
         if (data.ok) {
             state.initializeLight(data);
+            state.cacheBootstrapLight(data);
             return data;
         } else {
             throw new Error("Data was not ok");
@@ -55,13 +136,11 @@ export async function loadRankingsData() {
                 rankingGlobal: fullData.rankingGlobal
             };
         } else {
-            const response = await fetch(`${API_URL}?action=rankings&_=${Date.now()}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            data = await response.json();
+            // Solo lectura (puede recalcular rankings en servidor, pero el
+            // resultado es el mismo si se repite): reintentar es seguro.
+            data = await apiGet('rankings');
         }
-        
+
         if (data.ok) {
             return data;
         } else {
@@ -85,13 +164,10 @@ export async function loadBootstrapData() {
             }
             data = await response.json();
         } else {
-            const response = await fetch(`${API_URL}?action=bootstrap&_=${Date.now()}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            data = await response.json();
+            // Solo lectura: reintentar es seguro.
+            data = await apiGet('bootstrap');
         }
-        
+
         if (data.ok) {
             state.initialize(data);
             return data;
@@ -121,11 +197,10 @@ export async function loadMonthData(monthId) {
                 predictionsSummary: fullData.predictionsSummary
             };
         } else {
-            const response = await fetch(`${API_URL}?action=monthData&month_id=${encodeURIComponent(monthId)}&_=${Date.now()}`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            data = await response.json();
+            // Solo lectura: reintentar es seguro.
+            data = await apiGet('monthData', { month_id: monthId });
         }
-        
+
         if (data.ok) {
             state.setMonthData(monthId, data);
             return data;
@@ -158,23 +233,18 @@ export async function savePrediction(userId, token, monthId, predictions) {
             }, 800);
         });
     } else {
-        const payload = {
+        // Escritura idempotente por diseño: el backend reemplaza las filas del
+        // usuario para esos partidos en vez de añadirlas (ver actionSavePrediction
+        // en Code.gs), así que repetirla deja la hoja igual. Aun así se manda
+        // request_id para que el backend devuelva la respuesta original en vez
+        // de reejecutar cuando el 404 nos hizo reintentar de más.
+        const result = await apiPost({
             action: 'savePrediction',
             token: token,
             month_id: monthId,
-            predictions: predictions
-        };
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify(payload)
+            predictions: predictions,
+            request_id: newRequestId()
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
         if (result.ok) {
             state.updatePredictionStatus(userId, 'submitted');
         }
@@ -218,22 +288,12 @@ export async function getUserPredictions(userId, token, monthId) {
             }, 500);
         });
     } else {
-        const payload = {
+        // Solo lectura: reintentar es seguro.
+        return await apiPost({
             action: 'getUserPredictions',
             token: token,
             month_id: monthId
-        };
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify(payload)
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return await response.json();
     }
 }
 
@@ -306,23 +366,18 @@ export async function registerParticipant(displayName, email, registrationCode) 
             }, 800);
         });
     } else {
-        const payload = {
+        // La única escritura que NO es idempotente por sí sola: repetirla
+        // crearía un participante duplicado (o, peor, devolvería "nombre ya en
+        // uso" dejando al usuario sin su PIN). El request_id es obligatorio
+        // aquí: el backend cachea la respuesta y devuelve la misma —PIN y token
+        // incluidos— si le llega dos veces el mismo id.
+        return await apiPost({
             action: 'registerParticipant',
             display_name: displayName,
             email: email,
-            registration_code: registrationCode
-        };
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify(payload)
+            registration_code: registrationCode,
+            request_id: newRequestId()
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return await response.json();
     }
 }
 
@@ -358,16 +413,14 @@ export async function login(userId, pin) {
         });
     }
 
-    const payload = { action: 'login', user_id: userId, pin: pin };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
+    // Crea una fila en Sessions. Con request_id, un reintento devuelve el mismo
+    // token en vez de abrir una segunda sesión huérfana.
+    return await apiPost({
+        action: 'login',
+        user_id: userId,
+        pin: pin,
+        request_id: newRequestId()
     });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
 }
 
 export async function resumeSession(token) {
@@ -394,16 +447,8 @@ export async function resumeSession(token) {
         });
     }
 
-    const payload = { action: 'resumeSession', token: token };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    // Idempotente: solo refresca la caducidad de la sesión.
+    return await apiPost({ action: 'resumeSession', token: token });
 }
 
 export async function logout(token) {
@@ -411,16 +456,8 @@ export async function logout(token) {
         return Promise.resolve({ ok: true, code: "LOGGED_OUT" });
     }
 
-    const payload = { action: 'logout', token: token };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    // Idempotente: borrar una sesión ya borrada no cambia nada.
+    return await apiPost({ action: 'logout', token: token });
 }
 
 // ==========================================
@@ -444,13 +481,8 @@ export async function adminGetMonths(adminToken) {
         });
     }
 
-    const payload = { action: 'adminGetMonths', admin_token: adminToken };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-    });
-    return await response.json();
+    // Solo lectura: reintentar es seguro.
+    return await apiPost({ action: 'adminGetMonths', admin_token: adminToken });
 }
 
 export async function adminGetMonthMatches(adminToken, monthId) {
@@ -474,13 +506,8 @@ export async function adminGetMonthMatches(adminToken, monthId) {
         });
     }
 
-    const payload = { action: 'adminGetMonthMatches', admin_token: adminToken, month_id: monthId };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-    });
-    return await response.json();
+    // Solo lectura: reintentar es seguro.
+    return await apiPost({ action: 'adminGetMonthMatches', admin_token: adminToken, month_id: monthId });
 }
 
 export async function adminSaveResults(adminToken, monthId, results) {
@@ -499,13 +526,16 @@ export async function adminSaveResults(adminToken, monthId, results) {
         });
     }
 
-    const payload = { action: 'adminSaveResults', admin_token: adminToken, month_id: monthId, results: results };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
+    // Escritura idempotente: sobrescribe los resultados de esos partidos, no
+    // los acumula. Aun así lleva request_id para no repetir el recálculo de
+    // rankings si un 404 nos hace reintentar.
+    return await apiPost({
+        action: 'adminSaveResults',
+        admin_token: adminToken,
+        month_id: monthId,
+        results: results,
+        request_id: newRequestId()
     });
-    return await response.json();
 }
 
 export async function adminSetMonthStatus(adminToken, monthId, status) {
@@ -524,11 +554,6 @@ export async function adminSetMonthStatus(adminToken, monthId, status) {
         });
     }
 
-    const payload = { action: 'adminSetMonthStatus', admin_token: adminToken, month_id: monthId, status: status };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-    });
-    return await response.json();
+    // Idempotente: dejar el mes en un estado concreto da igual repetirlo.
+    return await apiPost({ action: 'adminSetMonthStatus', admin_token: adminToken, month_id: monthId, status: status });
 }
