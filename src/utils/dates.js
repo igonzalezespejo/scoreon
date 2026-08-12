@@ -15,6 +15,24 @@ export function isPastLock(lockAtIsoString, serverTimeIsoString) {
     return now >= lockTime;
 }
 
+// Un partido deja de admitir apuestas en su lock_at, y si esa columna está
+// vacía en Sheets, en su kickoff_at (misma regla que aplica el backend en
+// actionSavePrediction, ver Code.gs). Sin ninguna de las dos fechas el partido
+// nunca se bloquea: es preferible dejar apostar de más a bloquear una tarjeta
+// por un hueco en la hoja.
+//
+// Usa la hora del navegador, así que un reloj mal puesto puede adelantar o
+// atrasar el bloqueo visual. No es un problema de integridad: el backend
+// revalida cada partido contra su propia hora y es la autoridad final.
+export function isMatchLocked(match) {
+    if (!match) return false;
+    const lockAt = match.lock_at || match.kickoff_at;
+    if (!lockAt) return false;
+    const lockTime = new Date(lockAt).getTime();
+    if (isNaN(lockTime)) return false;
+    return Date.now() >= lockTime;
+}
+
 export function getDaysRemaining(targetIsoString, serverTimeIsoString) {
     const target = new Date(targetIsoString).getTime();
     const now = serverTimeIsoString ? new Date(serverTimeIsoString).getTime() : Date.now();

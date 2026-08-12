@@ -81,13 +81,30 @@ class State {
 
     // Actualiza en memoria las predicciones propias tras un guardado exitoso,
     // sin necesidad de volver a pedirlas al servidor.
+    //
+    // Fusiona en vez de reemplazar: bettingView solo envía los partidos que
+    // siguen abiertos, así que las apuestas de los partidos ya empezados no
+    // vienen en `predictions`. El backend las conserva en la hoja (solo borra
+    // las filas de los match_id enviados), y aquí hay que conservarlas igual o
+    // desaparecerían de la pantalla hasta el siguiente bootstrap.
     setMyPredictionsForMonth(monthId, predictions) {
-        this.myPredictionsById[monthId] = predictions.map(p => ({
-            match_id: p.match_id,
-            home_goals: p.home_goals,
-            away_goals: p.away_goals,
-            submitted_at: new Date().toISOString()
-        }));
+        const submittedAt = new Date().toISOString();
+        const byMatchId = {};
+
+        (this.myPredictionsById[monthId] || []).forEach(p => {
+            byMatchId[p.match_id] = p;
+        });
+
+        predictions.forEach(p => {
+            byMatchId[p.match_id] = {
+                match_id: p.match_id,
+                home_goals: p.home_goals,
+                away_goals: p.away_goals,
+                submitted_at: submittedAt
+            };
+        });
+
+        this.myPredictionsById[monthId] = Object.values(byMatchId);
     }
 
     isAuthenticated() {

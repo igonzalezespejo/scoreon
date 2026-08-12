@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { savePrediction, loadBootstrapLight, loadRankingsData } from '../api.js';
 import { showToast } from '../utils/dom.js';
-import { formatDate } from '../utils/dates.js';
+import { formatDate, isMatchLocked } from '../utils/dates.js';
 import { scorePrediction } from '../scoring.js';
 
 export const bettingView = {
@@ -115,6 +115,12 @@ export const bettingView = {
         const hasSubmitted = summary.status !== 'pending';
 
         const sortedMatches = [...matches].sort((a, b) => a.display_order - b.display_order);
+
+        // Aunque la porra siga abierta, cada partido deja de admitir cambios en
+        // cuanto llega su hora. Si ya no queda ninguno abierto no hay nada que
+        // guardar, así que el botón sobra.
+        const hasOpenMatches = sortedMatches.some(m => !isMatchLocked(m));
+
         let formHtml = `<form id="betting-form">`;
 
         const predMap = {};
@@ -126,6 +132,7 @@ export const bettingView = {
         formHtml += `<div class="betting-matches-grid">`;
 
         sortedMatches.forEach(match => {
+            const isLocked = !canBet || isMatchLocked(match);
             const pred = predMap[match.match_id];
             const hg = pred && pred.home_goals !== undefined && pred.home_goals !== null ? pred.home_goals : '';
             const ag = pred && pred.away_goals !== undefined && pred.away_goals !== null ? pred.away_goals : '';
@@ -170,11 +177,11 @@ export const bettingView = {
                         <div class="betting-match-team-name">${match.away_team}</div>
                         <div class="betting-match-results">
                             ${homeChip}
-                            <input type="number" min="0" max="20" class="betting-match-bet-input" data-match="${match.match_id}" data-team="home" value="${hg}" ${!canBet ? 'disabled' : ''} aria-label="Tu apuesta, goles de ${match.home_team}">
+                            <input type="number" min="0" max="20" class="betting-match-bet-input" data-match="${match.match_id}" data-team="home" value="${hg}" ${isLocked ? 'disabled' : ''} aria-label="Tu apuesta, goles de ${match.home_team}">
                         </div>
                         <div class="betting-match-results">
                             ${awayChip}
-                            <input type="number" min="0" max="20" class="betting-match-bet-input" data-match="${match.match_id}" data-team="away" value="${ag}" ${!canBet ? 'disabled' : ''} aria-label="Tu apuesta, goles de ${match.away_team}">
+                            <input type="number" min="0" max="20" class="betting-match-bet-input" data-match="${match.match_id}" data-team="away" value="${ag}" ${isLocked ? 'disabled' : ''} aria-label="Tu apuesta, goles de ${match.away_team}">
                         </div>
                     </div>
                 </div>
@@ -183,7 +190,7 @@ export const bettingView = {
 
         formHtml += `</div>`;
 
-        if (canBet) {
+        if (canBet && hasOpenMatches) {
             formHtml += `
                 <div style="margin-top: 1.5rem; text-align: right;">
                     <button type="submit" class="btn btn-primary" id="btn-submit-bets">
@@ -196,7 +203,7 @@ export const bettingView = {
 
         matchesContainer.innerHTML = formHtml;
 
-        if (canBet) {
+        if (canBet && hasOpenMatches) {
             const form = container.querySelector('#betting-form');
             form.addEventListener('submit', (e) => this.handleSubmit(e, userId, sortedMatches));
         }
@@ -210,18 +217,40 @@ export const bettingView = {
         btn.textContent = 'Guardando...';
 
         try {
+            // El bloqueo se recalcula aquí y no se reutiliza el del render: la
+            // pestaña puede llevar horas abierta y haber vencido el plazo de
+            // algún partido mientras tanto. Un input deshabilitado sigue
+            // teniendo value legible, así que omitirlos es una decisión
+            // explícita, no un efecto secundario del atributo disabled.
             const predictions = [];
+            const lockedOut = [];
             matches.forEach(m => {
                 const homeInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="home"]`);
                 const awayInput = document.querySelector(`input[data-match="${m.match_id}"][data-team="away"]`);
-                if (homeInput.value !== '' && awayInput.value !== '') {
-                    predictions.push({
-                        match_id: m.match_id,
-                        home_goals: parseInt(homeInput.value),
-                        away_goals: parseInt(awayInput.value)
-                    });
+                if (homeInput.value === '' || awayInput.value === '') return;
+
+                if (isMatchLocked(m)) {
+                    lockedOut.push(m);
+                    return;
                 }
+
+                predictions.push({
+                    match_id: m.match_id,
+                    home_goals: parseInt(homeInput.value),
+                    away_goals: parseInt(awayInput.value)
+                });
             });
+
+            // Se cerró el último partido abierto con la pantalla puesta. No
+            // tiene sentido llamar al backend (lo rechazaría por lote vacío):
+            // se repinta el formulario, que ya se dibujará con todo
+            // deshabilitado y sin botón de guardar.
+            if (predictions.length === 0) {
+                showToast('El plazo de todos los partidos ha vencido; no se ha guardado nada.', 'error');
+                const view = document.getElementById('view-betting');
+                if (view) this.showFromCache(view);
+                return;
+            }
 
             const token = state.sessionToken;
             const monthId = state.selectedMonthId;
@@ -229,7 +258,15 @@ export const bettingView = {
             const response = await savePrediction(userId, token, monthId, predictions);
 
             if (response.ok) {
-                showToast(response.message || '¡Apuesta guardada correctamente!');
+                if (lockedOut.length > 0) {
+                    // Sin este aviso el usuario vería "guardada correctamente"
+                    // y daría por hecho que también se guardó lo que tocó en un
+                    // partido que ya había empezado.
+                    const names = lockedOut.map(m => `${m.home_team} - ${m.away_team}`).join(', ');
+                    showToast(`Apuesta guardada. No se guardó ${names}: el plazo ya había vencido.`, 'error');
+                } else {
+                    showToast(response.message || '¡Apuesta guardada correctamente!');
+                }
 
                 // Actualiza la caché local al instante con lo que se acaba de
                 // guardar (sabemos que el servidor lo aceptó), sin esperar a
