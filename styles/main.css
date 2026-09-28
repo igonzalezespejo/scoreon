@@ -366,6 +366,55 @@ h1, h2, h3, h4, h5, h6 {
   border-color: transparent var(--success-color) transparent transparent;
 }
 
+/* "i" de información: se dibuja en azul marino sobre el triángulo de estado
+   (el blanco apenas se leía sobre el amarillo de "pendiente"). El botón ocupa
+   todo el cuadrado de la esquina para que sea fácil de tocar en el móvil,
+   pero la letra queda arriba a la derecha, dentro del triángulo. */
+.betting-match-info-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 34px;
+  height: 34px;
+  padding: 3px 5px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--header-bg);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.betting-match-info-btn:focus-visible {
+  outline: 2px solid var(--accent-info);
+  outline-offset: -2px;
+  border-radius: 0 15px 0 0;
+}
+
+.match-info-popover {
+  position: fixed;
+  z-index: 1100;
+  max-width: min(300px, calc(100vw - 16px));
+  background: var(--header-bg);
+  color: #ffffff;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 8px 24px rgba(2, 15, 42, 0.25);
+}
+
+.match-info-popover[hidden] {
+  display: none;
+}
+
 .betting-match-points-badge {
   position: absolute;
   top: 0.6rem;

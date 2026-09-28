@@ -4,6 +4,70 @@ import { showToast } from '../utils/dom.js';
 import { formatDate, isMatchLocked } from '../utils/dates.js';
 import { scorePrediction } from '../scoring.js';
 
+// Estado de la ventanita de información (una sola para toda la vista).
+// `anchor` es la "i" que la abrió y `fromHover` distingue si se abrió al pasar
+// el ratón (se cierra al salir) o con un clic/toque (se queda abierta).
+let infoPopover = null;
+
+function getInfoPopover() {
+    if (infoPopover) return infoPopover;
+
+    const el = document.createElement('div');
+    el.className = 'match-info-popover';
+    el.setAttribute('role', 'tooltip');
+    el.hidden = true;
+    document.body.appendChild(el);
+    infoPopover = { el, anchor: null, fromHover: false, get hidden() { return el.hidden; } };
+
+    // Listeners globales, registrados una única vez: cualquier clic fuera,
+    // Escape, scroll o cambio de tamaño cierra la ventanita.
+    document.addEventListener('click', (e) => {
+        if (!el.hidden && !el.contains(e.target)) hideInfoPopover();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideInfoPopover();
+    });
+    window.addEventListener('scroll', hideInfoPopover, true);
+    window.addEventListener('resize', hideInfoPopover);
+
+    return infoPopover;
+}
+
+function showInfoPopover(anchor, text, fromHover) {
+    const popover = getInfoPopover();
+    const { el } = popover;
+    if (popover.anchor && popover.anchor !== anchor) {
+        popover.anchor.setAttribute('aria-expanded', 'false');
+    }
+
+    el.textContent = text;
+    el.hidden = false;
+    popover.anchor = anchor;
+    popover.fromHover = fromHover;
+    anchor.setAttribute('aria-expanded', 'true');
+
+    // Debajo de la "i", alineada a su borde derecho y sin salirse de la
+    // pantalla; si no cabe debajo, se abre hacia arriba.
+    const margin = 8;
+    const r = anchor.getBoundingClientRect();
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    let left = Math.min(r.right - w, window.innerWidth - w - margin);
+    left = Math.max(margin, left);
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - margin) top = Math.max(margin, r.top - h - 6);
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+}
+
+function hideInfoPopover() {
+    if (!infoPopover || infoPopover.el.hidden) return;
+    infoPopover.el.hidden = true;
+    if (infoPopover.anchor) infoPopover.anchor.setAttribute('aria-expanded', 'false');
+    infoPopover.anchor = null;
+    infoPopover.fromHover = false;
+}
+
 export const bettingView = {
     render() {
         if (!state.coreLoaded) {
@@ -167,10 +231,18 @@ export const bettingView = {
                 ? `<div class="betting-match-points-badge" title="Puntos conseguidos en este partido">+${scoreResult.points}</div>`
                 : '';
 
+            // La descripción viene de la columna `description` de la hoja
+            // Matches. El texto no se mete en el HTML: se lee del partido al
+            // abrir la ventanita (ver bindMatchInfo), así no hay que escaparlo.
+            const infoBtn = String(match.description || '').trim()
+                ? `<button type="button" class="betting-match-info-btn" data-match-info="${match.match_id}" aria-label="Información del partido ${match.home_team} - ${match.away_team}" aria-expanded="false">i</button>`
+                : '';
+
             formHtml += `
                 <div class="betting-match-card ${cardStateClass}">
                     ${pointsBadge}
                     <div class="betting-match-ribbon" title="${ribbonText === 'Guardado' ? 'Apuesta guardada' : 'Apuesta pendiente'}">${ribbonText}</div>
+                    ${infoBtn}
                     <div class="betting-match-comp-line"><span class="betting-match-comp">${match.competition}</span> · <span class="betting-match-horario">${formatDate(match.kickoff_at)}</span></div>
                     <div class="betting-match-split">
                         <div class="betting-match-team-name">${match.home_team}</div>
@@ -203,10 +275,48 @@ export const bettingView = {
 
         matchesContainer.innerHTML = formHtml;
 
+        this.bindMatchInfo(matchesContainer, sortedMatches);
+
         if (canBet && hasOpenMatches) {
             const form = container.querySelector('#betting-form');
             form.addEventListener('submit', (e) => this.handleSubmit(e, userId, sortedMatches));
         }
+    },
+
+    // Ventanita con la descripción del partido. Es un único elemento en
+    // <body> con position: fixed, porque la tarjeta tiene overflow: hidden y
+    // la recortaría. En ordenador se abre al pasar el ratón; en móvil (sin
+    // hover) se abre y cierra al tocar la "i".
+    bindMatchInfo(matchesContainer, matches) {
+        const byId = {};
+        matches.forEach(m => byId[m.match_id] = m);
+
+        const popover = getInfoPopover();
+        const canHover = window.matchMedia('(hover: hover)').matches;
+
+        matchesContainer.querySelectorAll('.betting-match-info-btn').forEach(btn => {
+            const match = byId[btn.getAttribute('data-match-info')];
+            if (!match) return;
+            const text = String(match.description || '').trim();
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (popover.anchor === btn && !popover.hidden && !popover.fromHover) {
+                    hideInfoPopover();
+                } else {
+                    showInfoPopover(btn, text, false);
+                }
+            });
+
+            if (canHover) {
+                btn.addEventListener('mouseenter', () => {
+                    if (popover.hidden) showInfoPopover(btn, text, true);
+                });
+                btn.addEventListener('mouseleave', () => {
+                    if (popover.fromHover) hideInfoPopover();
+                });
+            }
+        });
     },
 
     async handleSubmit(e, userId, matches) {
