@@ -95,48 +95,48 @@ export const staticDescriptions = {
     `,
     '2026-10': `
         <div class="static-description" style="text-align: left; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem; padding: 1rem;">
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0;">Semana 1: Europa de Alta Tensión y Trampas Ligeras</h4>
-            <p style="margin-bottom: 0.5rem;">Arrancamos combinando las noches europeas con salidas muy físicas en la liga.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0;">Semana 1 (2 al 6 de octubre): Las selecciones abren el mes</h4>
+            <p style="margin-bottom: 0.5rem;">Octubre arranca con la segunda ventana de la Nations League: cinco duelos entre selecciones que ya se vieron las caras en septiembre y que ahora buscan la revancha, más un partido de Segunda con aroma a Primera.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>Villarreal CF vs. FC Barcelona:</strong> (LaLiga). La Cerámica siempre exige un despliegue físico brutal. Un partido de ida y vuelta constante. (1º partido del Barça)</li>
-                <li><strong>Sevilla FC vs. Real Sociedad:</strong> (LaLiga). Choque de estilos y de aspiraciones europeas en el Sánchez-Pizjuán. Partidazo táctico. (1º partido del Sevilla)</li>
-                <li><strong>Real Betis vs. AS Roma:</strong> (Europa League). Una noche grande europea en el Villamarín ante un gigante italiano. Tensión máxima. (1º partido del Betis)</li>
-                <li><strong>Liverpool vs. Arsenal:</strong> (Premier League). El primer gran duelo de titanes del mes en Inglaterra. Anfield dictará sentencia.</li>
-                <li><strong>Aston Villa vs. Bayern Múnich:</strong> (Champions League). Villa Park se viste de gala para recibir al gigante bávaro. Ojo a la sorpresa local.</li>
-                <li><strong>Napoli vs. AC Milan:</strong> (Serie A). Clásico italiano del sur contra el norte, con un ambiente espectacular asegurado.</li>
+                <li><strong>Francia vs. Italia:</strong> (UEFA Nations League, 2 de octubre). Uno de los grandes clásicos del fútbol europeo abre el mes. El talento ofensivo francés contra el orden y el oficio italiano, en un partido que rara vez se resuelve con comodidad.</li>
+                <li><strong>Croacia vs. Inglaterra:</strong> (UEFA Nations League, 3 de octubre). Croacia jugará a puerta cerrada por sanción de la UEFA, lo que le quita su gran arma como local. Inglaterra tendrá el favoritismo, pero la experiencia croata convierte cualquier cruce en una partida de ajedrez.</li>
+                <li><strong>UD Las Palmas vs. Real Valladolid:</strong> (LaLiga Hypermotion, 4 de octubre). Dos clubes acostumbrados a Primera que pelean por volver cuanto antes. En Segunda los partidos son largos, igualados y de marcador corto, así que el empate siempre está al acecho.</li>
+                <li><strong>Portugal vs. Noruega:</strong> (UEFA Nations League, 4 de octubre). Revancha inmediata del duelo de septiembre, esta vez en Portugal. Mucha pegada en ambos lados y un partido que puede romperse en cuanto aparezca el primer gol.</li>
+                <li><strong>Italia vs. Turquía:</strong> (UEFA Nations League, 5 de octubre). Italia necesita hacerse fuerte en casa ante una Turquía joven, intensa y sin complejos. Un encuentro más abierto de lo que suele sugerir el sello italiano.</li>
+                <li><strong>Croacia vs. España:</strong> (UEFA Nations League, 6 de octubre). Revancha del partido de finales de septiembre. España querrá imponer su posesión, mientras que Croacia intentará llevar el partido a su terreno con paciencia, oficio y un centro del campo que nunca regala nada.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 2: El Segundo "Virus FIFA" (Parón de Selecciones)</h4>
-            <p style="margin-bottom: 0.5rem;">Vuelven las convocatorias internacionales. Como los equipos nacionales cambian tanto de un mes a otro, apostar aquí al resultado exacto es pura intuición.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 2 (10 al 14 de octubre): Premier de altura y Champions de lujo</h4>
+            <p style="margin-bottom: 0.5rem;">Vuelven los clubes y lo hacen por todo lo alto: un fin de semana con dos grandes citas en Inglaterra y una segunda jornada de Champions con cruces entre España, Inglaterra, Italia y Francia.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>España vs. Francia:</strong> (UEFA Nations League). Duelo por la hegemonía europea contemporánea.</li>
-                <li><strong>Inglaterra vs. Países Bajos:</strong> (UEFA Nations League). Fútbol rapidísimo, de transiciones, con muchísimas opciones de acabar en un empate con varios goles.</li>
-                <li><strong>Uruguay vs. Argentina:</strong> (Eliminatorias Sudamericanas). El Clásico del Río de la Plata. Fricción, faltas y marcadores cortísimos.</li>
-                <li><strong>Colombia vs. Brasil:</strong> (Eliminatorias Sudamericanas). Barranquilla es una plaza dificilísima para cualquiera, incluido Brasil.</li>
-                <li><strong>Alemania vs. Italia:</strong> (UEFA Nations League). El gran clásico histórico europeo por excelencia.</li>
-                <li><strong>Portugal vs. Croacia:</strong> (UEFA Nations League). Dos selecciones a las que les gusta masticar mucho la posesión del balón.</li>
+                <li><strong>Manchester United vs. Tottenham Hotspur:</strong> (Premier League, 10 de octubre). Old Trafford recibe a un Tottenham siempre peligroso a la contra. Dos equipos irregulares con capacidad para lo mejor y lo peor, lo que hace de este partido una auténtica lotería.</li>
+                <li><strong>Como vs. AS Roma:</strong> (Serie A, 11 de octubre). El Como ha pasado de recién ascendido a proyecto ambicioso y a orillas del lago no regala nada. La Roma llega con más cartel, pero el partido del mediodía suele guardar sorpresas.</li>
+                <li><strong>Liverpool vs. Manchester City:</strong> (Premier League, 11 de octubre). El gran duelo de la última década en Inglaterra. Anfield, ritmo altísimo y dos equipos que se conocen de memoria; de esos partidos en los que el marcador puede moverse en cualquier momento.</li>
+                <li><strong>Villarreal vs. Napoli:</strong> (Champions League, 13 de octubre). La Cerámica recibe al Napoli en una noche europea de mucho nivel. El Villarreal se crece en casa y el conjunto italiano llega con la exigencia de sumar fuera.</li>
+                <li><strong>Atlético de Madrid vs. Manchester United:</strong> (Champions League, 13 de octubre). El Metropolitano en noche de Champions es uno de los escenarios más duros de Europa. Intensidad, orden defensivo y un United que tendrá que sufrir para sacar algo.</li>
+                <li><strong>Manchester City vs. Paris Saint-Germain:</strong> (Champions League, 14 de octubre). Posiblemente el cartel más potente de toda la jornada europea. Dos plantillas repletas de estrellas, muchísima posesión y un partido en el que cualquier resultado es creíble.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 3: La Resaca y los Derbis Locales</h4>
-            <p style="margin-bottom: 0.5rem;">Los jugadores vuelven de sus vuelos transoceánicos. Momento ideal para que los equipos más modestos le rasquen puntos a los gigantes, y fin de semana de derbis puros.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 3 (15 al 21 de octubre): De Balaídos a las grandes noches de Champions</h4>
+            <p style="margin-bottom: 0.5rem;">Una semana que empieza con una noche europea en Vigo, pasa por un fin de semana muy español e inglés y termina con dos auténticos partidazos de Champions.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>Real Madrid vs. Athletic Club:</strong> (LaLiga). Un clásico inmemorial en el Bernabéu. Los leones siempre muerden tras los parones. (1º partido del Madrid)</li>
-                <li><strong>RCD Espanyol vs. Sevilla FC:</strong> (LaLiga). Salida históricamente espinosa para el Sevilla, perfecta para buscar un pronóstico ajustado. (2º partido del Sevilla)</li>
-                <li><strong>Real Betis vs. Girona FC:</strong> (LaLiga). Dos equipos diseñados para mirar la portería contraria. Promesa de lluvia de goles. (2º partido del Betis)</li>
-                <li><strong>Manchester United vs. Manchester City:</strong> (Premier League). El Derbi de Mánchester. Old Trafford decide quién manda en la ciudad.</li>
-                <li><strong>PSG vs. Arsenal:</strong> (Champions League). Duelo de plantillas ultramodernas en el Parque de los Príncipes.</li>
-                <li><strong>Boca Juniors vs. River Plate:</strong> (Liga Argentina). El Superclásico. Tradicionalmente cae por estas fechas y es el partido más impredecible y pasional del mundo.</li>
+                <li><strong>RC Celta vs. Juventus:</strong> (UEFA Europa League, 15 de octubre). Balaídos vive una noche europea de las grandes ante la Vecchia Signora. El Celta juega sin complejos y la Juve tendrá que demostrar su jerarquía en un ambiente muy caliente.</li>
+                <li><strong>Real Betis vs. FC Barcelona:</strong> (LaLiga, 17 de octubre). El Betis recibe al Barça en La Cartuja. Los verdiblancos suelen competir de tú a tú ante los grandes y el Barcelona tendrá que controlar las transiciones para no llevarse un disgusto.</li>
+                <li><strong>Newcastle United vs. Aston Villa:</strong> (Premier League, 17 de octubre). St James' Park y dos aspirantes a la zona europea frente a frente. Presión, intensidad física y un duelo muy equilibrado sobre el papel.</li>
+                <li><strong>Real Madrid vs. Sevilla FC:</strong> (LaLiga, 18 de octubre). El Bernabéu recibe a un Sevilla que siempre compite con orgullo en Chamartín. El Madrid es favorito, pero el marcador exacto puede ser más apretado de lo que parece.</li>
+                <li><strong>Paris Saint-Germain vs. FC Barcelona:</strong> (Champions League, 20 de octubre). Un clásico moderno de la Champions con muchas noches memorables a sus espaldas. Talento ofensivo a raudales en el Parque de los Príncipes y un partido que invita a esperar goles.</li>
+                <li><strong>Bayern Múnich vs. Arsenal:</strong> (Champions League, 21 de octubre). El Allianz Arena mide a un Arsenal que llega con ambición de título. Duelo entre dos de los equipos más completos de Europa, con muy poco margen de error.</li>
             </ul>
 
-            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 4: La Semana del Clásico y el Terror de Halloween</h4>
-            <p style="margin-bottom: 0.5rem;">Cerramos el mes con la joya de la corona del fútbol español y derbis de altísimo voltaje en el resto de Europa.</p>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 1rem;">Semana 4 (24 al 31 de octubre): Clásico, Klassiker y derbi de Milán</h4>
+            <p style="margin-bottom: 0.5rem;">Cerramos el mes con la semana más fuerte del calendario: el Clásico español, un cruce de Copa en Anfield y un último sábado con tres partidazos, incluidos el Klassiker alemán y el derbi de Milán.</p>
             <ul style="padding-left: 1.2rem; margin-bottom: 0;">
-                <li><strong>Real Madrid vs. FC Barcelona:</strong> (LaLiga). El partido de los partidos. La casilla donde todo el grupo de la porra va a sudar para poner el pronóstico. (2º partido del Madrid y 2º del Barça)</li>
-                <li><strong>Chelsea vs. Newcastle United:</strong> (Premier League). Stamford Bridge mide la resistencia de dos plantillas hechas a golpe de talonario.</li>
-                <li><strong>Aston Villa vs. Tottenham Hotspur:</strong> (Premier League). Fútbol de rock and roll, muy directo y sin frenos.</li>
-                <li><strong>AS Roma vs. Lazio:</strong> (Serie A). El Derby della Capitale. En Roma la ciudad se paraliza; un empate a cero o un partido loco lleno de tarjetas son igual de probables.</li>
-                <li><strong>Galatasaray vs. Fenerbahçe:</strong> (Superliga Turca). El Derbi Intercontinental. Caos absoluto y ambiente infernal, perfecto para una quiniela.</li>
-                <li><strong>Olympique de Marsella vs. PSG:</strong> (Ligue 1). Le Classique francés. El Velodrome es una caldera que suele igualar las diferencias de presupuesto.</li>
+                <li><strong>Aston Villa vs. Manchester City:</strong> (Premier League, 24 de octubre). Villa Park ya ha sido una trampa para el City en temporadas recientes. Partido de mediodía con un Villa muy intenso ante el gran favorito.</li>
+                <li><strong>FC Barcelona vs. Real Madrid:</strong> (LaLiga, 25 de octubre). El partido de los partidos. Primer Clásico de la temporada en el Spotify Camp Nou y la casilla donde todo el grupo va a sudar para poner el pronóstico.</li>
+                <li><strong>Liverpool vs. Chelsea:</strong> (Carabao Cup, 28 de octubre). Eliminatoria a partido único en Anfield. Las rotaciones típicas de la Copa y la amenaza de la prórroga y los penaltis hacen que el resultado a los 90 minutos sea especialmente difícil de acertar.</li>
+                <li><strong>Chelsea vs. Manchester United:</strong> (Premier League, 31 de octubre). Stamford Bridge abre el último sábado del mes con un clásico inglés entre dos gigantes que buscan recuperar su sitio en la élite.</li>
+                <li><strong>Bayern Múnich vs. Borussia Dortmund:</strong> (Bundesliga, 31 de octubre). Der Klassiker en el Allianz Arena. El Bayern suele imponer su ley en casa, pero el Dortmund siempre tiene velocidad para castigar cualquier descuido.</li>
+                <li><strong>AC Milan vs. Inter de Milán:</strong> (Serie A, 31 de octubre). El Derby della Madonnina cierra el mes. San Siro dividido en dos, tensión máxima y un partido que suele decidirse por detalles.</li>
             </ul>
         </div>
     `
