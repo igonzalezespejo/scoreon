@@ -13,6 +13,38 @@ const SESSION_STORAGE_KEY = 'porra_session_token';
 const BOOTSTRAP_CACHE_KEY = 'porra_bootstrap_light';
 const BOOTSTRAP_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
+// Usuario y apuestas propias de la última sesión confirmada. Permiten entrar
+// al instante al volver (sesión optimista) y verificar el token en segundo
+// plano. No es una autorización: el backend valida el token en cada
+// escritura, así que un token caducado solo puede ver datos, nunca guardar.
+const SESSION_USER_KEY = 'porra_session_user';
+const MY_PREDICTIONS_KEY = 'porra_my_predictions';
+
+function readJson(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function writeJson(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+        // Almacenamiento lleno o bloqueado: solo se pierde la entrada rápida.
+    }
+}
+
+function removeKey(key) {
+    try {
+        localStorage.removeItem(key);
+    } catch (e) {
+        // Sin almacenamiento no hay nada que borrar.
+    }
+}
+
 class State {
     constructor() {
         this.currentUser = null; // { user_id, display_name, is_admin }
@@ -50,6 +82,21 @@ class State {
         this.rankingsLoaded = false;
         this.rankingsLoading = false;
         this.rankingsError = null;
+
+        // Versión de la copia pública ya aplicada en esta visita (ver
+        // acceptSnapshotVersion). No se guarda en el navegador a propósito.
+        this.snapshotVersion = 0;
+    }
+
+    // Evita que una lectura lenta de la copia pública sustituya a otra más
+    // nueva que llegó antes. Solo compara dentro de la misma visita: si se
+    // comparara con la versión guardada en el navegador, reiniciar el
+    // contador en el backend dejaría a la web ignorando los datos nuevos.
+    acceptSnapshotVersion(version) {
+        if (version == null) return true;
+        if (version < this.snapshotVersion) return false;
+        this.snapshotVersion = version;
+        return true;
     }
 
     // Lee el token guardado en el navegador (si existe) a memoria, sin
@@ -65,6 +112,34 @@ class State {
         this.currentUser = user;
         this.myPredictionsById = myPredictions || {};
         localStorage.setItem(SESSION_STORAGE_KEY, token);
+        writeJson(SESSION_USER_KEY, user);
+        writeJson(MY_PREDICTIONS_KEY, this.myPredictionsById);
+    }
+
+    // Sesión optimista: recupera el usuario y sus apuestas de la última
+    // sesión confirmada para entrar sin esperar al backend. Devuelve false si
+    // no hay copia (p. ej. la primera visita tras esta versión): entonces se
+    // verifica como siempre, esperando a resumeSession.
+    restoreCachedSession() {
+        if (!this.sessionToken) return false;
+        const user = readJson(SESSION_USER_KEY);
+        if (!user || !user.user_id) return false;
+        this.currentUser = user;
+        this.myPredictionsById = readJson(MY_PREDICTIONS_KEY) || {};
+        return true;
+    }
+
+    // Aplica lo que devuelve resumeSession en segundo plano. Devuelve true si
+    // las apuestas propias han cambiado respecto a las que había en pantalla
+    // (por ejemplo, se guardaron desde otro dispositivo).
+    applyFreshSession(user, myPredictions) {
+        const fresh = myPredictions || {};
+        const changed = JSON.stringify(normalizePredictions(this.myPredictionsById)) !== JSON.stringify(normalizePredictions(fresh));
+        this.currentUser = user;
+        this.myPredictionsById = fresh;
+        writeJson(SESSION_USER_KEY, user);
+        writeJson(MY_PREDICTIONS_KEY, fresh);
+        return changed;
     }
 
     clearSession() {
@@ -73,6 +148,8 @@ class State {
         this.sessionError = null;
         this.myPredictionsById = {};
         localStorage.removeItem(SESSION_STORAGE_KEY);
+        removeKey(SESSION_USER_KEY);
+        removeKey(MY_PREDICTIONS_KEY);
     }
 
     getMyPredictionsForMonth(monthId) {
@@ -113,6 +190,7 @@ class State {
         });
 
         this.myPredictionsById[monthId] = Object.values(byMatchId);
+        writeJson(MY_PREDICTIONS_KEY, this.myPredictionsById);
     }
 
     isAuthenticated() {
@@ -213,6 +291,11 @@ class State {
             if (Date.now() - cached.cachedAt > BOOTSTRAP_CACHE_TTL_MS) return false;
 
             this.initializeLight(cached.data);
+            // La copia pública trae también el ranking: así la pestaña de
+            // ranking se ve al instante en vez de esperar a la red.
+            if (cached.data.rankingMonthly) {
+                this.updateRankings(cached.data);
+            }
             this.showingCachedData = true;
             return true;
         } catch (e) {
@@ -299,8 +382,35 @@ class State {
         // Code.gs), pero es de un solo disparo: si el admin lo reabre a
         // mano después de esa fecha, se queda abierto — por eso aquí no
         // se vuelve a comprobar lock_at, solo status.
-        return month.status === 'open';
+        //
+        // Excepción: un mes "open" con lock_at vencido y SIN auto_closed_at
+        // es uno que el backend todavía no ha cerrado, pero cerrará en cuanto
+        // llegue cualquier escritura (actionSavePrediction lo cierra antes de
+        // validar). Antes lo cerraba la propia carga de la web; con la copia
+        // pública el cierre puede tardar unos minutos en aparecer, así que
+        // aquí se aplica la misma regla para no ofrecer un formulario que el
+        // servidor va a rechazar. Si el admin lo reabrió a mano, ya tiene
+        // auto_closed_at y sigue abierto.
+        if (month.status !== 'open') return false;
+        if (month.lock_at && !month.auto_closed_at) {
+            const lockTime = new Date(month.lock_at).getTime();
+            if (!isNaN(lockTime) && Date.now() >= lockTime) return false;
+        }
+        return true;
     }
+}
+
+// Forma comparable de { month_id: [predicciones] }: mismo orden y mismos
+// tipos, para detectar cambios reales sin falsos positivos por orden o por
+// "2" vs 2.
+function normalizePredictions(byMonth) {
+    const out = {};
+    Object.keys(byMonth || {}).sort().forEach(monthId => {
+        out[monthId] = (byMonth[monthId] || [])
+            .map(p => [String(p.match_id), Number(p.home_goals), Number(p.away_goals)])
+            .sort((a, b) => a[0].localeCompare(b[0]));
+    });
+    return out;
 }
 
 export const state = new State();

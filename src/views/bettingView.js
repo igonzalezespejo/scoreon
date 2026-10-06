@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { savePrediction, loadBootstrapLight, loadRankingsData } from '../api.js';
+import { savePrediction, refreshCoreData } from '../api.js';
 import { showToast } from '../utils/dom.js';
 import { formatDate, isMatchLocked } from '../utils/dates.js';
 import { scorePrediction } from '../scoring.js';
@@ -171,6 +171,49 @@ export const bettingView = {
         const userPredictions = state.getMyPredictionsForMonth(monthId);
 
         this.renderMatchesForm(userId, container, matches, results, userPredictions, summary);
+    },
+
+    // true si algún partido abierto tiene en pantalla un valor distinto del
+    // guardado: el usuario está a medio rellenar y no se le debe repintar.
+    hasUnsavedChanges() {
+        const view = document.getElementById('view-betting');
+        if (!view) return false;
+        return this.collectEdits(view, state.getMyPredictionsForMonth(state.selectedMonthId)).length > 0;
+    },
+
+    // Casillas abiertas cuyo valor difiere de `baseline` (lo que había
+    // guardado cuando se pintó la pantalla).
+    collectEdits(view, baseline) {
+        const saved = {};
+        (baseline || []).forEach(p => saved[p.match_id] = p);
+        const edits = [];
+        view.querySelectorAll('input.betting-match-bet-input:not([disabled])').forEach(input => {
+            const pred = saved[input.dataset.match];
+            const value = pred ? pred[input.dataset.team === 'home' ? 'home_goals' : 'away_goals'] : '';
+            const savedText = value === null || value === undefined ? '' : String(value);
+            if (input.value !== savedText) {
+                edits.push({ match: input.dataset.match, team: input.dataset.team, value: input.value });
+            }
+        });
+        return edits;
+    },
+
+    // Llegan apuestas propias más nuevas (guardadas desde otro dispositivo)
+    // con la pantalla abierta. Hay que repintar: si no, una casilla sin tocar
+    // seguiría mostrando el valor viejo y, al guardar, se compararía contra
+    // el nuevo y lo machacaría sin que el usuario lo haya decidido. Lo que el
+    // usuario sí había cambiado (respecto a `previousPredictions`, lo que se
+    // le había enseñado) se conserva.
+    refreshKeepingEdits(previousPredictions) {
+        const view = document.getElementById('view-betting');
+        if (!view) return;
+        const edits = this.collectEdits(view, previousPredictions);
+        this.showFromCache(view);
+        edits.forEach(e => {
+            const input = view.querySelector(`input.betting-match-bet-input[data-match="${e.match}"][data-team="${e.team}"]`);
+            if (input && !input.disabled) input.value = e.value;
+        });
+        showToast('Tus apuestas se han actualizado con lo guardado desde otro dispositivo.');
     },
 
     renderMatchesForm(userId, container, matches, results, userPredictions, summary) {
@@ -427,17 +470,9 @@ export const bettingView = {
                 state.setMyPredictionsForMonth(monthId, response.confirmed_predictions);
 
                 // Refresca en segundo plano el resto de meses/resumen (por si
-                // algo cambió en Sheets desde otra pestaña o el admin) y las
-                // apuestas del ranking; no bloquea el repintado inmediato.
-                loadBootstrapLight().catch(err => console.error("Error refrescando datos:", err));
-
-                state.setRankingsLoading(true);
-                loadRankingsData()
-                    .then(data => state.updateRankings(data))
-                    .catch(err => {
-                        console.error("Error refreshing rankings:", err);
-                        state.setRankingsError("Error al recargar rankings");
-                    });
+                // algo cambió en Sheets desde otra pestaña o el admin) y el
+                // ranking; no bloquea el repintado inmediato.
+                refreshCoreData().catch(err => console.error("Error refrescando datos:", err));
 
                 const view = document.getElementById('view-betting');
                 if (view) this.showFromCache(view);

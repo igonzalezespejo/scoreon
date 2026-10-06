@@ -11,3 +11,7 @@ export const API_URL = 'https://script.google.com/macros/s/XXXX/exec';
 
 // Set to true to use local mock data instead of calling the API
 export const USE_MOCK = true;
+
+// ID of the public Google Sheet with the read-only data copy (see
+// apps-script/Publico.gs). null = read everything through API_URL.
+export const PUBLIC_SHEET_ID = null;

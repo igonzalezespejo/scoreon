@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { USE_MOCK, API_URL } from './config.js';
+import { USE_MOCK, API_URL, PUBLIC_SHEET_ID } from './config.js';
 
 /**
  * API layer
@@ -92,6 +92,142 @@ function newRequestId() {
         return window.crypto.randomUUID();
     }
     return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+// ==========================================
+// COPIA PÚBLICA (lectura rápida)
+// ==========================================
+//
+// Apps Script genera, en cada escritura, una copia de todo lo que la web
+// enseña y la deja en una hoja pública (ver apps-script/Publico.gs). Leerla
+// con la consulta gviz de Google Sheets tarda ~0,3 s y no pasa por el
+// redirect de /exec que tarda decenas de segundos y falla con 404.
+//
+// Formato: columna A, A1 = "|" + cabecera {version, length, chunks}, y A2..
+// = "|" + trozos del JSON. Se comprueba que el JSON llega entero y que la
+// cabecera y los trozos son de la misma versión.
+const SNAPSHOT_TIMEOUT_MS = 15000;
+const SNAPSHOT_ATTEMPTS = 2;
+
+export function isPublicSnapshotEnabled() {
+    return !USE_MOCK && !!PUBLIC_SHEET_ID;
+}
+
+async function fetchPublicSnapshot() {
+    const url = `https://docs.google.com/spreadsheets/d/${PUBLIC_SHEET_ID}/gviz/tq?tqx=out:json&headers=0&sheet=Publico`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SNAPSHOT_TIMEOUT_MS);
+    try {
+        const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const text = await response.text();
+        const gviz = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+        if (gviz.status !== 'ok') {
+            throw new Error(`Copia pública ilegible (gviz status ${gviz.status})`);
+        }
+
+        const cells = gviz.table.rows.map(r => (r.c && r.c[0] && r.c[0].v != null) ? String(r.c[0].v) : '');
+        const clean = cells.map(c => c.startsWith('|') ? c.slice(1) : c);
+        if (!clean[0]) throw new Error('Copia pública vacía');
+
+        const meta = JSON.parse(clean[0]);
+        const payload = clean.slice(1, 1 + meta.chunks).join('');
+        if (payload.length !== meta.length) {
+            throw new Error('Copia pública incompleta');
+        }
+        const snapshot = JSON.parse(payload);
+        if (snapshot.version !== meta.version) {
+            throw new Error('Copia pública con versiones mezcladas');
+        }
+        if (snapshot.app !== 'scoreon' || !snapshot.monthsData) {
+            throw new Error('La hoja no contiene una copia de ScoreOn');
+        }
+        return snapshot;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+// Convierte la copia pública a la misma forma que la respuesta de
+// bootstrapLight + rankings, para que state la consuma igual venga de donde
+// venga.
+function snapshotToCoreData(snapshot) {
+    const activeMonthId = snapshot.activeMonth ? snapshot.activeMonth.month_id : null;
+    const active = (activeMonthId && snapshot.monthsData[activeMonthId]) || { matches: [], results: [], predictionsSummary: {} };
+    return {
+        ok: true,
+        serverTime: new Date().toISOString(),
+        config: snapshot.config,
+        months: snapshot.months,
+        activeMonth: snapshot.activeMonth,
+        participants: snapshot.participants,
+        matches: active.matches,
+        predictionsSummary: active.predictionsSummary,
+        results: active.results,
+        monthsData: snapshot.monthsData,
+        scoringRules: snapshot.scoringRules,
+        rankingMonthly: snapshot.rankingMonthly,
+        rankingGlobal: snapshot.rankingGlobal,
+        snapshot_version: snapshot.version
+    };
+}
+
+export async function loadPublicSnapshot() {
+    let lastError;
+    for (let attempt = 1; attempt <= SNAPSHOT_ATTEMPTS; attempt++) {
+        try {
+            const data = snapshotToCoreData(await fetchPublicSnapshot());
+            // Dos lecturas pueden cruzarse (la de arranque y la de después de
+            // guardar): nunca se sustituye una copia por otra más antigua.
+            if (state.acceptSnapshotVersion(data.snapshot_version)) {
+                state.initializeLight(data);
+                state.updateRankings(data);
+                state.cacheBootstrapLight(data);
+            }
+            return data;
+        } catch (error) {
+            lastError = error;
+            if (attempt < SNAPSHOT_ATTEMPTS) {
+                console.warn(`Reintentando la copia pública (intento ${attempt}/${SNAPSHOT_ATTEMPTS} fallido):`, error.message);
+                await wait(BASE_BACKOFF_MS);
+            }
+        }
+    }
+    throw lastError;
+}
+
+// Carga meses, partidos, contadores y ranking. Primero la copia pública; si
+// falla, lo de siempre por /exec. Devuelve de dónde vinieron los datos:
+// 'snapshot' ya trae el ranking; 'exec' no (hay que pedirlo aparte).
+export async function loadCoreData() {
+    if (isPublicSnapshotEnabled()) {
+        try {
+            await loadPublicSnapshot();
+            return 'snapshot';
+        } catch (error) {
+            console.error("Copia pública no disponible, se usa Apps Script:", error);
+        }
+    }
+    await loadBootstrapLight();
+    return 'exec';
+}
+
+// Refresco en segundo plano después de una escritura (apuesta, resultados,
+// estado de mes, registro).
+export async function refreshCoreData() {
+    const source = await loadCoreData();
+    if (source === 'exec') {
+        state.setRankingsLoading(true);
+        loadRankingsData()
+            .then(data => state.updateRankings(data))
+            .catch(err => {
+                console.error("Error refreshing rankings:", err);
+                state.setRankingsError("Error al recargar rankings");
+            });
+    }
+    return source;
 }
 
 export async function loadBootstrapLight() {

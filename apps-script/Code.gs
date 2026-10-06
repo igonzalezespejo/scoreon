@@ -14,6 +14,9 @@ function onOpen() {
       .addItem('Limpiar sesiones caducadas', 'menuCleanExpiredSessions')
       .addItem('Instalar trigger de cierre automático de meses', 'installAutoCloseMonthsTrigger')
       .addItem('Cerrar meses caducados ahora', 'menuAutoCloseExpiredMonths')
+      .addSeparator()
+      .addItem('Publicar copia pública ahora', 'menuPublishPublicSnapshot')
+      .addItem('Instalar red de seguridad de la copia pública (cada 5 min)', 'installPublicSnapshotTrigger')
       .addToUi();
 }
 
@@ -337,6 +340,8 @@ function handleRequest(params) {
         return withIdempotency(params.request_id, function() { return actionAdminSaveResults(params); });
       case "adminSetMonthStatus":
         return actionAdminSetMonthStatus(params);
+      case "publicSnapshotInfo":
+        return actionPublicSnapshotInfo();
       default:
         return buildErrorResponse("UNKNOWN_ACTION", "Action not supported: " + action);
     }
@@ -1387,12 +1392,17 @@ function actionSavePrediction(params) {
       markRankingsDirty("savePrediction_error");
     }
 
+    // Dentro del lock: así las copias públicas salen en el mismo orden que
+    // las escrituras. Si falla, la apuesta ya está guardada igualmente.
+    const snapshotVersion = publishPublicSnapshotSafe_("savePrediction");
+
     return buildSuccessResponse({
       code: "SAVED",
       message: "Predicciones guardadas correctamente",
       changed_count: changes.length,
       changes: changes,
-      confirmed_predictions: confirmedPredictions
+      confirmed_predictions: confirmedPredictions,
+      snapshot_version: snapshotVersion
     });
 
   } finally {
@@ -1514,6 +1524,8 @@ function actionRegisterParticipant(params) {
     } catch(e) {
       markRankingsDirty("registerParticipant_error");
     }
+
+    publishPublicSnapshotSafe_("registerParticipant");
 
     const session = createSession(slug);
 
@@ -2367,6 +2379,7 @@ function actionAdminSaveResults(params) {
     logAction("admin", "SAVE_RESULTS", `Admin guardó ${updatedCount} resultados del mes ${monthId}`, new Date());
 
     updateRankingsInSheetsUnsafe();
+    publishPublicSnapshotSafe_("adminSaveResults");
 
     return buildSuccessResponse({
       code: "ADMIN_RESULTS_SAVED",
@@ -2419,6 +2432,7 @@ function actionAdminSetMonthStatus(params) {
     }
 
     logAction("admin", "SET_MONTH_STATUS", `Admin cambió estado de ${monthId} a ${status}`, new Date());
+    publishPublicSnapshotSafe_("adminSetMonthStatus");
 
     return buildSuccessResponse({
       code: "ADMIN_MONTH_STATUS_UPDATED",

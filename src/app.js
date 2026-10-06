@@ -1,4 +1,4 @@
-import { loadBootstrapLight, loadRankingsData, resumeSession, logout as logoutApi } from './api.js';
+import { loadCoreData, loadRankingsData, resumeSession, logout as logoutApi } from './api.js';
 import { state } from './state.js';
 import { homeView } from './views/homeView.js';
 import { bettingView } from './views/bettingView.js';
@@ -43,14 +43,17 @@ async function init() {
     // La lista de participantes hace falta tanto para la pantalla de login
     // como para el resto de vistas, así que este fetch no espera a que se
     // resuelva la sesión.
-    loadBootstrapLight()
-        .then(data => {
+    loadCoreData()
+        .then(source => {
             statusMsg.textContent = `Actualizado: ${new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' })}`;
 
-            const viewName = Object.keys(VIEWS).find(k => VIEWS[k] === currentView);
-            if (viewName && CORE_DATA_VIEWS.includes(viewName)) {
-                navigateTo(viewName);
+            const viewName = currentViewName();
+            if (viewName && (CORE_DATA_VIEWS.includes(viewName) || (source === 'snapshot' && viewName === 'ranking'))) {
+                rerenderCurrentView();
             }
+
+            // La copia pública ya trae el ranking; por /exec va aparte.
+            if (source === 'snapshot') return;
 
             state.setRankingsLoading(true);
             loadRankingsData()
@@ -85,7 +88,7 @@ async function init() {
             statusMsg.textContent = 'Error cargando datos';
             statusMsg.style.color = 'var(--accent-danger)';
 
-            const viewName = Object.keys(VIEWS).find(k => VIEWS[k] === currentView);
+            const viewName = currentViewName();
             if (viewName && CORE_DATA_VIEWS.includes(viewName)) {
                 navigateTo(viewName);
             }
@@ -97,9 +100,74 @@ async function init() {
         return;
     }
 
-    // Hay un token guardado de una visita anterior: hay que confirmarlo contra
-    // el backend antes de dar acceso.
+    // Sesión optimista: si esta sesión ya se confirmó en una visita anterior,
+    // se entra al instante con el usuario y las apuestas guardadas, y el token
+    // se comprueba en segundo plano. Guardar sigue exigiendo un token válido
+    // en el backend, así que esto solo adelanta lo que se ve, no lo que se
+    // puede hacer.
+    if (state.restoreCachedSession()) {
+        updateNavVisibility();
+        navigateTo('home');
+        refreshSessionInBackground(token);
+        return;
+    }
+
+    // Sin copia de la sesión (p. ej. primera visita con esta versión): se
+    // confirma contra el backend antes de dar acceso, como siempre.
     await verifySession(token);
+}
+
+function currentViewName() {
+    return Object.keys(VIEWS).find(k => VIEWS[k] === currentView) || null;
+}
+
+// Repinta la vista actual con los datos nuevos, salvo que el usuario esté a
+// medio rellenar sus apuestas: repintar le borraría lo que lleva escrito. En
+// ese caso los datos quedan en memoria y se ven al guardar o al cambiar de
+// pestaña.
+function rerenderCurrentView() {
+    const viewName = currentViewName();
+    if (!viewName) return;
+    if (viewName === 'betting' && bettingView.hasUnsavedChanges()) return;
+    navigateTo(viewName);
+}
+
+// Comprueba en segundo plano el token de una sesión optimista.
+//   - Válido: se actualizan usuario y apuestas propias. Si las apuestas han
+//     cambiado (se guardaron desde otro dispositivo), se refresca la pantalla
+//     — y en Apuestas sin perder lo que el usuario esté escribiendo.
+//   - El backend dice que no vale (caducada, revocada, usuario desactivado):
+//     fuera, a la pantalla de login.
+//   - No se ha podido contactar (404 de Apps Script, red): se sigue dentro.
+//     No es motivo para echar a nadie, y guardar ya revalida el token.
+async function refreshSessionInBackground(token) {
+    try {
+        const response = await resumeSession(token);
+        if (state.sessionToken !== token) return; // cerró sesión entretanto
+
+        if (response.ok) {
+            const previous = state.getMyPredictionsForMonth(state.selectedMonthId);
+            const changed = state.applyFreshSession(response.user, response.myPredictions);
+            updateNavVisibility();
+            if (!changed) return;
+
+            const viewName = currentViewName();
+            if (viewName === 'betting') {
+                bettingView.refreshKeepingEdits(previous);
+            } else if (viewName === 'home' || viewName === 'status') {
+                navigateTo(viewName);
+            }
+            return;
+        }
+
+        if (response.code === 'SESSION_INVALID') {
+            state.clearSession();
+            updateNavVisibility();
+            navigateTo('login');
+        }
+    } catch (error) {
+        console.warn("No se pudo verificar la sesión en segundo plano; se mantiene la sesión guardada:", error);
+    }
 }
 
 // Confirma un token guardado contra el backend. Distingue dos fallos que antes

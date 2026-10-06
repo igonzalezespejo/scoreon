@@ -108,6 +108,14 @@
 - Verificado en navegador contra el backend real que entrar/salir/reentrar en Estado dispara exactamente **una** petición de red por entrada (sin bucles) y que los datos se mantienen al día.
 - No se ha tocado `apps-script/Code.gs`, `src/scoring.js`, `src/config.js` ni las reglas de puntuación.
 
+## V2.13 — Lectura desde copia pública y sesión optimista
+- **Motivo (medido 2026-10-06):** el script tarda 1–5 s, pero la entrega de `/exec` de Google añade hasta 80 s y falla con 404 en ~20 % de las peticiones, incluso en una acción que no toca Sheets. Con 3 peticiones por carga, una de cada dos cargas tenía algún fallo. Precalcular más en el backend no lo arreglaba: había que dejar de leer por `/exec`.
+- **Copia pública (`apps-script/Publico.gs`):** cada escritura (`savePrediction`, `adminSaveResults`, `adminSetMonthStatus`, `registerParticipant`) regenera, dentro del lock, un JSON con meses, partidos, resultados, contadores y ranking, y lo escribe en una hoja aparte compartida por enlace. Sin PIN, emails, códigos ni apuestas individuales. Si la copia falla, la escritura se guarda igual. Un trigger cada 5 min (`installPublicSnapshotTrigger`) la regenera para ediciones a mano, cierre automático de meses o fallos.
+- **Lectura:** la web lee esa hoja con la consulta gviz (~0,3 s, 0 fallos en 50 lecturas y en 20 simultáneas) y verifica que el JSON llega entero, de una sola versión y marcado como ScoreOn. Si falla, vuelve a `/exec` como antes. El ranking llega en la misma lectura.
+- **Sesión optimista:** con una sesión ya confirmada se entra al instante con usuario, apuestas propias y ranking guardados en el navegador; el token se comprueba en segundo plano (solo `SESSION_INVALID` saca al login; un fallo de red no). Si las apuestas propias cambiaron en otro dispositivo, Apuestas se repinta conservando lo que el usuario esté escribiendo.
+- `state.canBet()` aplica la misma regla de cierre automático que el backend (mes abierto con `lock_at` vencido y sin `auto_closed_at` = cerrado), porque la carga ya no cierra meses.
+- No se han tocado `src/scoring.js` ni las reglas de puntuación. Pendiente: que `savePrediction` deje de borrar y reescribir `Predictions_Current` entera.
+
 ## Objetivo del archivo
 
 Crear y mantener este archivo como `roadmap.md` en la raíz del proyecto. Este documento será la hoja de ruta principal para Antigravity 2.0 y para cualquier agente que trabaje en paralelo.

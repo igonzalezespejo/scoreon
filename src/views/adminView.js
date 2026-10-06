@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { adminGetMonths, adminGetMonthMatches, adminSaveResults, adminSetMonthStatus, loadRankingsData, loadBootstrapLight } from '../api.js';
+import { adminGetMonths, adminGetMonthMatches, adminSaveResults, adminSetMonthStatus, refreshCoreData } from '../api.js';
 import { showToast, htmlToElements, empty } from '../utils/dom.js';
 import { formatDate } from '../utils/dates.js';
 
@@ -161,7 +161,7 @@ export const adminView = {
                 badge.textContent = status.toUpperCase();
                 badge.className = status === 'open' ? 'badge badge-success' : 'badge badge-danger';
                 
-                await loadBootstrapLight();
+                await refreshCoreData();
             } else {
                 showToast(response.message || 'Error al actualizar', 'error');
             }
@@ -246,15 +246,7 @@ export const adminView = {
             if (response.ok) {
                 showToast(response.message || 'Resultados guardados correctamente');
                 
-                state.setRankingsLoading(true);
-                loadRankingsData()
-                    .then(data => state.updateRankings(data))
-                    .catch(err => {
-                        console.error("Error refreshing rankings:", err);
-                        state.setRankingsError("Error al recargar rankings");
-                    });
-                
-                await loadBootstrapLight();
+                await refreshCoreData();
                 
                 this.handleMonthChange(monthId, container);
             } else {

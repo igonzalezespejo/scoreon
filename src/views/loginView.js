@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { login, registerParticipant, loadBootstrapLight } from '../api.js';
+import { login, registerParticipant, refreshCoreData } from '../api.js';
 import { showToast, empty } from '../utils/dom.js';
 
 export const loginView = {
@@ -91,7 +91,7 @@ export const loginView = {
                             <label class="form-label" for="reg-email">Email:</label>
                             <input type="email" id="reg-email" class="form-input" required placeholder="tu@email.com">
                         </div>
-                        ${state.config && state.config.registration_code ? `
+                        ${state.config && (state.config.registration_code_required || state.config.registration_code) ? `
                         <div class="form-group">
                             <label class="form-label" for="reg-code">Código de invitación:</label>
                             <input type="text" id="reg-code" class="form-input" required>
@@ -227,7 +227,7 @@ export const loginView = {
                 // Refresco de la lista de participantes en segundo plano: si esta
                 // llamada falla (p.ej. 404 transitorio de Apps Script) no debe
                 // impedir que el usuario recién registrado entre en la app.
-                loadBootstrapLight().catch(error => {
+                refreshCoreData().catch(error => {
                     console.error('Error refrescando datos tras el registro:', error);
                 });
             } else {
