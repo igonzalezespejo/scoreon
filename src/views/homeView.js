@@ -1,7 +1,6 @@
 import { state } from '../state.js';
 import { formatDate, buildMonthTitle } from '../utils/dates.js';
 import { navigateTo } from '../app.js';
-import { staticDescriptions } from '../data/staticDescriptions.js';
 import { staticSeason } from '../data/staticSeason.js';
 
 function getDisplayMonths() {
@@ -118,12 +117,7 @@ export const homeView = {
                         ${statsSection}
 
                         <div style="margin-top: auto; display: flex; gap: 10px; justify-content: center;">
-                            <button class="btn btn-secondary btn-info-month" data-month-id="${m.month_id}">INFO</button>
                             <button class="btn btn-primary btn-apostar-month" data-month-id="${m.month_id}">${apostarText}</button>
-                        </div>
-
-                        <div id="matches-info-${m.month_id}" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                            <!-- Matches will be loaded here -->
                         </div>
                     </div>
                 `;
@@ -214,87 +208,5 @@ export const homeView = {
                 }
             });
         });
-
-        // INFO button logic
-        const infoBtns = container.querySelectorAll('.btn-info-month');
-        infoBtns.forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const monthId = btn.getAttribute('data-month-id');
-                const infoContainer = container.querySelector(`#matches-info-${monthId}`);
-
-                if (infoContainer.style.display === 'block') {
-                    infoContainer.style.display = 'none';
-                    return;
-                }
-
-                infoContainer.style.display = 'block';
-
-                // Show static description if we have it
-                const staticHtml = staticDescriptions[monthId] || '';
-
-                if (!state.coreLoaded) {
-                    infoContainer.innerHTML = staticHtml + '<div style="text-align: center; color: var(--text-secondary); margin-top: 1rem;">Cargando datos del mes...</div>';
-                    return;
-                }
-
-                infoContainer.innerHTML = staticHtml + '<div style="text-align: center; color: var(--text-secondary); margin-top: 1rem;">Cargando partidos...</div>';
-
-                // Get matches from cache or fetch
-                let matches = [];
-                if (state.monthDataById[monthId] && state.monthDataById[monthId].matches) {
-                    matches = state.monthDataById[monthId].matches;
-                } else if (monthId === state.activeMonth?.month_id) {
-                    matches = state.matches;
-                } else {
-                    try {
-                        const api = await import('../api.js');
-                        const data = await api.loadMonthData(monthId);
-                        if (data && data.matches) {
-                            matches = data.matches;
-                        }
-                    } catch (err) {
-                        infoContainer.innerHTML = '<div style="text-align: center; color: var(--accent-danger);">Error al cargar los partidos.</div>';
-                        return;
-                    }
-                }
-
-                // Render dynamic matches below the static content
-                const dynamicHtml = this.getMatchesListHtml(matches);
-                infoContainer.innerHTML = staticHtml + dynamicHtml;
-
-                // Re-render the view to update stats if they were just fetched
-                if (!state.monthDataById[monthId]) {
-                   // This is handled by loadMonthData automatically storing in state
-                   // But if we want the stats at the top of the card to update, we could re-render
-                   // However, for now let's just keep it simple and just show the matches.
-                }
-            });
-        });
-    },
-
-    getMatchesListHtml(matches) {
-        if (!matches || matches.length === 0) {
-            return '<p class="text-muted" style="text-align: center; margin-top: 1rem;">No hay partidos configurados para este mes.</p>';
-        }
-
-        // Try to group by week based on kickoff_at, or just display a simple list
-        // Since we don't have a "week" field in the schema, we'll just list them sorted by date.
-
-        let html = '<div style="margin-top: 1.5rem;"><h4 style="color: var(--accent-primary); margin-bottom: 1rem; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Calendario Oficial</h4><ul style="list-style: none; padding: 0; margin: 0; text-align: left;">';
-        matches.forEach(match => {
-            const kickoff = formatDate(match.kickoff_at);
-            const status = match.status === 'final' ? '<span class="badge badge-primary" style="font-size:0.7rem; padding: 2px 4px; margin-left: 5px;">Final</span>' :
-                           match.status === 'cancelled' ? '<span class="badge badge-danger" style="font-size:0.7rem; padding: 2px 4px; margin-left: 5px;">Cancelado</span>' : '';
-            html += `
-                <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--border-color);">
-                    <div style="font-size: 0.85rem; color: var(--accent-secondary); font-weight: 600; text-transform: uppercase;">${match.competition}</div>
-                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.3rem;">${kickoff} ${status}</div>
-                    <div style="font-size: 1.1rem; font-weight: 500;">${match.home_team} <span style="color: var(--text-muted); margin: 0 0.5rem;">vs</span> ${match.away_team}</div>
-                </li>
-            `;
-        });
-        html += '</ul></div>';
-
-        return html;
     }
 };
